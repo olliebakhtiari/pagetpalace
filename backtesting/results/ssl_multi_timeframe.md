@@ -1,4 +1,4 @@
-# 10K starting, 6 equity split, max 2 trades per strategy.
+# 10K starting, 6 equity split, max 2 trades per strategy. < 1 MONTH TEST.
 
 ## MOVING STOPLOSS AT 1:1(0.01) AND 2:1(0.33)
 
