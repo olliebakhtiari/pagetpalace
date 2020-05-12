@@ -1,0 +1,122 @@
+# Python standard.
+import datetime
+from typing import Tuple
+
+# Third-party.
+import pandas as pd
+
+
+def get_days_in_months() -> dict:
+    return {
+        1: 31,
+        2: 28,  # account for leap year when using.
+        3: 31,
+        4: 30,
+        5: 31,
+        6: 30,
+        7: 31,
+        8: 31,
+        9: 30,
+        10: 31,
+        11: 30,
+        12: 31,
+    }
+
+
+def is_leap_year(year: int) -> bool:
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+def convert_from_timestamp(timestamp: int) -> str:
+    return datetime.datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def get_date_and_time(d_t: datetime.datetime) -> Tuple[datetime.date, datetime.time]:
+    return datetime.date(d_t.year, d_t.month, d_t.day), datetime.time(d_t.hour, d_t.minute, d_t.second)
+
+
+def is_market_open(date: datetime.date, time: str) -> bool:
+    dow = date.isoweekday()
+    hour = int(time.split(':')[0])
+    if dow == 5 and hour >= 22:
+        return False
+    if dow == 6:
+        return False
+    if dow == 7 and hour < 22:
+        return False
+
+    return True
+
+
+def get_nearest_15m_loc(dt: datetime.datetime) -> datetime.datetime:
+    return datetime.datetime(dt.year, dt.month, dt.day, dt.hour, dt.minute - dt.minute % 15, 0)
+
+
+def get_nearest_15m_data(fif_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+    fif_loc = str(get_nearest_15m_loc(curr_dt))
+    idx = fif_data.loc[fif_loc]['idx'].astype(int)
+    data = fif_data.loc[fif_data['idx'] == idx - 1]
+
+    return data
+
+
+def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
+    return datetime.datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
+
+
+def get_nearest_1hr_data(hr_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+    hr_loc = str(get_nearest_hr_loc(curr_dt))
+    idx = hr_data.loc[hr_loc]['idx'].astype(int)
+    data = hr_data.loc[hr_data['idx'] == idx - 1]
+
+    return data
+
+
+def get_nearest_4hr_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.datetime:
+    """ Four hr data set affected by daylight savings. odd cycle -> 01, 05, 09, 13, 17, 21. """
+    loc = datetime.datetime(dt.year, dt.month, dt.day, dt.hour - dt.hour % 4, 0, 0)
+    if not is_even_cycle:
+        if dt.hour % 4 == 0:
+            loc -= datetime.timedelta(hours=3)
+        else:
+            loc += datetime.timedelta(hours=1)
+
+    return loc
+
+
+def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
+                         curr_dt: datetime.datetime,
+                         is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
+    four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
+    try:
+        idx = four_hr_data.loc[four_hr_loc]['idx'].astype(int)
+        data = four_hr_data.loc[four_hr_data['idx'] == idx - 1]
+    except KeyError as exc:
+        is_even_cycle = not is_even_cycle
+        print(f'{exc}, 4hr daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
+        four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
+        idx = four_hr_data.loc[four_hr_loc]['idx'].astype(int)
+        data = four_hr_data.loc[four_hr_data['idx'] == idx - 1]
+
+    return data, is_even_cycle
+
+
+def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.datetime:
+    return datetime.datetime(dt.year, dt.month, dt.day, 16 if is_even_cycle else 17, 0, 0)
+
+
+def get_nearest_daily_data(d_data: pd.DataFrame,
+                           curr_dt: datetime.datetime,
+                           is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
+    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
+    try:
+        idx = d_data.loc[d_loc]['idx'].astype(int)
+        data = d_data.loc[d_data['idx'] == idx - 1]
+    except KeyError as exc:
+        is_even_cycle = not is_even_cycle
+        print(f'{exc}, daily daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
+        d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
+        idx = d_data.loc[d_loc]['idx'].astype(int)
+        data = d_data.loc[d_data['idx'] == idx - 1]
+
+    return data, is_even_cycle
