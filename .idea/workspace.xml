@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe.md" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/oanda_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/datetime_utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -34,17 +38,16 @@
   <component name="ProjectId" id="1X3zO3NwVti1Umfu2sCQMhM5o2I" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/data/oanda/GBP_USD" />
       <recent name="$PROJECT_DIR$/data/hist_data" />
       <recent name="$PROJECT_DIR$/backtesting/development" />
       <recent name="$PROJECT_DIR$/backtesting" />
-      <recent name="$PROJECT_DIR$/tools" />
     </key>
   </component>
   <component name="RunDashboard">

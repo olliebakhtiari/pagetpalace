@@ -47,9 +47,9 @@ class OandaInstrumentData(RequestMixin):
                          to_date: str = None,
                          smooth: bool = False,
                          include_first: bool = True,
-                         daily_alignment: int = 17,
+                         daily_alignment: int = 22,
                          alignment_timezone: str = 'Europe/London',
-                         weekly_alignment: str = 'Friday') -> dict:
+                         weekly_alignment: str = 'Sunday') -> dict:
         """ price: “M” (midpoint candles), “B” (bid candles) and “A” (ask candles).
             granularity: The granularity of the candlesticks to fetch [default=S5]
             count: The number of candlesticks to return in the response.
@@ -77,6 +77,7 @@ class OandaInstrumentData(RequestMixin):
         """
         if prices not in 'ABM':
             raise ValueError('prices must be any combination of A, B and M')
+
         # include_first has no meaning without from_date being specified.
         if not from_date:
             include_first = None

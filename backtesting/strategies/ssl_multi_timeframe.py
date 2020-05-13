@@ -122,8 +122,8 @@ def execute(equity_split: int = 6,
     balances = []
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
 
-    # Iterate through lowest time frame of all strategies being ran. start at around 20 days worth of candles for SSL.
-    for curr_dt, curr_candle in m5[250000::].iterrows():
+    # Iterate through lowest time frame of all strategies being ran. Start at around 20 days worth of candles for SSL.
+    for curr_dt, curr_candle in tqdm(m5[250000::].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -136,7 +136,11 @@ def execute(equity_split: int = 6,
         previous_5m_candlestick = m5.iloc[idx - 1]
 
         # Strategy 1 SSL.
-        trend_1 = d_candle['HighLowValue'].values[0]
+        try:
+            trend_1 = d_candle['HighLowValue'].values[0]
+        except Exception as exc:
+            print(f'{curr_dt} - {d_candle}')
+            raise exc
         entry_1 = hr1_candle['HighLowValue'].values[0]
 
         # Strategy 2 SSL.
@@ -181,7 +185,7 @@ def execute(equity_split: int = 6,
         # Add 2k margin every 30 days. 31680 minutes in 30 days. 730 hours in a month.
         if idx % 6336 == 0:
             account.deposit_funds(2000.)
-
+            print('=========== INVESTING 2K ===========')
         # Check signals and act.
         signals = check_signals(
             s1_params=(trend_1, entry_1),

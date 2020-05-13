@@ -4,6 +4,7 @@ from typing import Tuple
 
 # Third-party.
 import pandas as pd
+import numpy as np
 
 
 def get_days_in_months() -> dict:
@@ -54,8 +55,8 @@ def get_nearest_15m_loc(dt: datetime.datetime) -> datetime.datetime:
 
 def get_nearest_15m_data(fif_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
     fif_loc = str(get_nearest_15m_loc(curr_dt))
-    idx = fif_data.loc[fif_loc]['idx'].astype(int)
-    data = fif_data.loc[fif_data['idx'] == idx - 1]
+    idx = np.where(fif_data.index == fif_loc)[0]
+    data = fif_data.iloc[idx - 1]
 
     return data
 
@@ -66,8 +67,8 @@ def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
 
 def get_nearest_1hr_data(hr_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
     hr_loc = str(get_nearest_hr_loc(curr_dt))
-    idx = hr_data.loc[hr_loc]['idx'].astype(int)
-    data = hr_data.loc[hr_data['idx'] == idx - 1]
+    idx = np.where(hr_data.index == hr_loc)[0]
+    data = hr_data.iloc[idx - 1]
 
     return data
 
@@ -89,14 +90,14 @@ def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
                          is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
     four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
     try:
-        idx = four_hr_data.loc[four_hr_loc]['idx'].astype(int)
-        data = four_hr_data.loc[four_hr_data['idx'] == idx - 1]
+        idx = np.where(four_hr_data.index == four_hr_loc)[0]
+        data = four_hr_data.iloc[idx - 1]
     except KeyError as exc:
         is_even_cycle = not is_even_cycle
         print(f'{exc}, 4hr daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
         four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
-        idx = four_hr_data.loc[four_hr_loc]['idx'].astype(int)
-        data = four_hr_data.loc[four_hr_data['idx'] == idx - 1]
+        idx = np.where(four_hr_data.index == four_hr_loc)[0]
+        data = four_hr_data.iloc[idx - 1]
 
     return data, is_even_cycle
 
@@ -110,13 +111,13 @@ def get_nearest_daily_data(d_data: pd.DataFrame,
                            is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
     d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
     try:
-        idx = d_data.loc[d_loc]['idx'].astype(int)
-        data = d_data.loc[d_data['idx'] == idx - 1]
+        idx = np.where(d_data.index == d_loc)[0]
+        data = d_data.iloc[idx - 1]
     except KeyError as exc:
         is_even_cycle = not is_even_cycle
         print(f'{exc}, daily daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
         d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
-        idx = d_data.loc[d_loc]['idx'].astype(int)
-        data = d_data.loc[d_data['idx'] == idx - 1]
+        idx = np.where(d_data.index == d_loc)[0]
+        data = d_data.iloc[idx - 1]
 
     return data, is_even_cycle

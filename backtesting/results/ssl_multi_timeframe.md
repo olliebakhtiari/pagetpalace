@@ -86,4 +86,12 @@ final balance = 19626.64
 highest balance = 31264.9
 lowest balance = 10880.9
 
+## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.50)
+sl_mult=3.5, tp_mult=2
+trades taken = 98
+win rate = 52.04%
+pips accumulated = 3318.78565
+final balance = 21877.84
+highest balance = 37578.9
+lowest balance = 10880.9
 
