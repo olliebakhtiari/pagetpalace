@@ -121,9 +121,10 @@ def execute(equity_split: int = 6,
     # Set up and track account.
     balances = []
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
+    prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. Start at around 20 days worth of candles for SSL.
-    for curr_dt, curr_candle in tqdm(m5[250000::].iterrows()):
+    for curr_dt, curr_candle in tqdm(m5[246639::].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -182,10 +183,11 @@ def execute(equity_split: int = 6,
         # Data to plot.
         balances.append(account.get_current_total_balance())
 
-        # Add 2k margin every 30 days. 31680 minutes in 30 days. 730 hours in a month.
-        if idx % 6336 == 0:
+        # Add 2k margin every month.
+        if prev_month_deposited != curr_dt.month:
             account.deposit_funds(2000.)
-            print('=========== INVESTING 2K ===========')
+            prev_month_deposited = curr_dt.month
+
         # Check signals and act.
         signals = check_signals(
             s1_params=(trend_1, entry_1),
@@ -277,12 +279,12 @@ def execute(equity_split: int = 6,
 
 
 if __name__ == '__main__':
-    acc, bal = execute(sl_mult=3.5, tp_mult=2)
-    print(acc)
-
-    # for sl_mult in tqdm([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]):
-    #     for tp_mult in [2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]:
-    #         acc, bal = execute(sl_mult=sl_mult, tp_mult=tp_mult)
-    #         print(f'sl_mult={sl_mult}, tp_mult={tp_mult}')
-    #         print(acc)
+    results = {}
+    for sl_mult in tqdm([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]):
+        for tp_mult in [2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]:
+            acc, bal = execute(sl_mult=sl_mult, tp_mult=tp_mult)
+            results[f'sl_mult={sl_mult}, tp_mult={tp_mult}'] = acc
+            print(f'sl: {sl_mult} - tp: {tp_mult}')
+            print(acc)
+    print(results)
 
