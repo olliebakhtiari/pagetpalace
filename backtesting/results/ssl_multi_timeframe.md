@@ -95,3 +95,26 @@ final balance = 21877.84
 highest balance = 37578.9
 lowest balance = 10880.9
 
+
+
+# 10K starting, 6 equity split, max 2 trades per strategy. 2019-05-01 - 2020-03-27.
+
+## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.50)
+
+sl: 3.25 - tp: 2
+trades taken = 1334
+win rate = 38.53%
+pips accumulated = 9604.64454
+final balance = 130338.84
+highest balance = 198210.41
+lowest balance = 12153.28
+
+sl: 3.5 - tp: 2
+trades taken = 1291
+win rate = 39.04%
+pips accumulated = 9699.49464
+final balance = 110958.94
+highest balance = 190025.22
+lowest balance = 11860.24
+
+

@@ -124,7 +124,7 @@ def execute(equity_split: int = 6,
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. Start at around 20 days worth of candles for SSL.
-    for curr_dt, curr_candle in tqdm(m5[246639::].iterrows()):
+    for curr_dt, curr_candle in m5[246639::].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -137,11 +137,7 @@ def execute(equity_split: int = 6,
         previous_5m_candlestick = m5.iloc[idx - 1]
 
         # Strategy 1 SSL.
-        try:
-            trend_1 = d_candle['HighLowValue'].values[0]
-        except Exception as exc:
-            print(f'{curr_dt} - {d_candle}')
-            raise exc
+        trend_1 = d_candle['HighLowValue'].values[0]
         entry_1 = hr1_candle['HighLowValue'].values[0]
 
         # Strategy 2 SSL.
@@ -279,12 +275,14 @@ def execute(equity_split: int = 6,
 
 
 if __name__ == '__main__':
-    results = {}
-    for sl_mult in tqdm([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]):
-        for tp_mult in [2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]:
-            acc, bal = execute(sl_mult=sl_mult, tp_mult=tp_mult)
-            results[f'sl_mult={sl_mult}, tp_mult={tp_mult}'] = acc
-            print(f'sl: {sl_mult} - tp: {tp_mult}')
-            print(acc)
-    print(results)
+    acc, bal = execute(sl_mult=3.5, tp_mult=2)
+    print(acc)
+    # results = {}
+    # for sl_mult in tqdm([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]):
+    #     for tp_mult in [2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]:
+    #         acc, bal = execute(sl_mult=sl_mult, tp_mult=tp_mult)
+    #         results[f'sl_mult={sl_mult}, tp_mult={tp_mult}'] = str(acc)
+    #         print(f'sl: {sl_mult} - tp: {tp_mult}')
+    #         print(acc)
+    # print(results)
 

@@ -88,13 +88,12 @@ def get_nearest_4hr_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.
 def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
                          curr_dt: datetime.datetime,
                          is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
-    four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
+    four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle))
     idx = np.where(four_hr_data.index == four_hr_loc)[0]
     data = four_hr_data.iloc[idx - 1]
     if not len(data.values):
         is_even_cycle = not is_even_cycle
-        print(f'4hr daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
-        four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle=is_even_cycle))
+        four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle))
         idx = np.where(four_hr_data.index == four_hr_loc)[0]
         data = four_hr_data.iloc[idx - 1]
 
@@ -108,13 +107,12 @@ def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetim
 def get_nearest_daily_data(d_data: pd.DataFrame,
                            curr_dt: datetime.datetime,
                            is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
-    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
+    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
     idx = np.where(d_data.index == d_loc)[0]
     data = d_data.iloc[idx - 1]
     if not len(data.values):
         is_even_cycle = not is_even_cycle
-        print(f'daily daylight savings cycle changing. is_odd_cycle = {is_even_cycle}')
-        d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle=is_even_cycle))
+        d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
         idx = np.where(d_data.index == d_loc)[0]
         data = d_data.iloc[idx - 1]
 
