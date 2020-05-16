@@ -102,17 +102,11 @@ def place_trade(
         )
 
 
-# Construct data.
-daily, hr4, hr1, m15, m5 = get_data()
-for df in tqdm([daily, hr4, hr1, m15, m5]):
-    append_ssl_channel(df)
-    append_average_true_range(df=df, prices='mid', periods=14)
-
-
 def execute(equity_split: int = 6,
             trades_per_strategy: int = 2,
-            sl_mult: float = 3.,
-            tp_mult: float = 3.) -> Tuple[BackTestingAccount, List[float]]:
+            sl_mult: float = 3.25,
+            tp_mult: float = 2.,
+            ssl_channel_period: int = 20) -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
@@ -123,7 +117,13 @@ def execute(equity_split: int = 6,
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
 
-    # Iterate through lowest time frame of all strategies being ran. Start at around 20 days worth of candles for SSL.
+    # Construct data.
+    daily, hr4, hr1, m15, m5 = get_data()
+    for df in [daily, hr4, hr1, m15, m5]:
+        append_ssl_channel(df, periods=ssl_channel_period)
+        append_average_true_range(df=df, prices='mid', periods=14)
+
+    # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months.
     for curr_dt, curr_candle in m5[246639::].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
@@ -275,14 +275,26 @@ def execute(equity_split: int = 6,
 
 
 if __name__ == '__main__':
-    acc, bal = execute(sl_mult=3.5, tp_mult=2)
-    print(acc)
-    # results = {}
-    # for sl_mult in tqdm([2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]):
-    #     for tp_mult in [2, 2.25, 2.5, 2.75, 3, 3.25, 3.5]:
-    #         acc, bal = execute(sl_mult=sl_mult, tp_mult=tp_mult)
-    #         results[f'sl_mult={sl_mult}, tp_mult={tp_mult}'] = str(acc)
-    #         print(f'sl: {sl_mult} - tp: {tp_mult}')
-    #         print(acc)
-    # print(results)
+    # acc, bal = execute()
+    # print(acc)
+    # strategy_results = {
+    #     '1': {'wins': 0, 'losses': 0},
+    #     '2': {'wins': 0, 'losses': 0},
+    #     '3': {'wins': 0, 'losses': 0},
+    # }
+    # for trade in acc.get_closed_trades():
+    #     if trade.win_or_loss == 'win':
+    #         strategy_results[trade.label]['wins'] += 1
+    #     else:
+    #         strategy_results[trade.label]['losses'] += 1
+    # print(strategy_results)
+    results = {}
+    for ssl_param in range(10, 21):
+        for sl_x in tqdm([3, 3.25, 3.5]):
+            for tp_x in [2, 2.25, 2.5]:
+                acc, bal = execute(sl_mult=sl_x, tp_mult=tp_x, ssl_channel_period=ssl_param)
+                results[f'ssl_channel_period={ssl_param}, sl_mult={sl_x}, tp_mult={tp_x}'] = str(acc)
+                print(f'ssl_channel_period: {ssl_param} - sl: {sl_x} - tp: {tp_x}')
+                print(acc)
+    print(results)
 

@@ -234,8 +234,8 @@ def ssl_channel(data: pd.DataFrame,
     return hi_lo_vals, ssl_down, ssl_up
 
 
-def append_ssl_channel(data: pd.DataFrame):
-    hlv, ssl_down, ssl_up = ssl_channel(data)
+def append_ssl_channel(data: pd.DataFrame, periods: int = 20):
+    hlv, ssl_down, ssl_up = ssl_channel(data, periods=periods)
     data['HighLowValue'] = hlv
     data['SSLDown'] = ssl_down
     data['SSLUp'] = ssl_up

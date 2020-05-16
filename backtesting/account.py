@@ -31,7 +31,7 @@ class BackTestingAccount:
         self._partially_closed_2 = []
 
     def __str__(self):
-        return f'trades taken = {self.get_total_trades_taken()}\n' \
+        return f'trades executed = {self.get_all_trades_count()}\n' \
                f'win rate = {round(self.get_win_rate(), 2)}%\n' \
                f'pips accumulated = {round(self._pips_accumulated, 5)}\n' \
                f'final balance = {round(self._total_margin, 2)}\n' \
@@ -91,9 +91,6 @@ class BackTestingAccount:
     def get_pending_orders(self) -> List[Union[LongOrder, ShortOrder, LongDynamicSL, ShortDynamicSL]]:
         return self._pending_orders
 
-    def get_total_trades_taken(self) -> int:
-        return len(self._active_trades) + len(self._closed_trades)
-
     def count_orders_by_label(self, label: str) -> int:
         count = 0
         for trade in self._active_trades:
@@ -105,8 +102,11 @@ class BackTestingAccount:
 
         return count
 
+    def get_all_trades_count(self):
+        return len(self._active_trades) + len(self._closed_trades)
+
     def get_win_rate(self) -> float:
-        return (self._win_count / self.get_total_trades_taken()) * 100
+        return (self._win_count / self.get_all_trades_count()) * 100
 
     def has_active_trades(self) -> bool:
         return len(self._active_trades) > 0
@@ -348,7 +348,7 @@ class BackTestingAccount:
             self._close_trade(order_index=index, closed_at=current_date_time, win_or_loss='win')
         elif sl_hit:
             pounds = self.calculate_pips_to_pounds(margin, sl_hit, point_type)
-            if sl_hit > 0 and isinstance(trade, ShortDynamicSL):
+            if sl_hit > 0 and isinstance(trade, (ShortDynamicSL, LongDynamicSL)):
                 self._process_profit(pips=sl_hit, margin_from_trade=margin, pounds=pounds)
             else:
                 self._process_loss(pips=abs(sl_hit), margin_from_trade=margin, pounds=abs(pounds))
