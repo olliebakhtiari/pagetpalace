@@ -102,8 +102,8 @@ def place_trade(
         )
 
 
-def execute(equity_split: int = 6,
-            trades_per_strategy: int = 2,
+def execute(equity_split: int = 2,
+            trades_per_strategy: int = 3,
             sl_mult: float = 3.25,
             tp_mult: float = 2.,
             trend_period: int = 20,
@@ -134,7 +134,7 @@ def execute(equity_split: int = 6,
         append_average_true_range(df=df, prices='mid', periods=14)
 
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months.
-    for curr_dt, curr_candle in m5[246639::].iterrows():
+    for curr_dt, curr_candle in m5[6000::].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -285,13 +285,15 @@ def execute(equity_split: int = 6,
 
 
 if __name__ == '__main__':
-    # acc, bal = execute()
-    # print(acc)
-    for ssl_param in tqdm([10, 12, 14, 16, 18, 22]):
-        acc, bal = execute(entry_period=ssl_param)
-        print(f'trend_period: 20 - entry_period: {ssl_param} - sl: 3.25 - tp: 2')
+    for args in tqdm([(2, 3), (3, 2), (3, 4)]):
+        acc, bal = execute(equity_split=args[0], trades_per_strategy=args[1])
         print(acc)
         print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+    # for ssl_param in tqdm([10, 12, 14, 16, 18, 22]):
+    #     acc, bal = execute(entry_period=ssl_param)
+    #     print(f'trend_period: 20 - entry_period: {ssl_param} - sl: 3.25 - tp: 2')
+    #     print(acc)
+    #     print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
 
 
 

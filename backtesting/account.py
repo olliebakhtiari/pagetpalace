@@ -73,7 +73,7 @@ class BackTestingAccount:
         return self._available_margin
 
     def get_margin_size_per_trade(self, pips: float, point_type: str) -> float:
-        margin_size = self.get_tradeable_margin() / 6
+        margin_size = self.get_tradeable_margin() / self.equity_split
         pound_per_pip_ratio = margin_size / 143
         margin_at_risk = self.calculate_pips_to_pounds(margin_size, pips, point_type)
         max_risk = self.get_current_total_balance() * 0.15
@@ -82,7 +82,7 @@ class BackTestingAccount:
             new_pound_per_pip_ratio = pound_per_pip_ratio / risk_ratio
             margin_size = new_pound_per_pip_ratio * 143
 
-        return margin_size
+        return min(margin_size, self._available_margin)
 
     def deposit_funds(self, amount: float):
         self._total_margin += amount

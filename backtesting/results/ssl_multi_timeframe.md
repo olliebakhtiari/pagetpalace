@@ -1,121 +1,4 @@
-# 10K starting, 6 equity split, max 2 trades per strategy. < 1 MONTH TEST.
-
-## MOVING STOPLOSS AT 1:1(0.01) AND 2:1(0.33)
-
-#### SL -> 2.5 * ATR, TP -> SL * 2.5
-- trades taken = 116
-- win rate = 46.55%
-- pips accumulated = 478.54039
-- final balance = 12335.39
-- highest balance = 19521.45
-- lowest balance = 10374.76
-
-#### SL -> 3 * ATR, TP -> SL * 1.5
-
-- trades taken = 120
-- win rate = 51.67%
-- pips accumulated = -67.31671
-- final balance = 8659.94
-- highest balance = 17871.87
-- lowest balance = 8034.67
-
-
-## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.25), 0.66(0.25)
-sl_mult=2, tp_mult=1.5
-trades taken = 122
-win rate = 55.74%
-pips accumulated = 1973.15679
-final balance = 17547.28
-highest balance = 19548.0
-lowest balance = 10793.69
-
-sl_mult=2.5, tp_mult=2.5
-trades taken = 116
-win rate = 46.55%
-pips accumulated = 2794.71544
-final balance = 16232.17
-highest balance = 22293.32
-lowest balance = 11530.59
-
-sl_mult=3.5, tp_mult=1
-trades taken = 122
-win rate = 58.2%
-pips accumulated = 2128.264
-final balance = 12656.54
-highest balance = 23394.03
-lowest balance = 10926.49
-
-sl_mult=3.5, tp_mult=2
-trades taken = 109
-win rate = 49.54%
-pips accumulated = 3455.89749
-final balance = 16493.6
-highest balance = 29477.58
-lowest balance = 10687.54
-
-## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.25)
-sl_mult=2, tp_mult=3.5
-trades taken = 118
-win rate = 40.68%
-pips accumulated = 2893.81893
-final balance = 20440.03
-highest balance = 21024.3
-lowest balance = 10880.9
-
-sl_mult=2.5, tp_mult=2.5
-trades taken = 116
-win rate = 46.55%
-pips accumulated = 2794.71544
-final balance = 19493.6
-highest balance = 24460.79
-lowest balance = 11239.74
-
-sl_mult=3, tp_mult=2
-trades taken = 117
-win rate = 47.86%
-pips accumulated = 2617.34766
-final balance = 13929.76
-highest balance = 25315.99
-lowest balance = 11190.09
-
-sl_mult=3.5, tp_mult=2
-trades taken = 109
-win rate = 49.54%
-pips accumulated = 3455.89749
-final balance = 19626.64
-highest balance = 31264.9
-lowest balance = 10880.9
-
-## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.50)
-sl_mult=3.5, tp_mult=2
-trades taken = 98
-win rate = 52.04%
-pips accumulated = 3318.78565
-final balance = 21877.84
-highest balance = 37578.9
-lowest balance = 10880.9
-
-
-
-# 10K starting, 6 equity split, max 2 trades per strategy. 2019-05-01 - 2020-03-27.
-
-## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.50)
-
-sl: 3.25 - tp: 2
-trades taken = 1334
-win rate = 38.53%
-pips accumulated = 9604.64454
-final balance = 130338.84
-highest balance = 198210.41
-lowest balance = 12153.28
-
-sl: 3.5 - tp: 2
-trades taken = 1291
-win rate = 39.04%
-pips accumulated = 9699.49464
-final balance = 110958.94
-highest balance = 190025.22
-lowest balance = 11860.24
+# 10K starting. 2019-05-01 - 2020-03-27.
 
 ## DIFFERENT SSL PERIODS
 
@@ -191,3 +74,76 @@ final balance = 124331.62
 highest balance = 210450.92
 lowest balance = 11906.05
 
+## MOVING STOPLOSS AT 0.33(0.01) AND 0.66(0.33) AND PARTIALLY CLOSING AT 0.33(0.50), 0.66(0.50)
+## 6 SPLIT, NO TRADE CAP PER STRATEGY, 20~20 3.25 2
+
+trades executed = 1427
+win rate = 63.42%
+pips accumulated = 10436.53311
+final balance = 132946.95
+highest balance = 234458.12
+lowest balance = 12199.37
+{'1': {'wins': 72, 'losses': 22}, '2': {'wins': 206, 'losses': 137}, '3': {'wins': 627, 'losses': 361}}
+
+## 6 SPLIT, 3 TRADE CAP PER STRATEGY, 20~20 3.25 2
+trades executed = 1420
+win rate = 63.31%
+pips accumulated = 10437.86594
+final balance = 133405.84
+highest balance = 235267.39
+lowest balance = 12199.37
+{'1': {'wins': 72, 'losses': 22}, '2': {'wins': 207, 'losses': 136}, '3': {'wins': 620, 'losses': 361}}
+
+## 3 SPLIT, 2 TRADE CAP PER STRATEGY, 20~20 3.25 2, stop loss check 0.33, 0.66 - partial check 0.5, 0.75
+trades executed = 1302
+win rate = 63.67%
+pips accumulated = 11748.094
+final balance = 219841.9
+highest balance = 465396.84
+lowest balance = 12297.17
+{'1': {'wins': 68, 'losses': 19}, '2': {'wins': 193, 'losses': 126}, '3': {'wins': 568, 'losses': 326}}
+
+## 3 SPLIT, 3 TRADE CAP PER STRATEGY, 20~20 3.25 2 0.33,0.66 both
+trades executed = 1369
+win rate = 63.48%
+pips accumulated = 10307.63232
+final balance = 256905.41
+highest balance = 610474.56
+lowest balance = 12395.72
+{'1': {'wins': 71, 'losses': 21}, '2': {'wins': 202, 'losses': 129}, '3': {'wins': 596, 'losses': 348}}
+
+## 4 SPLIT, 4 TRADE CAP PER STRATEGY, 20~20 3.25 2 0.33,0.66 both
+trades executed = 1411
+win rate = 63.43%
+pips accumulated = 10415.30362
+final balance = 210360.64
+highest balance = 463439.47
+lowest balance = 12298.57
+{'1': {'wins': 72, 'losses': 22}, '2': {'wins': 205, 'losses': 132}, '3': {'wins': 618, 'losses': 360}}
+
+## 2 SPLIT, 3 TRADE CAP PER STRATEGY, 20~20 3.25 2 0.33,0.66 both    ****************
+trades executed = 1253
+win rate = 63.21%
+pips accumulated = 9646.05053
+final balance = 288891.04
+highest balance = 805692.09
+lowest balance = 11169.89
+{'1': {'wins': 66, 'losses': 20}, '2': {'wins': 175, 'losses': 117}, '3': {'wins': 551, 'losses': 322}}
+
+## 3 SPLIT, 2 TRADE CAP PER STRATEGY, 20~20 3.25 2  ****************
+trades executed = 1309
+win rate = 63.79%
+pips accumulated = 10052.57931
+final balance = 310839.21
+highest balance = 581670.7
+lowest balance = 12397.43
+{'1': {'wins': 68, 'losses': 19}, '2': {'wins': 197, 'losses': 126}, '3': {'wins': 570, 'losses': 327}}
+
+## 3 SPLIT, 4 TRADE CAP PER STRATEGY, 20~20 3.25 2 0.33,0.66 both   ****************
+trades executed = 1373
+win rate = 63.58%
+pips accumulated = 10317.49055
+final balance = 257807.27
+highest balance = 612617.61
+lowest balance = 12397.43
+{'1': {'wins': 71, 'losses': 21}, '2': {'wins': 202, 'losses': 129}, '3': {'wins': 600, 'losses': 348}}
