@@ -106,7 +106,8 @@ def execute(equity_split: int = 6,
             trades_per_strategy: int = 2,
             sl_mult: float = 3.25,
             tp_mult: float = 2.,
-            ssl_channel_period: int = 20) -> Tuple[BackTestingAccount, List[float]]:
+            trend_period: int = 20,
+            entry_period: int = 20) -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
@@ -119,8 +120,17 @@ def execute(equity_split: int = 6,
 
     # Construct data.
     daily, hr4, hr1, m15, m5 = get_data()
+
+    # Trend indicator values.
+    for df in [daily, hr4, hr1]:
+        append_ssl_channel(data=df, periods=trend_period)
+
+    # Entry indicator values.
+    for df in [m15, m5]:
+        append_ssl_channel(data=df, periods=entry_period)
+
+    # Used to calculate tp/sl.
     for df in [daily, hr4, hr1, m15, m5]:
-        append_ssl_channel(df, periods=ssl_channel_period)
         append_average_true_range(df=df, prices='mid', periods=14)
 
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months.
@@ -277,24 +287,11 @@ def execute(equity_split: int = 6,
 if __name__ == '__main__':
     # acc, bal = execute()
     # print(acc)
-    # strategy_results = {
-    #     '1': {'wins': 0, 'losses': 0},
-    #     '2': {'wins': 0, 'losses': 0},
-    #     '3': {'wins': 0, 'losses': 0},
-    # }
-    # for trade in acc.get_closed_trades():
-    #     if trade.win_or_loss == 'win':
-    #         strategy_results[trade.label]['wins'] += 1
-    #     else:
-    #         strategy_results[trade.label]['losses'] += 1
-    # print(strategy_results)
-    results = {}
-    for ssl_param in range(21, 24):
-        for sl_x in tqdm([3, 3.5]):
-            for tp_x in [2, 2.5]:
-                acc, bal = execute(sl_mult=sl_x, tp_mult=tp_x, ssl_channel_period=ssl_param)
-                results[f'ssl_channel_period={ssl_param}, sl_mult={sl_x}, tp_mult={tp_x}'] = str(acc)
-                print(f'ssl_channel_period: {ssl_param} - sl: {sl_x} - tp: {tp_x}')
-                print(acc)
+    for ssl_param in tqdm([10, 12, 14, 16, 18, 22]):
+        acc, bal = execute(entry_period=ssl_param)
+        print(f'trend_period: 20 - entry_period: {ssl_param} - sl: 3.25 - tp: 2')
+        print(acc)
+        print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+
 
 

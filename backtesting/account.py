@@ -108,6 +108,16 @@ class BackTestingAccount:
     def get_win_rate(self) -> float:
         return (self._win_count / self.get_all_trades_count()) * 100
 
+    def get_individual_strategy_wins_losses(self, strategies_to_check: List[str]) -> dict:
+        results = {label: {'wins': 0, 'losses': 0} for label in strategies_to_check}
+        for trade in self.get_closed_trades():
+            if trade.win_or_loss == 'win':
+                results[trade.label]['wins'] += 1
+            else:
+                results[trade.label]['losses'] += 1
+
+        return results
+
     def has_active_trades(self) -> bool:
         return len(self._active_trades) > 0
 
