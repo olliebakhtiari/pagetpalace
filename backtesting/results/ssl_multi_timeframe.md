@@ -117,4 +117,77 @@ final balance = 110958.94
 highest balance = 190025.22
 lowest balance = 11860.24
 
+## DIFFERENT SSL PERIODS
+
+ssl_channel_period: 10 - sl: 3.5 - tp: 2.5
+trades executed = 1555
+win rate = 58.46%
+pips accumulated = 13567.70687
+final balance = 99461.46
+highest balance = 143893.37
+lowest balance = 11467.21
+
+ssl_channel_period: 11 - sl: 3.5 - tp: 2.5
+trades executed = 1505
+win rate = 59.0%
+pips accumulated = 13332.58567
+final balance = 127244.74
+highest balance = 177150.1
+lowest balance = 11895.66
+
+ssl_channel_period: 15 - sl: 3.5 - tp: 2
+trades executed = 1477
+win rate = 61.41%
+pips accumulated = 10233.36097
+final balance = 56493.21
+highest balance = 194395.52
+lowest balance = 12185.69
+
+ssl_channel_period: 15 - sl: 3.5 - tp: 2.5
+trades executed = 1372
+win rate = 56.27%
+pips accumulated = 11348.03636
+final balance = 70920.06
+highest balance = 177106.17
+lowest balance = 11287.61
+
+ssl_channel_period: 16 - sl: 3.25 - tp: 2
+trades executed = 1488
+win rate = 62.16%
+pips accumulated = 9831.64206
+final balance = 70556.91
+highest balance = 163085.37
+lowest balance = 12199.37
+
+ssl_channel_period: 16 - sl: 3.5 - tp: 2
+trades executed = 1438
+win rate = 61.89%
+pips accumulated = 10248.26884
+final balance = 74324.14
+highest balance = 205460.96
+lowest balance = 11973.45
+
+ssl_channel_period: 19 - sl: 3.5 - tp: 2
+trades executed = 1330
+win rate = 63.23%
+pips accumulated = 9855.88548
+final balance = 77217.21
+highest balance = 199784.99
+lowest balance = 12018.62
+
+ssl_channel_period: 20 - sl: 3.25 - tp: 2
+trades executed = 1334
+win rate = 63.87%
+pips accumulated = 10137.45232
+final balance = 147099.24
+highest balance = 219177.95
+lowest balance = 12199.37
+
+ssl_channel_period: 20 - sl: 3.5 - tp: 2
+trades executed = 1291
+win rate = 63.52%
+pips accumulated = 10196.78562
+final balance = 124331.62
+highest balance = 210450.92
+lowest balance = 11906.05
 

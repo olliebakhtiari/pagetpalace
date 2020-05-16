@@ -289,12 +289,12 @@ if __name__ == '__main__':
     #         strategy_results[trade.label]['losses'] += 1
     # print(strategy_results)
     results = {}
-    for ssl_param in range(10, 21):
-        for sl_x in tqdm([3, 3.25, 3.5]):
-            for tp_x in [2, 2.25, 2.5]:
+    for ssl_param in range(21, 24):
+        for sl_x in tqdm([3, 3.5]):
+            for tp_x in [2, 2.5]:
                 acc, bal = execute(sl_mult=sl_x, tp_mult=tp_x, ssl_channel_period=ssl_param)
                 results[f'ssl_channel_period={ssl_param}, sl_mult={sl_x}, tp_mult={tp_x}'] = str(acc)
                 print(f'ssl_channel_period: {ssl_param} - sl: {sl_x} - tp: {tp_x}')
                 print(acc)
-    print(results)
+
 
