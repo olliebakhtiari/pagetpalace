@@ -73,8 +73,8 @@ def place_trade(
         label: str,
         spread: float,
         entry_offset: float,
+        margin_size: float,
 ):
-    strategy = label.split('_')[0]
     if signal == 'long':
         entry_price = round(prev_candle['askHigh'], 5) + entry_offset
         account.open_trade(
@@ -84,7 +84,7 @@ def place_trade(
             entry=entry_price,
             take_profit=round(entry_price + tp_pip_amount, 5),
             stop_loss=round(entry_price - sl_pip_amount, 5),
-            margin_size=account.get_margin_size_per_trade(sl_pip_amount, 'index', strategy=strategy),
+            margin_size=margin_size,
             label=label,
             spread=spread,
         )
@@ -97,7 +97,7 @@ def place_trade(
             entry=entry_price,
             take_profit=round(entry_price - tp_pip_amount, 5),
             stop_loss=round(entry_price + sl_pip_amount, 5),
-            margin_size=account.get_margin_size_per_trade(sl_pip_amount, 'index', strategy=strategy),
+            margin_size=margin_size,
             label=label,
             spread=spread,
         )
@@ -115,7 +115,7 @@ def execute(equity_split: int = 3,
     prev_3_entry = 0
     trade_caps = {
         '1': 100,
-        '2': cap,
+        # '2': cap,
         '3': cap,
     }
 
@@ -140,7 +140,7 @@ def execute(equity_split: int = 3,
         append_average_true_range(df=df, prices='mid', periods=14)
 
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 114750 ~3 years.
-    for curr_dt, curr_candle in m5[246639::].iterrows():
+    for curr_dt, curr_candle in tqdm(m5[298527::].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -203,7 +203,8 @@ def execute(equity_split: int = 3,
         # Check signals and act.
         signals = check_signals(
             s1_params=(trend_1, entry_1),
-            s2_params=(trend_2, entry_2),
+            # s2_params=(trend_2, entry_2),
+            s2_params=(0, 0),
             s3_params=(trend_3, entry_3),
         )
 
@@ -230,22 +231,28 @@ def execute(equity_split: int = 3,
             candles_to_check = lowest_tf_candles_to_check[strategy]
             if signal \
                     and has_new_signal(prev=candles_to_check['previous'], curr=candles_to_check['current']) \
-                    and account.count_orders_by_label(label=strategy) < trade_caps[strategy] \
-                    and account.has_margin_available():
+                    and account.has_margin_available() \
+                    and account.count_orders_by_label(label=strategy) < trade_caps[strategy]:
                 sl_pip_amount = strategy_atr_values[strategy] * sl_mult
-                tp_pip_amount = sl_pip_amount * tp_mult
-                place_trade(
-                    account=account,
-                    signal=signal,
-                    prev_candle=previous_5m_candlestick,
-                    curr_dt=curr_dt,
-                    tp_pip_amount=tp_pip_amount,
-                    sl_pip_amount=sl_pip_amount,
-                    instrument_point_type='index',
-                    label=f'{strategy}_{signal}',
-                    spread=spread,
-                    entry_offset=strategy_entry_offsets[strategy]
-                )
+                margin_size = account.get_margin_size_per_trade(sl_pip_amount, 'index', strategy=strategy)
+                if margin_size > 0:
+                    print(curr_dt)
+                    print(f'total bal - {account.get_current_total_balance()}, available margin - {account.get_available_margin()}')
+                    tp_pip_amount = sl_pip_amount * tp_mult
+                    place_trade(
+                        account=account,
+                        signal=signal,
+                        prev_candle=previous_5m_candlestick,
+                        curr_dt=curr_dt,
+                        tp_pip_amount=tp_pip_amount,
+                        sl_pip_amount=sl_pip_amount,
+                        instrument_point_type='index',
+                        label=f'{strategy}_{signal}',
+                        spread=spread,
+                        entry_offset=strategy_entry_offsets[strategy],
+                        margin_size=margin_size,
+                    )
+                    print(f'total bal - {account.get_current_total_balance()}, available margin - {account.get_available_margin()}')
 
         # Monitor and act on active trades.
         if account.has_active_trades():
@@ -291,11 +298,9 @@ def execute(equity_split: int = 3,
 
 
 if __name__ == '__main__':
-    acc, bal = execute(equity_split=3, cap=2)
-    print(f'equity_split=2, 3, strat 1 uncapped trades, strat 2 and 3 capped at 2. distribute more margin into strategy 1.')
+    acc, bal = execute(equity_split=2, cap=2)
+    print(f'equity_split=2, strat 1 uncapped trades, strat 3 capped at 2. no risk check.')
     print(acc)
+    print(acc.get_closed_trades())
+    print(acc.get_partially_closed_trades())
     print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
-
-
-
-

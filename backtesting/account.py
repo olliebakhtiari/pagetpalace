@@ -31,11 +31,16 @@ class BackTestingAccount:
         self._partially_closed_2 = []
 
     def __str__(self):
-        return f'trades executed = {self.get_all_trades_count()}\n' \
-               f'win rate = {round(self.get_win_rate(), 2)}%\n' \
-               f'pips accumulated = {round(self._pips_accumulated, 5)}\n' \
-               f'final balance = {round(self._total_margin, 2)}\n' \
-               f'highest balance = {round(self._highest_balance, 2)}\nlowest balance = {round(self._lowest_balance, 2)}'
+        return f'trades executed = {self._round_and_format(self.get_all_trades_count())}\n' \
+               f'win rate = {self._round_and_format(self.get_win_rate())}%\n' \
+               f'pips accumulated = {self._round_and_format(self._pips_accumulated)}\n' \
+               f'final balance = £{self._round_and_format(self._total_margin)}\n' \
+               f'highest balance = £{self._round_and_format(self._highest_balance)}\n' \
+               f'lowest balance = £{self._round_and_format(self._lowest_balance)}'
+
+    @staticmethod
+    def _round_and_format(number: float):
+        return f'{round(number, 2):,.2f}'
 
     @property
     def starting_capital(self) -> float:
@@ -72,10 +77,18 @@ class BackTestingAccount:
     def get_available_margin(self) -> float:
         return self._available_margin
 
-    def get_margin_size_per_trade(self, pips: float, point_type: str, strategy: str) -> float:
+    def _check_and_get_valid_margin_size(self, margin_size: float) -> float:
 
-        # Give more margin to strategy one.
-        margin_size = self.get_tradeable_margin() / 2 if strategy == '1' else self.get_tradeable_margin() / 3
+        # Make sure not to trade if available margin is less than or equal to 10% of total margin.
+        available_minus_restricted = self._available_margin - (self._total_margin * 0.1)
+        if (margin_size > available_minus_restricted) and (available_minus_restricted < 500):
+            margin_size = 0
+        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 500):
+            margin_size = available_minus_restricted
+
+        return margin_size
+
+    def _check_against_max_risk(self, margin_size: float, pips: float, point_type: str) -> float:
 
         # Calculate money being risked on this trade.
         pound_per_pip_ratio = margin_size / 143
@@ -84,12 +97,20 @@ class BackTestingAccount:
 
         # Set risk to 15% if it exceeds.
         if margin_at_risk > max_risk:
-            print('risk exceeded.')
             risk_ratio = margin_at_risk / max_risk
             new_pound_per_pip_ratio = pound_per_pip_ratio / risk_ratio
             margin_size = new_pound_per_pip_ratio * 143
 
-        return min(margin_size, self._available_margin)
+        return margin_size
+
+    def get_margin_size_per_trade(self, pips: float, point_type: str, strategy: str) -> float:
+
+        # Give more margin to strategy one.
+        # margin_size = self.get_tradeable_margin() / 2 if strategy == '1' else self.get_tradeable_margin() / 3
+        margin_size = self.get_tradeable_margin() / self.equity_split
+        # self._check_against_max_risk(margin_size, pips, point_type)
+
+        return self._check_and_get_valid_margin_size(margin_size)
 
     def deposit_funds(self, amount: float):
         self._total_margin += amount
@@ -288,6 +309,7 @@ class BackTestingAccount:
         self._restore_margin(margin_from_trade=margin_to_close, trade_outcome=profit)
         trade.margin_size -= margin_to_close
         self._pips_accumulated += (pip_count * check_pct)
+        print(f'partially closing {repr(trade)}')
 
     def _add_trade_to_partially_closed(
             self,

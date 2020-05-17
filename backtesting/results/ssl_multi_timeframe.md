@@ -333,3 +333,21 @@ final balance = 330311.96
 highest balance = 744768.26
 lowest balance = 12458.14
 {'1': {'wins': 70, 'losses': 21}, '2': {'wins': 189, 'losses': 119}, '3': {'wins': 549, 'losses': 320}}
+
+equity_split=2, strat 1 uncapped trades, strat 3 capped at 2. no risk check.
+trades executed = 694
+win rate = 63.98%
+pips accumulated = 5454.78865
+final balance = 2850283.49
+highest balance = 6578794.57
+lowest balance = 11167.84
+{'1': {'wins': 57, 'losses': 16}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 387, 'losses': 233}}
+
+equity_split=3, strat 1 uncapped trades, strat 3 capped at 2. no risk check.
+trades executed = 690
+win rate = 63.91%
+pips accumulated = 5221.13392
+final balance = 2979758.5
+highest balance = 6765284.43
+lowest balance = 11167.84
+{'1': {'wins': 57, 'losses': 16}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 384, 'losses': 231}}
