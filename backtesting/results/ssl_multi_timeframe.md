@@ -147,3 +147,32 @@ final balance = 257807.27
 highest balance = 612617.61
 lowest balance = 12397.43
 {'1': {'wins': 71, 'losses': 21}, '2': {'wins': 202, 'losses': 129}, '3': {'wins': 600, 'losses': 348}}
+
+
+## FROM 2017-01-06. 20~20 3.25 2 0.33,0.66 both
+## 2 SPLIT, 3 TRADE CAP PER STRATEGY
+trades executed = 4305
+win rate = 61.28%
+pips accumulated = 17436.20626
+final balance = 352947.68
+highest balance = 984340.51
+lowest balance = 6245.29
+{'1': {'wins': 227, 'losses': 123}, '2': {'wins': 615, 'losses': 402}, '3': {'wins': 1796, 'losses': 1140}}
+
+## 3 SPLIT, 2 TRADE CAP PER STRATEGY
+trades executed = 4554
+win rate = 61.46%
+pips accumulated = 18369.82591
+final balance = 442029.2
+highest balance = 827165.39
+lowest balance = 8902.7
+{'1': {'wins': 228, 'losses': 117}, '2': {'wins': 704, 'losses': 441}, '3': {'wins': 1867, 'losses': 1195}}
+
+## 3 SPLIT, 4 TRADE CAP PER STRATEGY
+trades executed = 4742
+win rate = 61.45%
+pips accumulated = 18817.13056
+final balance = 357347.73
+highest balance = 849151.83
+lowest balance = 8622.81
+{'1': {'wins': 239, 'losses': 128}, '2': {'wins': 725, 'losses': 459}, '3': {'wins': 1950, 'losses': 1239}}
