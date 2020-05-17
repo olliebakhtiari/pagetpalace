@@ -72,12 +72,19 @@ class BackTestingAccount:
     def get_available_margin(self) -> float:
         return self._available_margin
 
-    def get_margin_size_per_trade(self, pips: float, point_type: str) -> float:
-        margin_size = self.get_tradeable_margin() / self.equity_split
+    def get_margin_size_per_trade(self, pips: float, point_type: str, strategy: str) -> float:
+
+        # Give more margin to strategy one.
+        margin_size = self.get_tradeable_margin() / 2 if strategy == '1' else self.get_tradeable_margin() / 3
+
+        # Calculate money being risked on this trade.
         pound_per_pip_ratio = margin_size / 143
         margin_at_risk = self.calculate_pips_to_pounds(margin_size, pips, point_type)
         max_risk = self.get_current_total_balance() * 0.15
+
+        # Set risk to 15% if it exceeds.
         if margin_at_risk > max_risk:
+            print('risk exceeded.')
             risk_ratio = margin_at_risk / max_risk
             new_pound_per_pip_ratio = pound_per_pip_ratio / risk_ratio
             margin_size = new_pound_per_pip_ratio * 143
