@@ -309,7 +309,6 @@ class BackTestingAccount:
         self._restore_margin(margin_from_trade=margin_to_close, trade_outcome=profit)
         trade.margin_size -= margin_to_close
         self._pips_accumulated += (pip_count * check_pct)
-        print(f'partially closing {repr(trade)}')
 
     def _add_trade_to_partially_closed(
             self,

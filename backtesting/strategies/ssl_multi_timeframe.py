@@ -103,12 +103,30 @@ def place_trade(
         )
 
 
-def execute(equity_split: int = 3,
-            cap: int = 100,
-            sl_mult: float = 3.25,
-            tp_mult: float = 2.,
-            trend_period: int = 20,
-            entry_period: int = 20) -> Tuple[BackTestingAccount, List[float]]:
+# Construct data.
+daily, hr4, hr1, m15, m5 = get_data()
+
+# Trend indicator values.
+for df in [daily, hr4, hr1]:
+    append_ssl_channel(data=df, periods=20)
+
+# Entry indicator values.
+for df in [m15, m5]:
+    append_ssl_channel(data=df, periods=20)
+
+# Used to calculate tp/sl.
+for df in [daily, hr4, hr1, m15, m5]:
+    append_average_true_range(df=df, prices='mid', periods=14)
+
+
+def execute(equity_split: int,
+            cap: int,
+            sl_mult: float,
+            tp_mult: float,
+            check_pct_one: float,
+            check_pct_two: float,
+            close_amount_one: float,
+            close_amount_two: float) -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
@@ -124,23 +142,8 @@ def execute(equity_split: int = 3,
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
 
-    # Construct data.
-    daily, hr4, hr1, m15, m5 = get_data()
-
-    # Trend indicator values.
-    for df in [daily, hr4, hr1]:
-        append_ssl_channel(data=df, periods=trend_period)
-
-    # Entry indicator values.
-    for df in [m15, m5]:
-        append_ssl_channel(data=df, periods=entry_period)
-
-    # Used to calculate tp/sl.
-    for df in [daily, hr4, hr1, m15, m5]:
-        append_average_true_range(df=df, prices='mid', periods=14)
-
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 114750 ~3 years.
-    for curr_dt, curr_candle in tqdm(m5[298527::].iterrows()):
+    for curr_dt, curr_candle in m5[246639::].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -236,8 +239,6 @@ def execute(equity_split: int = 3,
                 sl_pip_amount = strategy_atr_values[strategy] * sl_mult
                 margin_size = account.get_margin_size_per_trade(sl_pip_amount, 'index', strategy=strategy)
                 if margin_size > 0:
-                    print(curr_dt)
-                    print(f'total bal - {account.get_current_total_balance()}, available margin - {account.get_available_margin()}')
                     tp_pip_amount = sl_pip_amount * tp_mult
                     place_trade(
                         account=account,
@@ -252,7 +253,6 @@ def execute(equity_split: int = 3,
                         entry_offset=strategy_entry_offsets[strategy],
                         margin_size=margin_size,
                     )
-                    print(f'total bal - {account.get_current_total_balance()}, available margin - {account.get_available_margin()}')
 
         # Monitor and act on active trades.
         if account.has_active_trades():
@@ -267,25 +267,25 @@ def execute(equity_split: int = 3,
                 account.check_and_adjust_stop_losses(
                     long_price=long_price,
                     short_price=short_price,
-                    check_pct=0.33,
+                    check_pct=check_pct_one,
                     move_pct=0.01,
                 )
                 account.check_and_adjust_stop_losses(
                     long_price=long_price,
                     short_price=short_price,
-                    check_pct=0.66,
-                    move_pct=0.33,
+                    check_pct=check_pct_two,
+                    move_pct=check_pct_one,
                 )
                 account.check_and_partially_close_trades(
-                    check_pct=0.33,
-                    close_pct=0.50,
+                    check_pct=check_pct_one,
+                    close_pct=close_amount_one,
                     long_price=long_price,
                     short_price=short_price,
                     partial_close_count=1,
                 )
                 account.check_and_partially_close_trades(
-                    check_pct=0.66,
-                    close_pct=0.50,
+                    check_pct=check_pct_two,
+                    close_pct=close_amount_two,
                     long_price=long_price,
                     short_price=short_price,
                     partial_close_count=2,
@@ -298,9 +298,20 @@ def execute(equity_split: int = 3,
 
 
 if __name__ == '__main__':
-    acc, bal = execute(equity_split=2, cap=2)
-    print(f'equity_split=2, strat 1 uncapped trades, strat 3 capped at 2. no risk check.')
-    print(acc)
-    print(acc.get_closed_trades())
-    print(acc.get_partially_closed_trades())
-    print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+    for check_pct_one in tqdm([0.2, 0.3, 0.4]):
+        for check_pct_two in tqdm([0.55, 0.65, 0.75]):
+            for close_amount_one in [0.3, 0.4, 0.6]:
+                for close_amount_two in [0.3, 0.4, 0.6]:
+                    acc, bal = execute(
+                        equity_split=2,
+                        cap=2,
+                        sl_mult=3.25,
+                        tp_mult=2.,
+                        check_pct_one=check_pct_one,
+                        check_pct_two=check_pct_two,
+                        close_amount_one=close_amount_one,
+                        close_amount_two=close_amount_two,
+                    )
+                    print(f'check_pct_one={check_pct_one}, check_pct_two={check_pct_two}, close_amount_one={close_amount_one}, close_amount_two={close_amount_two}')
+                    print(acc)
+                    print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
