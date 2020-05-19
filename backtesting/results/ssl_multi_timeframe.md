@@ -352,7 +352,7 @@ highest balance = 6765284.43
 lowest balance = 11167.84
 {'1': {'wins': 57, 'losses': 16}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 384, 'losses': 231}}
 
-## 10 MONTH TESTS. DIFFERENT PERMUTATIONS OF CHECK PCT AND CLOSE PCT.
+## 10 MONTH TESTS. STRAT 1 & 3. DIFFERENT PERMUTATIONS OF CHECK PCT AND CLOSE PCT.
 check_pct_one=0.4, check_pct_two=0.75, close_amount_one=0.4, close_amount_two=0.6
 trades executed = 873.00
 win rate = 59.34%
@@ -415,3 +415,48 @@ final balance = £683,860.14
 highest balance = £1,175,845.64
 lowest balance = £10,261.93
 {'1': {'wins': 63, 'losses': 25}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 455, 'losses': 331}}
+
+check_pct_one=0.4, check_pct_two=0.75, close_amount_one=0.65, close_amount_two=0.65
+trades executed = 876.00
+win rate = 59.13%
+pips accumulated = 8,099.96
+final balance = £694,847.47
+highest balance = £1,166,532.63
+lowest balance = £10,198.92
+{'1': {'wins': 63, 'losses': 25}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 455, 'losses': 331}}
+
+check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.5
+trades executed = 909.00
+win rate = 62.82%
+pips accumulated = 7,247.72
+final balance = £880,125.63
+highest balance = £1,565,422.75
+lowest balance = £10,329.45
+{'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
+
+check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.6
+trades executed = 909.00
+win rate = 62.82%
+pips accumulated = 7,247.72
+final balance = £941,004.77
+highest balance = £1,641,863.84
+lowest balance = £10,374.06
+{'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
+
+check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.65
+trades executed = 909.00
+win rate = 62.82%
+pips accumulated = 7,247.72
+final balance = £972,226.24
+highest balance = £1,680,242.20
+lowest balance = £10,396.30
+{'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
+
+check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.7
+trades executed = 909.00
+win rate = 62.82%
+pips accumulated = 7,247.72
+final balance = £1,002,142.86
+highest balance = £1,715,588.83
+lowest balance = £10,418.51
+{'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
