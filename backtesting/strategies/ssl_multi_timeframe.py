@@ -119,7 +119,7 @@ for df in [daily, hr4, hr1, m15, m5]:
     append_average_true_range(df=df, prices='mid', periods=14)
 
 
-def execute() -> Tuple[BackTestingAccount, List[float]]:
+def execute(loss_check_pct: float, loss_close_pct: float) -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
@@ -136,7 +136,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 114750 ~3 years.
-    for curr_dt, curr_candle in tqdm(m5[246639::].iterrows()):
+    for curr_dt, curr_candle in m5[246639::].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -230,7 +230,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                     and account.has_margin_available() \
                     and account.count_orders_by_label(label=strategy) < trade_caps[strategy]:
                 sl_pip_amount = strategy_atr_values[strategy] * 3.25
-                margin_size = account.get_margin_size_per_trade(sl_pip_amount, 'index', strategy=strategy)
+                margin_size = account.get_margin_size_per_trade()
                 if margin_size > 0:
                     tp_pip_amount = sl_pip_amount * 2.
                     place_trade(
@@ -269,14 +269,20 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                     check_pct=0.65,
                     move_pct=0.35,
                 )
-                account.check_and_partially_close_trades(
+                account.check_and_cut_losses(
+                    check_pct=loss_check_pct,
+                    close_pct=loss_close_pct,
+                    long_price=long_price,
+                    short_price=short_price,
+                )
+                account.check_and_partially_close_profits(
                     check_pct=0.35,
                     close_pct=0.5,
                     long_price=long_price,
                     short_price=short_price,
                     partial_close_count=1,
                 )
-                account.check_and_partially_close_trades(
+                account.check_and_partially_close_profits(
                     check_pct=0.65,
                     close_pct=0.7,
                     long_price=long_price,
@@ -291,7 +297,9 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
 
 if __name__ == '__main__':
-    acc, bal = execute()
-    print(f'check_pct_one={0.35}, check_pct_two={0.65}, close_amount_one={0.5}, close_amount_two={0.7}')
-    print(acc)
-    print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+    for loss_check in tqdm([0.4, 0.5, 0.55, 0.6, 0.7, 0.75, 0.8]):
+        for loss_close in [0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]:
+            acc, bal = execute(loss_check_pct=loss_check, loss_close_pct=loss_close)
+            print(f'loss_check_pct={loss_check}, loss_close_pct={loss_close}')
+            print(acc)
+            print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))

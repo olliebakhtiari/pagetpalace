@@ -29,6 +29,7 @@ class BackTestingAccount:
         self._lowest_balance = sys.maxsize
         self._partially_closed_1 = []
         self._partially_closed_2 = []
+        self._losses_cut = []
 
     def __str__(self):
         return f'trades executed = {self._round_and_format(self.get_all_trades_count())}\n' \
@@ -103,12 +104,8 @@ class BackTestingAccount:
 
         return margin_size
 
-    def get_margin_size_per_trade(self, pips: float, point_type: str, strategy: str) -> float:
-
-        # Give more margin to strategy one.
-        # margin_size = self.get_tradeable_margin() / 2 if strategy == '1' else self.get_tradeable_margin() / 3
+    def get_margin_size_per_trade(self) -> float:
         margin_size = self.get_tradeable_margin() / self.equity_split
-        # self._check_against_max_risk(margin_size, pips, point_type)
 
         return self._check_and_get_valid_margin_size(margin_size)
 
@@ -176,21 +173,38 @@ class BackTestingAccount:
 
     @classmethod
     def calculate_pips_to_pounds(cls, margin: float, pips: float, point_type: str) -> float:
-        return (margin / cls.MARGIN_TO_PIP_RATIOS[point_type]) * (pips * (1e4 if point_type == 'pips' else 1))
+        return (margin / cls.MARGIN_TO_PIP_RATIOS[point_type]) * (pips * (1e4 if point_type == 'currency' else 1))
 
     @classmethod
     def _check_pct_target_hit(cls,
                               price: float,
-                              trade: Union[LongDynamicSL, ShortDynamicSL],
+                              trade: Union[LongDynamicSL, ShortDynamicSL, LongOrder, ShortOrder],
                               pct_of_target: float) -> bool:
         if pct_of_target <= 0:
-            raise ValueError('percentage target specified is 0 or less.')
+            raise ValueError('percentage target cannot be 0 or less.')
         has_hit = False
         full_target_pips = trade.calculate_profit()
         pct_target_pips = full_target_pips * pct_of_target
         if isinstance(trade, LongDynamicSL) and price >= (trade.entry + pct_target_pips):
             has_hit = True
         elif isinstance(trade, ShortDynamicSL) and price <= (trade.entry - pct_target_pips):
+            has_hit = True
+
+        return has_hit
+
+    @classmethod
+    def _check_pct_stop_loss_hit(cls,
+                                 price: float,
+                                 trade: Union[LongDynamicSL, ShortDynamicSL, LongOrder, ShortOrder],
+                                 pct_of_target: float) -> bool:
+        if pct_of_target <= 0:
+            raise ValueError('percentage target cannot be 0 or less.')
+        has_hit = False
+        full_stop_loss_pips = trade.calculate_loss()
+        pct_loss_pips = full_stop_loss_pips * pct_of_target
+        if isinstance(trade, (LongDynamicSL, LongOrder)) and price <= (trade.entry - pct_loss_pips):
+            has_hit = True
+        elif isinstance(trade, (ShortDynamicSL, ShortOrder)) and price >= (trade.entry + pct_loss_pips):
             has_hit = True
 
         return has_hit
@@ -276,7 +290,7 @@ class BackTestingAccount:
                 if self._check_pct_target_hit(price=short_price, trade=trade, pct_of_target=check_pct):
                     self._move_stop_loss_to_profit(current_price=short_price, trade=trade, pct_of_target=move_pct)
 
-    def check_and_partially_close_trades(
+    def check_and_partially_close_profits(
             self,
             check_pct: float,
             long_price: float,
@@ -289,16 +303,26 @@ class BackTestingAccount:
         partially_closed = self.get_partially_closed_trades()
         for trade in self._active_trades:
             if trade not in partially_closed[partial_close_count]:
-                if isinstance(trade, LongDynamicSL):
+                if isinstance(trade, (LongDynamicSL, LongOrder)):
                     if self._check_pct_target_hit(price=long_price, trade=trade, pct_of_target=check_pct):
-                        self._partially_close(trade, check_pct, close_pct)
+                        self._partially_close_profit(trade, check_pct, close_pct)
                         self._add_trade_to_partially_closed(trade, partial_close_count)
-                elif isinstance(trade, ShortDynamicSL):
+                elif isinstance(trade, (ShortDynamicSL, ShortOrder)):
                     if self._check_pct_target_hit(price=short_price, trade=trade, pct_of_target=check_pct):
-                        self._partially_close(trade, check_pct, close_pct)
+                        self._partially_close_profit(trade, check_pct, close_pct)
                         self._add_trade_to_partially_closed(trade, partial_close_count)
 
-    def _partially_close(
+    def check_and_cut_losses(self, check_pct: float, long_price: float, short_price: float, close_pct: float):
+        for trade in self._active_trades:
+            if trade not in self._losses_cut:
+                if isinstance(trade, (LongDynamicSL, LongOrder)):
+                    if self._check_pct_stop_loss_hit(price=long_price, trade=trade, pct_of_target=check_pct):
+                        self._cut_losses(trade, check_pct, close_pct)
+                elif isinstance(trade, (ShortDynamicSL, ShortOrder)):
+                    if self._check_pct_stop_loss_hit(price=short_price, trade=trade, pct_of_target=check_pct):
+                        self._cut_losses(trade, check_pct, close_pct)
+
+    def _partially_close_profit(
             self, trade: Union[LongOrder, ShortOrder, LongDynamicSL, ShortDynamicSL],
             check_pct: float,
             close_pct: float,
@@ -309,6 +333,20 @@ class BackTestingAccount:
         self._restore_margin(margin_from_trade=margin_to_close, trade_outcome=profit)
         trade.margin_size -= margin_to_close
         self._pips_accumulated += (pip_count * check_pct)
+
+    def _cut_losses(
+            self,
+            trade: Union[LongOrder, ShortOrder, LongDynamicSL, ShortDynamicSL],
+            check_pct: float,
+            close_pct: float,
+    ):
+        pip_count = trade.calculate_loss() * check_pct
+        margin_to_close = trade.margin_size * close_pct
+        loss = self.calculate_pips_to_pounds(margin_to_close, pip_count, trade.instrument_point_type) * -1
+        self._restore_margin(margin_from_trade=margin_to_close, trade_outcome=loss)
+        trade.margin_size -= margin_to_close
+        self._pips_accumulated -= (pip_count * check_pct)
+        self._losses_cut.append(trade)
 
     def _add_trade_to_partially_closed(
             self,
