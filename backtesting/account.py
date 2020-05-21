@@ -14,7 +14,7 @@ class BackTestingAccount:
         'index': 143,
     }
 
-    def __init__(self, starting_capital: float, equity_split: int):
+    def __init__(self, starting_capital: float, equity_split: float):
         self.starting_capital = starting_capital
         self.equity_split = equity_split
         self._total_margin = starting_capital
@@ -54,7 +54,7 @@ class BackTestingAccount:
         self._starting_capital = value
 
     @property
-    def equity_split(self) -> int:
+    def equity_split(self) -> float:
         return self._equity_split
 
     @equity_split.setter

@@ -452,7 +452,7 @@ highest balance = £1,680,242.20
 lowest balance = £10,396.30
 {'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
 
-check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.7
+strats 1 (no cap) and 3 (2 cap), equity split=2, sl_mult=3.25, tp_mult=2, check_pct_one=0.35, check_pct_two=0.65, close_amount_one=0.5, close_amount_two=0.7
 trades executed = 909.00
 win rate = 62.82%
 pips accumulated = 7,247.72
@@ -460,3 +460,10 @@ final balance = £1,002,142.86
 highest balance = £1,715,588.83
 lowest balance = £10,418.51
 {'1': {'wins': 69, 'losses': 21}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 502, 'losses': 315}}
+trades executed = 3,126.00
+win rate = 60.04%
+pips accumulated = 12,746.13
+final balance = £1,527,455.67
+highest balance = £2,614,882.56
+lowest balance = £6,734.04
+{'1': {'wins': 226, 'losses': 127}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 1651, 'losses': 1120}}
