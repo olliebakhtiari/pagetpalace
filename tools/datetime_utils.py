@@ -77,15 +77,37 @@ def get_nearest_4hr_loc(dt: datetime.datetime, is_even_cycle: bool, even_time_of
     """ Four hr data set affected by daylight savings. odd cycle -> 01, 05, 09, 13, 17, 21.
         Even time can be 00, 04, 08, 12, 16, 20 or 02, 06, 10, 14, 18, 22. Use even_time_offset for second case.
      """
-    offset = datetime.timedelta(hours=2) if even_time_offset else None
-    loc = datetime.datetime(dt.year, dt.month, dt.day, dt.hour - dt.hour % 4, 0, 0) - offset
-    if not is_even_cycle:
-        if dt.hour % 4 == 0:
-            loc -= datetime.timedelta(hours=3)
-        else:
-            loc += datetime.timedelta(hours=1)
+    loc = datetime.datetime(dt.year, dt.month, dt.day, dt.hour - dt.hour % 4, 0, 0)
+    if even_time_offset:
+        loc = calculate_even_time_with_offset_even_cycle(dt, loc)
+        if not is_even_cycle:
+            loc = calculate_even_time_with_offset_odd_cycle(dt, loc)
+    else:
+        if not is_even_cycle:
+            if dt.hour % 4 == 0:
+                loc -= datetime.timedelta(hours=3)
+            else:
+                loc += datetime.timedelta(hours=1)
 
     return loc
+
+
+def calculate_even_time_with_offset_even_cycle(dt: datetime.datetime, loc: datetime.datetime) -> datetime.datetime:
+    if dt.hour % 4 == 2 or dt.hour % 4 == 3:
+        new_loc = loc + datetime.timedelta(hours=2)
+    else:
+        new_loc = loc - datetime.timedelta(hours=2)
+
+    return new_loc
+
+
+def calculate_even_time_with_offset_odd_cycle(dt: datetime.datetime, loc: datetime.datetime) -> datetime.datetime:
+    if dt.hour % 4 == 1:
+        new_loc = loc + datetime.timedelta(hours=3)
+    else:
+        new_loc = loc - datetime.timedelta(hours=1)
+
+    return new_loc
 
 
 def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
@@ -124,7 +146,7 @@ def get_nearest_daily_data(d_data: pd.DataFrame,
 
 
 if __name__ == '__main__':
-    dt_ = datetime.datetime(year=2016, month=2, day=13, hour=18, minute=5, second=0)
-    print(get_nearest_4hr_loc(dt_, is_even_cycle=True, even_time_offset=True))
+    dt_ = datetime.datetime(year=2017, month=1, day=8, hour=6, minute=0, second=0)
+    print(get_nearest_4hr_loc(dt_, is_even_cycle=False, even_time_offset=False))
 
 

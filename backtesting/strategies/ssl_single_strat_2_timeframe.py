@@ -100,14 +100,12 @@ def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
     balances = []
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
-
-    # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 113754 ~3 years.
-    for curr_dt, curr_candle in m5[125883:323390:].iterrows():
+    for curr_dt, curr_candle in m5[125919:323390:].iterrows():
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
-        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle)
+        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle, even_time_offset=True)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
 
