@@ -92,17 +92,17 @@ append_ssl_channel(data=hr1, periods=20)
 append_average_true_range(df=hr1, prices='mid', periods=14)
 
 
-def execute() -> Tuple[BackTestingAccount, List[float]]:
+def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_entry = 0
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=2)
+    account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 113754 ~3 years.
-    for curr_dt, curr_candle in tqdm(m5[125883:323390:].iterrows()):
+    for curr_dt, curr_candle in m5[125883:323390:].iterrows():
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
@@ -148,7 +148,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         if signal \
                 and has_new_signal(prev=prev_entry, curr=entry) \
                 and account.has_margin_available() \
-                and account.count_orders_by_label(label='1') < 3:
+                and account.count_orders_by_label(label='1') < 100:
             sl_pip_amount = atr_value * 3.25
             margin_size = account.get_margin_size_per_trade()
             if margin_size > 0:
@@ -209,6 +209,8 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
 
 if __name__ == '__main__':
-    acc, bal = execute()
-    print(acc)
-    print(acc.get_individual_strategy_wins_losses(['1']))
+    for eq_sp in tqdm([2, 2.5, 3, 3.5]):
+        acc, bal = execute(equity_split=eq_sp)
+        print(f'equity_split={eq_sp}, sl_mult=3.25, tp_mult=2, check1=0.35, check2=0.65, move1=0.01, move2=0.35, close1=0.5, close2=0.7, no trade cap.')
+        print(acc)
+        print(acc.get_individual_strategy_wins_losses(['1']))
