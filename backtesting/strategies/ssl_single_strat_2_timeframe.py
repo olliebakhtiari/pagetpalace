@@ -11,17 +11,17 @@ from backtesting.account import BackTestingAccount
 from src.indicators import append_average_true_range, append_ssl_channel
 from tools.data_operations import read_oanda_data
 from tools.datetime_utils import (
-    get_nearest_4hr_data,
+    get_nearest_daily_data,
     get_nearest_1hr_data,
 )
 
 
 def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    four_hr = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_H4.csv')
+    daily = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_D.csv')
     hourly = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_H1.csv')
     five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_M5.csv')
 
-    return four_hr, hourly, five_min
+    return daily, hourly, five_min
 
 
 def has_new_signal(prev: int, curr: int) -> bool:
@@ -80,37 +80,37 @@ def place_trade(
 
 
 # Construct data.
-hr4, hr1, m5 = get_data()
+day, hr1, m5 = get_data()
 
 # Trend indicator values.
-append_ssl_channel(data=hr4, periods=20)
+append_ssl_channel(data=day, periods=20)
 
 # Entry indicator values.
-append_ssl_channel(data=hr1, periods=10)
+append_ssl_channel(data=hr1, periods=20)
 
 # Used to calculate tp/sl.
 append_average_true_range(df=hr1, prices='mid', periods=14)
 
 
-def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
+def execute() -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_entry = 0
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
+    account = BackTestingAccount(starting_capital=10000, equity_split=3)
     prev_month_deposited = 0
-    for curr_dt, curr_candle in m5[340871:350628:].iterrows():
+    for curr_dt, curr_candle in m5[307592:382066:].iterrows():
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
-        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle, even_time_offset=True)
+        d_candle, is_even_cycle = get_nearest_daily_data(day, curr_dt, is_even_cycle)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
 
-        # Strategy 1 SSL.
-        trend = hr4_candle['HighLowValue'].values[0]
+        # Strategy SSL.
+        trend = d_candle['HighLowValue'].values[0]
         entry = hr1_candle['HighLowValue'].values[0]
 
         # Used to set stop loss and take profits.
@@ -207,8 +207,7 @@ def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
 
 
 if __name__ == '__main__':
-    acc, bal = execute(equity_split=3)
-    print(f'equity_split={3}, sl_mult=3.25, tp_mult=2, check1=0.35, check2=0.65, move1=0.01, move2=0.35, close1=0.5, close2=0.7, no trade cap.')
+    acc, bal = execute()
+    print(f'DailySSL=20, 1hrSSL=20, equity_split=3, sl=3.25, tp=2, no trade cap.')
     print(acc)
     print(acc.get_individual_strategy_wins_losses(['1']))
-    print(acc.get_closed_trades())

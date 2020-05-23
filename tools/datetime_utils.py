@@ -6,6 +6,7 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 
+from tools.data_operations import read_oanda_data
 
 def get_days_in_months() -> dict:
     return {
@@ -141,12 +142,15 @@ def get_nearest_daily_data(d_data: pd.DataFrame,
         d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
         idx = np.where(d_data.index == d_loc)[0]
         data = d_data.iloc[idx - 1]
+        if not len(data.values):
+            return get_nearest_daily_data(d_data, curr_dt - datetime.timedelta(days=1), is_even_cycle)
 
     return data, is_even_cycle
 
 
 if __name__ == '__main__':
-    dt_ = datetime.datetime(year=2017, month=1, day=8, hour=6, minute=0, second=0)
-    print(get_nearest_4hr_loc(dt_, is_even_cycle=False, even_time_offset=False))
+    daily = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_D.csv')
+    dt_ = datetime.datetime(year=2019, month=2, day=20, hour=0, minute=0, second=0)
+
 
 
