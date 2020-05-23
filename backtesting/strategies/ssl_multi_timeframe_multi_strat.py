@@ -143,7 +143,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
         # Get valid candles.
         d_candle, is_even_cycle = get_nearest_daily_data(daily, curr_dt, is_even_cycle)
-        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle, even_time_offset=False)
+        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle, even_time_offset=True)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         m15_candle = get_nearest_15m_data(m15, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]

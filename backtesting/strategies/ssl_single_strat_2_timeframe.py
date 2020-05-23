@@ -100,7 +100,7 @@ def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
     balances = []
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
-    for curr_dt, curr_candle in m5[313529:324830:].iterrows():
+    for curr_dt, curr_candle in m5[340871:350628:].iterrows():
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 

@@ -147,6 +147,13 @@ class OandaInstrumentData(RequestMixin):
 
         return pd.DataFrame(data=data, columns=headers)
 
+    @classmethod
+    def calculate_end_date(cls, year: int, month: int, day: int):
+        end_dt = datetime.datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
+        td = datetime.timedelta(days=1)
+
+        return str(end_dt + td).replace(' ', 'T')
+
     def write_candles_to_csv(self, granularity: str, output_loc: str, start_year: int, end_year: int, prices: str):
         days_in_month = get_days_in_months()
         now = datetime.datetime.now()
@@ -154,7 +161,11 @@ class OandaInstrumentData(RequestMixin):
         for year in range(start_year, end_year+1):
             for month in range(1, 13):
                 if not (year == now.year and month >= now.month - 1):
-                    end_day = days_in_month[month] if not is_leap_year(year) and month == 2 else 29  # leap year for feb
+                    end_day = days_in_month[month]
+
+                    # leap year for feb.
+                    if is_leap_year(year) and month == 2:
+                        end_day = 29
 
                     # Split in two halves as capped at 5000 candles per request.
                     resp_1 = self.get_candlesticks(
@@ -164,7 +175,7 @@ class OandaInstrumentData(RequestMixin):
                     )
                     resp_2 = self.get_candlesticks(
                         from_date=f'{year}-{month:02}-15T00:00:00.000000000Z',
-                        to_date=f'{year}-{month:02}-{end_day}T00:00:00.000000000Z',
+                        to_date=f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
                         granularity=granularity,
                     )
                     logger.info(resp_1)
@@ -194,11 +205,13 @@ class OandaInstrumentData(RequestMixin):
 
 if __name__ == '__main__':
     g = 'M5'
-    od = OandaInstrumentData("SPX500_USD")
+    od = OandaInstrumentData("GBP_USD")
     od.write_candles_to_csv(
         granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_{g}.csv',
+        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
     )
+
+
