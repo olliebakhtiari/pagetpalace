@@ -6,7 +6,6 @@ from typing import Tuple
 import pandas as pd
 import numpy as np
 
-from tools.data_operations import read_oanda_data
 
 def get_days_in_months() -> dict:
     return {
@@ -111,18 +110,24 @@ def calculate_even_time_with_offset_odd_cycle(dt: datetime.datetime, loc: dateti
     return new_loc
 
 
+def get_4hr_candlestick(four_hr_data: pd.DataFrame,
+                        curr_dt: datetime.datetime,
+                        is_even_cycle: bool,
+                        even_time_offset: bool) -> pd.DataFrame:
+    four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle, even_time_offset))
+    idx = np.where(four_hr_data.index == four_hr_loc)[0]
+
+    return four_hr_data.iloc[idx - 1]
+
+
 def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
                          curr_dt: datetime.datetime,
                          is_even_cycle: bool,
                          even_time_offset: bool) -> Tuple[pd.DataFrame, bool]:
-    four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle, even_time_offset))
-    idx = np.where(four_hr_data.index == four_hr_loc)[0]
-    data = four_hr_data.iloc[idx - 1]
+    data = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
     if not len(data.values):
         is_even_cycle = not is_even_cycle
-        four_hr_loc = str(get_nearest_4hr_loc(curr_dt, is_even_cycle, even_time_offset))
-        idx = np.where(four_hr_data.index == four_hr_loc)[0]
-        data = four_hr_data.iloc[idx - 1]
+        data = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
 
     return data, is_even_cycle
 
@@ -131,17 +136,22 @@ def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetim
     return datetime.datetime(dt.year, dt.month, dt.day, 22 if is_even_cycle else 21, 0, 0)
 
 
+def get_daily_candlestick(d_data: pd.DataFrame,
+                          curr_dt: datetime.datetime,
+                          is_even_cycle: bool) -> pd.DataFrame:
+    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
+    idx = np.where(d_data.index == d_loc)[0]
+
+    return d_data.iloc[idx - 1]
+
+
 def get_nearest_daily_data(d_data: pd.DataFrame,
                            curr_dt: datetime.datetime,
                            is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
-    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
-    idx = np.where(d_data.index == d_loc)[0]
-    data = d_data.iloc[idx - 1]
+    data = get_daily_candlestick(d_data, curr_dt, is_even_cycle)
     if not len(data.values):
         is_even_cycle = not is_even_cycle
-        d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
-        idx = np.where(d_data.index == d_loc)[0]
-        data = d_data.iloc[idx - 1]
+        data = get_daily_candlestick(d_data, curr_dt, is_even_cycle)
         if not len(data.values):
             return get_nearest_daily_data(d_data, curr_dt - datetime.timedelta(days=1), is_even_cycle)
 
@@ -149,8 +159,4 @@ def get_nearest_daily_data(d_data: pd.DataFrame,
 
 
 if __name__ == '__main__':
-    daily = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_D.csv')
     dt_ = datetime.datetime(year=2019, month=2, day=20, hour=0, minute=0, second=0)
-
-
-
