@@ -3,8 +3,19 @@
   <component name="ChangeListManager">
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_single_strat_2_timeframe.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_single_strat_2_timeframe.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_D.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_H1.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_H4.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_M15.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_M5.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_D.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_H1.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_H4.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_M15.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_M5.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/oanda_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/data_operations.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/data_operations.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/datetime_utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -61,7 +72,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.datetime_utils">
+  <component name="RunManager" selected="Python.oanda_data">
     <configuration name="datetime_utils" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pagetpalace" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -162,16 +173,5 @@
       <path value="$PROJECT_DIR$/Lean" />
       <path value="$PROJECT_DIR$/quantconnect" />
     </ignored-roots>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tools/datetime_utils.py</url>
-          <line>79</line>
-          <option name="timeStamp" value="5" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
   </component>
 </project>

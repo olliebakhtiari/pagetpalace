@@ -86,7 +86,7 @@ hr4, hr1, m5 = get_data()
 append_ssl_channel(data=hr4, periods=20)
 
 # Entry indicator values.
-append_ssl_channel(data=hr1, periods=20)
+append_ssl_channel(data=hr1, periods=10)
 
 # Used to calculate tp/sl.
 append_average_true_range(df=hr1, prices='mid', periods=14)
@@ -100,7 +100,7 @@ def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
     balances = []
     account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
     prev_month_deposited = 0
-    for curr_dt, curr_candle in m5[125919:323390:].iterrows():
+    for curr_dt, curr_candle in m5[313529:324830:].iterrows():
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
@@ -207,8 +207,8 @@ def execute(equity_split: int) -> Tuple[BackTestingAccount, List[float]]:
 
 
 if __name__ == '__main__':
-    for eq_sp in tqdm([2, 2.5, 3, 3.5]):
-        acc, bal = execute(equity_split=eq_sp)
-        print(f'equity_split={eq_sp}, sl_mult=3.25, tp_mult=2, check1=0.35, check2=0.65, move1=0.01, move2=0.35, close1=0.5, close2=0.7, no trade cap.')
-        print(acc)
-        print(acc.get_individual_strategy_wins_losses(['1']))
+    acc, bal = execute(equity_split=3)
+    print(f'equity_split={3}, sl_mult=3.25, tp_mult=2, check1=0.35, check2=0.65, move1=0.01, move2=0.35, close1=0.5, close2=0.7, no trade cap.')
+    print(acc)
+    print(acc.get_individual_strategy_wins_losses(['1']))
+    print(acc.get_closed_trades())

@@ -127,7 +127,7 @@ def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
 
 
 def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.datetime:
-    return datetime.datetime(dt.year, dt.month, dt.day, 16 if is_even_cycle else 17, 0, 0)
+    return datetime.datetime(dt.year, dt.month, dt.day, 22 if is_even_cycle else 21, 0, 0)
 
 
 def get_nearest_daily_data(d_data: pd.DataFrame,

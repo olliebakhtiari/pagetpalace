@@ -152,7 +152,7 @@ class OandaInstrumentData(RequestMixin):
         now = datetime.datetime.now()
         candles = []
         for year in range(start_year, end_year+1):
-            for month in range(1, 12):
+            for month in range(1, 13):
                 if not (year == now.year and month >= now.month - 1):
                     end_day = days_in_month[month] if not is_leap_year(year) and month == 2 else 29  # leap year for feb
 
@@ -194,10 +194,10 @@ class OandaInstrumentData(RequestMixin):
 
 if __name__ == '__main__':
     g = 'M5'
-    od = OandaInstrumentData("GBP_USD")
+    od = OandaInstrumentData("SPX500_USD")
     od.write_candles_to_csv(
         granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_{g}.csv',
+        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
