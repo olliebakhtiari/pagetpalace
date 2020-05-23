@@ -68,3 +68,12 @@ final balance = £331,097.91
 highest balance = £344,990.93
 lowest balance = £9,660.43
 {'1': {'wins': 264, 'losses': 153}}
+
+## ~ 5 years
+trades executed = 693.00
+win rate = 62.48%
+pips accumulated = 7,687.34
+final balance = £2,109,682.54
+highest balance = £2,806,297.16
+lowest balance = £13,869.40
+{'1': {'wins': 433, 'losses': 259}}
