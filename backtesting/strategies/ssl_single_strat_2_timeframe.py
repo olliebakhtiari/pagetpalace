@@ -10,6 +10,7 @@ from tqdm import tqdm
 from backtesting.account import BackTestingAccount
 from src.indicators import append_average_true_range, append_ssl_channel
 from tools.data_operations import read_oanda_data
+from tools.plot import plot_overlay_balance_and_ssl
 from tools.datetime_utils import (
     get_nearest_daily_data,
     get_nearest_1hr_data,
@@ -17,11 +18,11 @@ from tools.datetime_utils import (
 
 
 def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    daily = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_D.csv')
-    hourly = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_H1.csv')
-    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/GBP_USD/GBPUSD_M5.csv')
+    day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_D.csv')
+    hourly = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H1.csv')
+    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M5.csv')
 
-    return daily, hourly, five_min
+    return day, hourly, five_min
 
 
 def has_new_signal(prev: int, curr: int) -> bool:
@@ -80,10 +81,10 @@ def place_trade(
 
 
 # Construct data.
-day, hr1, m5 = get_data()
+daily, hr1, m5 = get_data()
 
 # Trend indicator values.
-append_ssl_channel(data=day, periods=20)
+append_ssl_channel(data=daily, periods=20)
 
 # Entry indicator values.
 append_ssl_channel(data=hr1, periods=20)
@@ -98,14 +99,16 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=3)
+    account = BackTestingAccount(starting_capital=10000, equity_split=2)
     prev_month_deposited = 0
-    for curr_dt, curr_candle in tqdm(m5[307592:382066:].iterrows()):
+
+    # ~ 3 years: 134447. 21st Feb 2020: 346535.
+    for curr_dt, curr_candle in tqdm(m5.iterrows()):
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
-        d_candle, is_even_cycle = get_nearest_daily_data(day, curr_dt, is_even_cycle)
+        d_candle, is_even_cycle = get_nearest_daily_data(daily, curr_dt, is_even_cycle)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
 
@@ -146,7 +149,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         if signal \
                 and has_new_signal(prev=prev_entry, curr=entry) \
                 and account.has_margin_available() \
-                and account.count_orders_by_label(label='1') < 100:
+                and account.count_orders_by_label(label='1') < 5:
             sl_pip_amount = atr_value * 3.25
             margin_size = account.get_margin_size_per_trade()
             if margin_size > 0:
@@ -158,7 +161,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                     curr_dt=curr_dt,
                     tp_pip_amount=tp_pip_amount,
                     sl_pip_amount=sl_pip_amount,
-                    instrument_point_type='currency',
+                    instrument_point_type='index',
                     label=f'1_{signal}',
                     spread=spread,
                     entry_offset=atr_value / 5,
@@ -208,6 +211,15 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
 if __name__ == '__main__':
     acc, bal = execute()
-    print(f'DailySSL=20, 1hrSSL=20, equity_split=3, sl=3.25, tp=2, no trade cap.')
     print(acc)
     print(acc.get_individual_strategy_wins_losses(['1']))
+    plot_overlay_balance_and_ssl(
+        datetimes=hr1.index,
+        opens=hr1['midOpen'],
+        highs=hr1['midHigh'],
+        lows=hr1['midLow'],
+        closes=hr1['midClose'],
+        account_balance_over_time=bal,
+        ssl_ups=hr1['SSLUp'],
+        ssl_downs=hr1['SSLDown'],
+    )

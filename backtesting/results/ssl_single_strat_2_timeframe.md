@@ -1,3 +1,4 @@
+# GBP_USD
 ## 4HR/1HR
 ## ~3 years.
 4hrSSL=20, 1hrSSL=10, equity_split=2, sl_mult=3.25, tp_mult=2, check1=0.35, check2=0.65, move1=0.01, move2=0.35, close1=0.5, close2=0.7, no trade cap.
@@ -46,5 +47,24 @@ highest balance = £43,845.97
 lowest balance = £11,462.54
 {'1': {'wins': 94, 'losses': 84}}
 
-#DAILY/HOURLY
+# SPX500_USD
+##DAILY/HOURLY
 ## 1 year.
+DailySSL=20, 1hrSSL=20, equity_split=3, sl=3.25, tp=2, no trade cap.
+trades executed = 144.00
+win rate = 75.69%
+pips accumulated = 2,614.58
+final balance = £243,791.51
+highest balance = £254,021.11
+lowest balance = £9,614.62
+{'1': {'wins': 109, 'losses': 35}}
+
+## 3 year.
+DailySSL=20, 1hrSSL=20, equity_split=2, sl=3.25, tp=2, 10 cap.
+trades executed = 417.00
+win rate = 63.31%
+pips accumulated = 4,322.61
+final balance = £331,097.91
+highest balance = £344,990.93
+lowest balance = £9,660.43
+{'1': {'wins': 264, 'losses': 153}}

@@ -3,8 +3,14 @@
   <component name="ChangeListManager">
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/account.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/account.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_single_strat_2_timeframe.md" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/results/ssl_single_strat_2_timeframe.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_single_strat_2_timeframe.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_single_strat_2_timeframe.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/datetime_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/minute_data_download_links" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/resampled/FXCM_15_min.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/resampled/FXCM_4_hour.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/plot.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

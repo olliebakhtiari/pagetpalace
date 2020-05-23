@@ -92,7 +92,7 @@ class BackTestingAccount:
     def _check_against_max_risk(self, margin_size: float, pips: float, point_type: str) -> float:
 
         # Calculate money being risked on this trade.
-        pound_per_pip_ratio = margin_size / 143
+        pound_per_pip_ratio = margin_size / self.MARGIN_TO_PIP_RATIOS[point_type]
         margin_at_risk = self.calculate_pips_to_pounds(margin_size, pips, point_type)
         max_risk = self.get_current_total_balance() * 0.15
 
@@ -100,7 +100,7 @@ class BackTestingAccount:
         if margin_at_risk > max_risk:
             risk_ratio = margin_at_risk / max_risk
             new_pound_per_pip_ratio = pound_per_pip_ratio / risk_ratio
-            margin_size = new_pound_per_pip_ratio * 143
+            margin_size = new_pound_per_pip_ratio * self.MARGIN_TO_PIP_RATIOS[point_type]
 
         return margin_size
 
