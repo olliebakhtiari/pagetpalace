@@ -58,6 +58,8 @@ def check_signals(s1_params: tuple, s2_params: tuple, s3_params: tuple) -> dict:
             signals[strategy] = 'long'
         elif trend_ssl == -1 and entry_ssl == -1:
             signals[strategy] = 'short'
+    if signals['3'] != signals['1']:
+        signals['3'] = None
 
     return signals
 
@@ -125,9 +127,9 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     prev_2_entry = 0
     prev_3_entry = 0
     trade_caps = {
-        '1': 10,
+        '1': 1000,
         # '2': 2,
-        # '3': 2,
+        '3': 1000,
     }
 
     # Set up and track account.
@@ -135,8 +137,8 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     account = BackTestingAccount(starting_capital=10000, equity_split=2)
     prev_month_deposited = 0
 
-    # Iterate through lowest time frame of all strategies being ran. 246639 ~10 months. 113754 ~3 years.
-    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
+    # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
+    for curr_dt, curr_candle in tqdm(m5[340000:346535:].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -201,8 +203,8 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
             s1_params=(trend_1, entry_1),
             # s2_params=(trend_2, entry_2),
             s2_params=(0, 0),
-            # s3_params=(trend_3, entry_3),
-            s3_params=(0, 0),
+            s3_params=(trend_3, entry_3),
+            # s3_params=(0, 0),
         )
 
         # Prices to use to process pending and active orders.

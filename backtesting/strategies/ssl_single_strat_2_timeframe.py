@@ -103,7 +103,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     prev_month_deposited = 0
 
     # ~ 3 years: 134447. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5.iterrows()):
+    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
@@ -149,7 +149,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         if signal \
                 and has_new_signal(prev=prev_entry, curr=entry) \
                 and account.has_margin_available() \
-                and account.count_orders_by_label(label='1') < 5:
+                and account.count_orders_by_label(label='1') < 1000:
             sl_pip_amount = atr_value * 3.25
             margin_size = account.get_margin_size_per_trade()
             if margin_size > 0:

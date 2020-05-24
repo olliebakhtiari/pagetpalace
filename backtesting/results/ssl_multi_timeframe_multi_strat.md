@@ -567,3 +567,12 @@ final balance = £134,320.40
 highest balance = £137,822.87
 lowest balance = £11,725.52
 {'1': {'wins': 211, 'losses': 140}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 0, 'losses': 0}}
+
+## STRAT 1 AND 3 UNCAPPED. STRAT 3 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+trades executed = 834.00
+win rate = 64.99%
+pips accumulated = 4,490.95
+final balance = £275,337.97
+highest balance = £288,951.50
+lowest balance = £10,414.99
+{'1': {'wins': 110, 'losses': 35}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 432, 'losses': 257}}

@@ -2,6 +2,7 @@
 import datetime
 import sys
 from typing import List, Union
+from collections import defaultdict
 
 # Local.
 from .orders import OrderFactory, LongOrder, ShortOrder, LongDynamicSL, ShortDynamicSL
@@ -134,7 +135,7 @@ class BackTestingAccount:
         return (self._win_count / self.get_all_trades_count()) * 100
 
     def get_individual_strategy_wins_losses(self, strategies_to_check: List[str]) -> dict:
-        results = {label: {'wins': 0, 'losses': 0} for label in strategies_to_check}
+        results = defaultdict(lambda: {'wins': 0, 'losses': 0})
         for trade in self.get_closed_trades():
             if trade.win_or_loss == 'win':
                 results[trade.label]['wins'] += 1
