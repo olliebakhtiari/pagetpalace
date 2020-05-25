@@ -117,7 +117,7 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[276711:346535:].iterrows()):
+    for curr_dt, curr_candle in m5[276711:346535:].iterrows():
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -256,7 +256,7 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
 
 
 if __name__ == '__main__':
-    for es in [1.5, 2]:
+    for es in tqdm([1.5, 2]):
         acc, bal = execute(equity_split=es)
         print(f'equity_split={es}')
         print(acc)

@@ -615,3 +615,22 @@ final balance = £83,185.89
 highest balance = £85,110.24
 lowest balance = £11,539.39
 {'2': {'wins': 259, 'losses': 151}, '1': {'wins': 70, 'losses': 27}})
+
+##(1)12HOURLY/HOUR, (2)HOURLY/5MIN UNCAPPED. STRAT 2 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+equity_split=1.5
+trades executed = 707.00
+win rate = 64.78%
+pips accumulated = 3,565.83
+final balance = £258,687.49
+highest balance = £258,687.49
+lowest balance = £11,539.39
+{'2': {'wins': 368, 'losses': 220}, '1': {'wins': 90, 'losses': 29}})
+
+equity_split=2
+trades executed = 719.00
+win rate = 65.09%
+pips accumulated = 3,617.60
+final balance = £183,250.30
+highest balance = £183,487.80
+lowest balance = £11,642.16
+{'2': {'wins': 378, 'losses': 222}, '1': {'wins': 90, 'losses': 29}})
