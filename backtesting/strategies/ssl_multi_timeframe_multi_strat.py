@@ -110,10 +110,6 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
-    trade_caps = {
-        '1': 1000,
-        '2': 1000,
-    }
 
     # Set up and track account.
     balances = []
@@ -198,8 +194,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
             candles_to_check = lowest_tf_candles_to_check[strategy]
             if signal \
                     and has_new_signal(prev=candles_to_check['previous'], curr=candles_to_check['current']) \
-                    and account.has_margin_available() \
-                    and account.count_orders_by_label(label=strategy) < trade_caps[strategy]:
+                    and account.has_margin_available():
                 sl_pip_amount = strategy_atr_values[strategy] * 3.25
                 margin_size = account.get_margin_size_per_trade()
                 if margin_size > 0:
