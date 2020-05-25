@@ -568,7 +568,17 @@ highest balance = £137,822.87
 lowest balance = £11,725.52
 {'1': {'wins': 211, 'losses': 140}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 0, 'losses': 0}}
 
-## STRAT 1 AND 3 UNCAPPED. STRAT 3 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+## (1)DAILY/HOUR, (2)HOURLY/5MIN UNCAPPED. STRAT 2 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+equity_split=1.5
+trades executed = 703.00
+win rate = 65.43%
+pips accumulated = 3,849.34
+final balance = £298,520.54
+highest balance = £305,426.26
+lowest balance = £11,539.39
+{'3': {'wins': 364, 'losses': 212}, '1': {'wins': 96, 'losses': 31}})
+
+equity_split=2
 trades executed = 834.00
 win rate = 64.99%
 pips accumulated = 4,490.95
@@ -576,3 +586,21 @@ final balance = £275,337.97
 highest balance = £288,951.50
 lowest balance = £10,414.99
 {'1': {'wins': 110, 'losses': 35}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 432, 'losses': 257}}
+
+equity_split=2.5
+trades executed = 811.00
+win rate = 66.09%
+pips accumulated = 4,235.33
+final balance = £175,092.43
+highest balance = £182,665.93
+lowest balance = £11,812.13
+{'3': {'wins': 439, 'losses': 243}, '1': {'wins': 97, 'losses': 32}})
+
+equity_split=3
+trades executed = 826.00
+win rate = 66.22%
+pips accumulated = 4,306.02
+final balance = £144,934.42
+highest balance = £150,380.94
+lowest balance = £11,921.02
+{'3': {'wins': 449, 'losses': 247}, '1': {'wins': 98, 'losses': 32}})

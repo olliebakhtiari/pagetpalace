@@ -12,44 +12,37 @@ from src.indicators import append_average_true_range, append_ssl_channel
 from tools.data_operations import read_oanda_data
 from tools.datetime_utils import (
     get_nearest_daily_data,
-    get_nearest_4hr_data,
     get_nearest_1hr_data,
-    get_nearest_15m_data,
 )
 
 
-def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_D.csv')
-    four_hr = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H4.csv')
     hourly = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H1.csv')
-    fif_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M15.csv')
     five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M5.csv')
 
-    return day, four_hr, hourly, fif_min, five_min
+    return day, hourly, five_min
 
 
 def has_new_signal(prev: int, curr: int) -> bool:
     return prev != curr
 
 
-def check_signals(s1_params: tuple, s2_params: tuple, s3_params: tuple) -> dict:
+def check_signals(s1_params: tuple, s2_params: tuple) -> dict:
     """ TUPLE -> (TREND, ENTRY)
 
         S1 = D, H1
-        S2 = H4, M15
-        S3 = H1, M5
+        S2 = H1, M5
     """
     strategy_ssl_values_to_check = {
         '1': s1_params,
         '2': s2_params,
-        '3': s3_params,
     }
     signals = {
         '1': None,
         '2': None,
-        '3': None,
     }
-    for i in range(1, 4):
+    for i in range(1, 3):
         strategy = str(i)
         hi_lo_values = strategy_ssl_values_to_check[strategy]
         trend_ssl = hi_lo_values[0]
@@ -58,8 +51,8 @@ def check_signals(s1_params: tuple, s2_params: tuple, s3_params: tuple) -> dict:
             signals[strategy] = 'long'
         elif trend_ssl == -1 and entry_ssl == -1:
             signals[strategy] = 'short'
-    if signals['3'] != signals['1']:
-        signals['3'] = None
+    if signals['2'] != signals['1']:
+        signals['2'] = None
 
     return signals
 
@@ -106,18 +99,10 @@ def place_trade(
 
 
 # Construct data.
-daily, hr4, hr1, m15, m5 = get_data()
-
-# Trend indicator values.
-for df in [daily, hr4, hr1]:
+daily, hr1, m5 = get_data()
+for df in [daily, hr1, m5]:
     append_ssl_channel(data=df, periods=20)
-
-# Entry indicator values.
-for df in [m15, m5]:
-    append_ssl_channel(data=df, periods=20)
-
-# Used to calculate tp/sl.
-for df in [daily, hr4, hr1, m15, m5]:
+for df in [hr1, m5]:
     append_average_true_range(df=df, prices='mid', periods=14)
 
 
@@ -125,29 +110,25 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
-    prev_3_entry = 0
     trade_caps = {
         '1': 1000,
-        # '2': 2,
-        '3': 1000,
+        '2': 1000,
     }
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=2)
+    account = BackTestingAccount(starting_capital=10000, equity_split=1.5)
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[340000:346535:].iterrows()):
+    for curr_dt, curr_candle in tqdm(m5[276711:346535:].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
         d_candle, is_even_cycle = get_nearest_daily_data(daily, curr_dt, is_even_cycle)
-        hr4_candle, is_even_cycle = get_nearest_4hr_data(hr4, curr_dt, is_even_cycle, even_time_offset=True)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
-        m15_candle = get_nearest_15m_data(m15, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
 
         # Strategy 1 SSL.
@@ -155,23 +136,17 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         entry_1 = hr1_candle['HighLowValue'].values[0]
 
         # Strategy 2 SSL.
-        trend_2 = hr4_candle['HighLowValue'].values[0]
-        entry_2 = m15_candle['HighLowValue'].values[0]
-
-        # Strategy 3 SSL.
-        trend_3 = hr1_candle['HighLowValue'].values[0]
-        entry_3 = previous_5m_candlestick['HighLowValue']
+        trend_2 = hr1_candle['HighLowValue'].values[0]
+        entry_2 = previous_5m_candlestick['HighLowValue']
 
         # Used to set stop loss and take profits.
         strategy_atr_values = {
             '1': hr1_candle['ATR'].values[0],
-            '2': m15_candle['ATR'].values[0],
-            '3': previous_5m_candlestick['ATR'],
+            '2': previous_5m_candlestick['ATR'],
         }
         strategy_entry_offsets = {
             '1': strategy_atr_values['1'] / 5,
             '2': strategy_atr_values['2'] / 5,
-            '3': strategy_atr_values['3'] / 5,
         }
 
         # Check for new signals, don't re-enter every candle with same entry signal.
@@ -183,10 +158,6 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
             '2': {
                 'previous': prev_2_entry,
                 'current': entry_2,
-            },
-            '3': {
-                'previous': prev_3_entry,
-                'current': entry_3,
             },
         }
 
@@ -201,10 +172,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         # Check signals and act.
         signals = check_signals(
             s1_params=(trend_1, entry_1),
-            # s2_params=(trend_2, entry_2),
-            s2_params=(0, 0),
-            s3_params=(trend_3, entry_3),
-            # s3_params=(0, 0),
+            s2_params=(trend_2, entry_2),
         )
 
         # Prices to use to process pending and active orders.
@@ -288,7 +256,6 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                 )
         prev_1_entry = entry_1
         prev_2_entry = entry_2
-        prev_3_entry = entry_3
 
     return account, balances
 
