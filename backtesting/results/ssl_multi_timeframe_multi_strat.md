@@ -604,3 +604,7 @@ final balance = £144,934.42
 highest balance = £150,380.94
 lowest balance = £11,921.02
 {'3': {'wins': 449, 'losses': 247}, '1': {'wins': 98, 'losses': 32}})
+
+## INCORPORATE WEEKLY DATA AS OVERALL BIAS.
+##(1)DAILY/HOUR, (2)HOURLY/5MIN UNCAPPED. STRAT 2 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+

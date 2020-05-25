@@ -56,9 +56,9 @@ def get_nearest_15m_loc(dt: datetime.datetime) -> datetime.datetime:
 def get_nearest_15m_data(fif_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
     fif_loc = str(get_nearest_15m_loc(curr_dt))
     idx = np.where(fif_data.index == fif_loc)[0]
-    data = fif_data.iloc[idx - 1]
+    candlestick = fif_data.iloc[idx - 1]
 
-    return data
+    return candlestick
 
 
 def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
@@ -68,9 +68,9 @@ def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
 def get_nearest_1hr_data(hr_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
     hr_loc = str(get_nearest_hr_loc(curr_dt))
     idx = np.where(hr_data.index == hr_loc)[0]
-    data = hr_data.iloc[idx - 1]
+    candlestick = hr_data.iloc[idx - 1]
 
-    return data
+    return candlestick
 
 
 def get_nearest_4hr_loc(dt: datetime.datetime, is_even_cycle: bool, even_time_offset: bool) -> datetime.datetime:
@@ -124,39 +124,39 @@ def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
                          curr_dt: datetime.datetime,
                          is_even_cycle: bool,
                          even_time_offset: bool) -> Tuple[pd.DataFrame, bool]:
-    data = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
-    if not len(data.values):
+    candlestick = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
+    if not len(candlestick.values):
         is_even_cycle = not is_even_cycle
-        data = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
+        candlestick = get_4hr_candlestick(four_hr_data, curr_dt, is_even_cycle, even_time_offset)
 
-    return data, is_even_cycle
+    return candlestick, is_even_cycle
 
 
 def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.datetime:
     return datetime.datetime(dt.year, dt.month, dt.day, 22 if is_even_cycle else 21, 0, 0)
 
 
-def get_daily_candlestick(d_data: pd.DataFrame,
-                          curr_dt: datetime.datetime,
-                          is_even_cycle: bool) -> pd.DataFrame:
-    d_loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
-    idx = np.where(d_data.index == d_loc)[0]
+def get_daily_or_weekly_candlestick(data_frame: pd.DataFrame,
+                                    curr_dt: datetime.datetime,
+                                    is_even_cycle: bool) -> pd.DataFrame:
+    loc = str(get_nearest_daily_loc(curr_dt, is_even_cycle))
+    idx = np.where(data_frame.index == loc)[0]
 
-    return d_data.iloc[idx - 1]
+    return data_frame.iloc[idx - 1]
 
 
-def get_nearest_daily_data(d_data: pd.DataFrame,
-                           curr_dt: datetime.datetime,
-                           is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
-    data = get_daily_candlestick(d_data, curr_dt, is_even_cycle)
-    if not len(data.values):
+def get_nearest_daily_or_weekly_data(data_frame: pd.DataFrame,
+                                     curr_dt: datetime.datetime,
+                                     is_even_cycle: bool) -> Tuple[pd.DataFrame, bool]:
+    candlestick = get_daily_or_weekly_candlestick(data_frame, curr_dt, is_even_cycle)
+    if not len(candlestick.values):
         is_even_cycle = not is_even_cycle
-        data = get_daily_candlestick(d_data, curr_dt, is_even_cycle)
-        if not len(data.values):
-            return get_nearest_daily_data(d_data, curr_dt - datetime.timedelta(days=1), is_even_cycle)
+        candlestick = get_daily_or_weekly_candlestick(data_frame, curr_dt, is_even_cycle)
+        if not len(candlestick.values):
+            return get_nearest_daily_or_weekly_data(data_frame, curr_dt - datetime.timedelta(days=1), is_even_cycle)
 
-    return data, is_even_cycle
+    return candlestick, is_even_cycle
 
 
 if __name__ == '__main__':
-    dt_ = datetime.datetime(year=2019, month=2, day=20, hour=0, minute=0, second=0)
+    dt_ = datetime.datetime(year=2015, month=2, day=14, hour=22, minute=0, second=0)

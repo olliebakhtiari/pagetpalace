@@ -1,4 +1,4 @@
-Unnamed: 0,datetime,volume,askOpen,askHigh,askLow,askClose,bidOpen,bidHigh,bidLow,bidClose,midOpen,midHigh,midLow,midClose
+idx,datetime,volume,askOpen,askHigh,askLow,askClose,bidOpen,bidHigh,bidLow,bidClose,midOpen,midHigh,midLow,midClose
 0,2014-12-28 22:00:00,58251,2092.1,2095.5,2045.0,2052.8,2091.5,2095.0,2044.5,2052.3,2091.8,2095.2,2044.8,2052.6
 1,2015-01-04 22:00:00,201974,2051.4,2067.5,1990.2,2041.4,2050.9,2066.9,1989.6,2040.9,2051.2,2067.2,1990.0,2041.2
 2,2015-01-11 22:00:00,298337,2041.5,2057.0,1975.4,2016.9,2041.0,2056.5,1974.8,2016.3,2041.2,2056.8,1975.2,2016.6
