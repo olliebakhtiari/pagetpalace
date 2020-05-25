@@ -204,7 +204,7 @@ class OandaInstrumentData(RequestMixin):
 
 
 if __name__ == '__main__':
-    g = 'W'
+    g = 'H12'
     od = OandaInstrumentData("SPX500_USD")
     od.write_candles_to_csv(
         granularity=g,

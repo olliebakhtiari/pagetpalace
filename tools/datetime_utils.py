@@ -65,10 +65,10 @@ def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
     return datetime.datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
 
 
-def get_nearest_1hr_data(hr_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+def get_nearest_1hr_data(data_frame: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
     hr_loc = str(get_nearest_hr_loc(curr_dt))
-    idx = np.where(hr_data.index == hr_loc)[0]
-    candlestick = hr_data.iloc[idx - 1]
+    idx = np.where(data_frame.index == hr_loc)[0]
+    candlestick = data_frame.iloc[idx - 1]
 
     return candlestick
 
@@ -132,6 +132,16 @@ def get_nearest_4hr_data(four_hr_data: pd.DataFrame,
     return candlestick, is_even_cycle
 
 
+def get_nearest_12h_data(twelve_hr_data: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+    candlestick = get_nearest_1hr_data(twelve_hr_data, curr_dt)
+    hr_count = 1
+    while not len(candlestick.values):
+        candlestick = get_nearest_1hr_data(twelve_hr_data, curr_dt - datetime.timedelta(hours=hr_count))
+        hr_count += 1
+
+    return candlestick
+
+
 def get_nearest_daily_loc(dt: datetime.datetime, is_even_cycle: bool) -> datetime.datetime:
     return datetime.datetime(dt.year, dt.month, dt.day, 22 if is_even_cycle else 21, 0, 0)
 
@@ -159,4 +169,4 @@ def get_nearest_daily_or_weekly_data(data_frame: pd.DataFrame,
 
 
 if __name__ == '__main__':
-    dt_ = datetime.datetime(year=2015, month=2, day=14, hour=22, minute=0, second=0)
+    dt_ = datetime.datetime(year=2015, month=2, day=19, hour=9, minute=0, second=0)

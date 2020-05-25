@@ -5,7 +5,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe_multi_strat.md" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe_multi_strat.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_W.csv" beforeDir="false" afterPath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_W.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/oanda_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_data.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/datetime_utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -63,7 +63,7 @@
     </option>
   </component>
   <component name="RunManager">
-    <configuration name="ssl_multi_timeframe_multi_strat" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+    <configuration name="datetime_utils" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pagetpalace" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -71,11 +71,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="$USER_HOME$/.virtualenvs/pagetpalace/bin/python3" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backtesting/strategies" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tools" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tools/datetime_utils.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />

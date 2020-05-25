@@ -16,20 +16,19 @@ from tools.datetime_utils import (
 )
 
 
-def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    week = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_W.csv')
+def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_D.csv')
     hour = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H1.csv')
     five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M5.csv')
 
-    return week, day, hour, five_min
+    return day, hour, five_min
 
 
 def has_new_signal(prev: int, curr: int) -> bool:
     return prev != curr
 
 
-def check_signals(trade_bias: int, s1_params: tuple, s2_params: tuple) -> dict:
+def check_signals(s1_params: tuple, s2_params: tuple) -> dict:
     """ TUPLE -> (TREND, ENTRY)
 
         S1 = D, H1
@@ -43,10 +42,6 @@ def check_signals(trade_bias: int, s1_params: tuple, s2_params: tuple) -> dict:
         '1': None,
         '2': None,
     }
-    if trade_bias == 1:
-        trade_bias = 'long'
-    elif trade_bias == -1:
-        trade_bias = 'short'
     for i in range(1, 3):
         strategy = str(i)
         hi_lo_values = strategy_ssl_values_to_check[strategy]
@@ -56,10 +51,6 @@ def check_signals(trade_bias: int, s1_params: tuple, s2_params: tuple) -> dict:
             signals[strategy] = 'long'
         elif trend_ssl == -1 and entry_ssl == -1:
             signals[strategy] = 'short'
-
-    # Only trade in same direction.
-    if signals['1'] != trade_bias:
-        signals['1'] = None
     if signals['2'] != signals['1']:
         signals['2'] = None
 
@@ -108,8 +99,8 @@ def place_trade(
 
 
 # Construct data.
-weekly, daily, hr1, m5 = get_data()
-for df in [weekly, daily, hr1, m5]:
+daily, hr1, m5 = get_data()
+for df in [daily, hr1, m5]:
     append_ssl_channel(data=df, periods=20)
 for df in [hr1, m5]:
     append_average_true_range(df=df, prices='mid', periods=14)
@@ -132,13 +123,9 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
-        w_candle, is_even_cycle = get_nearest_daily_or_weekly_data(weekly, curr_dt, is_even_cycle)
         d_candle, is_even_cycle = get_nearest_daily_or_weekly_data(daily, curr_dt, is_even_cycle)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
-
-        # Overall bias.
-        trade_bias = w_candle['HighLowValue'].values[0]
 
         # Strategy 1 SSL.
         trend_1 = d_candle['HighLowValue'].values[0]
@@ -180,7 +167,6 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
 
         # Check signals and act.
         signals = check_signals(
-            trade_bias=trade_bias,
             s1_params=(trend_1, entry_1),
             s2_params=(trend_2, entry_2),
         )

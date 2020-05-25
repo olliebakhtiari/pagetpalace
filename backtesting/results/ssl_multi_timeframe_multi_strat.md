@@ -607,4 +607,11 @@ lowest balance = £11,921.02
 
 ## INCORPORATE WEEKLY DATA AS OVERALL BIAS.
 ##(1)DAILY/HOUR, (2)HOURLY/5MIN UNCAPPED. STRAT 2 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
-
+equity_split=1.5
+trades executed = 507.00
+win rate = 64.89%
+pips accumulated = 2,008.16
+final balance = £83,185.89
+highest balance = £85,110.24
+lowest balance = £11,539.39
+{'2': {'wins': 259, 'losses': 151}, '1': {'wins': 70, 'losses': 27}})
