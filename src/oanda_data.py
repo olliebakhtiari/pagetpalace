@@ -26,11 +26,8 @@ class OandaInstrumentData(RequestMixin):
     }
     DATA_POINTS = ['o', 'h', 'l', 'c']
 
-    def __init__(self, instrument: str):
-
-        # A string containing the base currency and quote currency delimited by a “_”, e.g. GBP_USD.
-        self.instrument = instrument
-        self.url = f'{self.PROTOCOL}{self.DOMAIN}/{self.VERSION}/instruments/{self.instrument}'
+    def __init__(self):
+        self.url = f'{self.PROTOCOL}{self.DOMAIN}/{self.VERSION}/instruments/'
         self.access_token = OANDA_LIVE_ACCESS_TOKEN
         self.default_headers = {
             'Authorization': f'Bearer {self.access_token}',
@@ -40,6 +37,7 @@ class OandaInstrumentData(RequestMixin):
         super().__init__(self.access_token, self.default_headers, self.default_params, self.url)
 
     def get_candlesticks(self,
+                         instrument: str,
                          prices: str = 'ABM',
                          granularity: str = 'D',
                          count: int = 14,
@@ -98,7 +96,7 @@ class OandaInstrumentData(RequestMixin):
             "alignmentTimezone": alignment_timezone,
             "weeklyAlignment": weekly_alignment,
         }
-        return self._request(endpoint='candles', params=params)
+        return self._request(endpoint=f'{instrument}/candles', params=params)
 
     @classmethod
     def convert_to_df(cls, candles: List[dict], prices: str) -> pd.DataFrame:
@@ -123,7 +121,7 @@ class OandaInstrumentData(RequestMixin):
                             ]
         """
         data = []
-        headers = cls.DEFAULT_HEADERS
+        headers = cls.DEFAULT_HEADERS.copy()
         for price_type in prices:
             headers.extend(cls.PRICE_HEADERS.get(price_type))
         for idx, candle in enumerate(candles):
@@ -154,11 +152,19 @@ class OandaInstrumentData(RequestMixin):
 
         return str(end_dt + td).replace(' ', 'T')
 
-    def write_candles_to_csv(self, granularity: str, output_loc: str, start_year: int, end_year: int, prices: str):
+    def write_candles_to_csv(
+            self,
+            instrument: str,
+            granularity: str,
+            output_loc: str,
+            start_year: int,
+            end_year: int,
+            prices: str
+    ):
         days_in_month = get_days_in_months()
         now = datetime.datetime.now()
         candles = []
-        for year in range(start_year, end_year+1):
+        for year in range(start_year, end_year + 1):
             for month in range(1, 13):
                 if not (year == now.year and month >= now.month - 1):
                     end_day = days_in_month[month]
@@ -169,11 +175,13 @@ class OandaInstrumentData(RequestMixin):
 
                     # Split in two halves as capped at 5000 candles per request.
                     resp_1 = self.get_candlesticks(
+                        instrument=instrument,
                         from_date=f'{year}-{month:02}-01T00:00:00.000000000Z',
                         to_date=f'{year}-{month:02}-15T00:00:00.000000000Z',
                         granularity=granularity,
                     )
                     resp_2 = self.get_candlesticks(
+                        instrument=instrument,
                         from_date=f'{year}-{month:02}-15T00:00:00.000000000Z',
                         to_date=f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
                         granularity=granularity,
@@ -188,30 +196,31 @@ class OandaInstrumentData(RequestMixin):
         df.to_csv(output_loc)
         remove_duplicate_datetimes_from_csv(output_loc)
 
-    def get_order_book(self, time: str = None) -> dict:
+    def get_order_book(self, instrument: str, time: str = None) -> dict:
         """ Fetch an order book for an instrument.
 
+        :param instrument:
         :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
         """
-        return self._request(endpoint='orderBook', params={"time": time} if time else {})
+        return self._request(endpoint=f'{instrument}/orderBook', params={"time": time} if time else {})
 
-    def get_position_book(self, time: str = None) -> dict:
+    def get_position_book(self, instrument: str, time: str = None) -> dict:
         """ Fetch a position book for an instrument.
 
+        :param instrument:
         :param time: The time of the snapshot to fetch. If not specified, then the most recent snapshot is fetched.
         """
-        return self._request(endpoint='positionBook', params={"time": time} if time else {})
+        return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
 
 if __name__ == '__main__':
     g = 'H12'
-    od = OandaInstrumentData("SPX500_USD")
+    od = OandaInstrumentData()
     od.write_candles_to_csv(
+        instrument='SPX500_USD',
         granularity=g,
         output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
     )
-
-

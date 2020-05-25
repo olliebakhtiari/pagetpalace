@@ -1,5 +1,5 @@
 # Python standard.
-from typing import Tuple, List
+from typing import Tuple, Union
 
 # Third-party.
 import numpy as np
@@ -232,6 +232,14 @@ def ssl_channel(data: pd.DataFrame,
     ssl_up = np.array([low_sma[i] if hi_lo_vals[i] < 0 else high_sma[i] for i in range(len(high_sma))])
 
     return hi_lo_vals, ssl_down, ssl_up
+
+
+def get_ssl_value(df: pd.DataFrame, prices: str = 'mid') -> Union[int, None]:
+    close = df[f'{prices}Close'].apply(pd.to_numeric).iloc[-1]
+    if close > df[f'{prices}High'].apply(pd.to_numeric).mean():
+        return 1
+    if close > df[f'{prices}Low'].apply(pd.to_numeric).mean():
+        return -1
 
 
 def append_ssl_channel(data: pd.DataFrame, periods: int = 20):
@@ -746,12 +754,12 @@ def distance_to_supp_and_res(entry: float, supp_and_res: dict, level: int = 3) -
     return abs(round(supp_and_res[f'r{level}'] - entry, 4)), abs(round(entry - supp_and_res[f's{level}'], 4))
 
 
-def append_average_true_range(df: pd.DataFrame, prices: str, periods: int = 14):
+def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: int = 14):
     data = df.copy()
     data.reset_index(drop=True)
-    high = data[f'{prices}High']
-    low = data[f'{prices}Low']
-    close = data[f'{prices}Close']
+    high = data[f'{prices}High'].apply(pd.to_numeric)
+    low = data[f'{prices}Low'].apply(pd.to_numeric)
+    close = data[f'{prices}Close'].apply(pd.to_numeric)
     data['tr0'] = abs(high - low)
     data['tr1'] = abs(high - close.shift())
     data['tr2'] = abs(low - close.shift())
