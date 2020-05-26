@@ -2,12 +2,9 @@
 import datetime
 from typing import Union
 
-# Local.
-from tools.logger import *
-
 
 class Order:
-    IMPLEMENTED_INSTRUMENT_TYPES = ['currency', 'index']
+    IMPLEMENTED_INSTRUMENT_TYPES = ['currency', 'spx500usd', 'nas100usd']
 
     def __init__(
             self,
@@ -43,7 +40,7 @@ class Order:
     @instrument_point_type.setter
     def instrument_point_type(self, value):
         if value not in self.IMPLEMENTED_INSTRUMENT_TYPES:
-            raise ValueError
+            raise ValueError('point type not implemented.')
         self._instrument_point_type = value
 
     @property

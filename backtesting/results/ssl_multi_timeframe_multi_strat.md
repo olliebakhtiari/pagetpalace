@@ -634,3 +634,23 @@ final balance = £183,250.30
 highest balance = £183,487.80
 lowest balance = £11,642.16
 {'2': {'wins': 378, 'losses': 222}, '1': {'wins': 90, 'losses': 29}})
+
+## NAS100USD
+## (1)DAILY/HOUR, (2)HOURLY/5MIN UNCAPPED. STRAT 2 ONLY TRADES IN SAME DIRECTION AS STRAT 1.
+equity_split=1.5
+trades executed = 729.00
+win rate = 62.83%
+pips accumulated = 13,136.90
+final balance = £214,521.17
+highest balance = £232,649.69
+lowest balance = £10,271.31
+{'2': {'wins': 366, 'losses': 233}, '1': {'wins': 92, 'losses': 38}})
+
+equity_split=2
+trades executed = 740.00
+win rate = 62.97%
+pips accumulated = 13,366.79
+final balance = £162,018.92
+highest balance = £176,642.57
+lowest balance = £10,282.85
+{'2': {'wins': 374, 'losses': 236}, '1': {'wins': 92, 'losses': 38}})
