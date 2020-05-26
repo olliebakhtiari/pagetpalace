@@ -52,7 +52,7 @@ def read_oanda_data(file_path: str) -> pd.DataFrame:
     return pd.read_csv(
         filepath_or_buffer=file_path,
         sep=',',
-        index_col='datetime',
+        # index_col='datetime',
         parse_dates=['datetime'],
         dtype={
             "idx": np.int64,

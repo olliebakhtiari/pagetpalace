@@ -17,9 +17,9 @@ from tools.datetime_utils import (
 
 
 def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_D.csv')
-    hour = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H1.csv')
-    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M5.csv')
+    day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_D.csv')
+    hour = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_H1.csv')
+    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_M5.csv')
 
     return day, hour, five_min
 
@@ -206,7 +206,7 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
                         curr_dt=curr_dt,
                         tp_pip_amount=tp_pip_amount,
                         sl_pip_amount=sl_pip_amount,
-                        instrument_point_type='spx500usd',
+                        instrument_point_type='nas100usd',
                         label=f'{strategy}_{signal}',
                         spread=spread,
                         entry_offset=strategy_entry_offsets[strategy],
