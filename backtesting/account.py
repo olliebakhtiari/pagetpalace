@@ -12,7 +12,8 @@ class BackTestingAccount:
     TRADEABLE_MARGIN_CAP = 0.9
     MARGIN_TO_PIP_RATIOS = {
         'currency': 426,
-        'index': 143,
+        'spx500usd': 143,
+        'nas100usd': 480,
     }
 
     def __init__(self, starting_capital: float, equity_split: float):

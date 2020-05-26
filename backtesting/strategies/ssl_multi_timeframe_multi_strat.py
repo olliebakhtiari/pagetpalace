@@ -206,7 +206,7 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
                         curr_dt=curr_dt,
                         tp_pip_amount=tp_pip_amount,
                         sl_pip_amount=sl_pip_amount,
-                        instrument_point_type='index',
+                        instrument_point_type='spx500usd',
                         label=f'{strategy}_{signal}',
                         spread=spread,
                         entry_offset=strategy_entry_offsets[strategy],

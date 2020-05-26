@@ -77,3 +77,25 @@ final balance = £2,109,682.54
 highest balance = £2,806,297.16
 lowest balance = £13,869.40
 {'1': {'wins': 433, 'losses': 259}}
+
+## HOURLY/5MIN
+## 1 year.
+hourly 20ssl, 5min 20ssl.
+equity_split=2
+trades executed = 1,218.00
+win rate = 60.92%
+pips accumulated = 2,877.39
+final balance = £28,217.56
+highest balance = £28,217.56
+lowest balance = £10,931.37
+{'2': {'wins': 742, 'losses': 476}})
+
+hourly 10ssl, 5min 20ssl.
+equity_split=2
+trades executed = 1,164.00
+win rate = 59.88%
+pips accumulated = 2,502.06
+final balance = £20,731.31
+highest balance = £26,354.47
+lowest balance = £11,575.70
+{'2': {'wins': 697, 'losses': 467}})

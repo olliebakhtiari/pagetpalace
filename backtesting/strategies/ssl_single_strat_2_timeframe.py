@@ -12,7 +12,7 @@ from src.indicators import append_average_true_range, append_ssl_channel
 from tools.data_operations import read_oanda_data
 from tools.plot import plot_overlay_balance_and_ssl
 from tools.datetime_utils import (
-    get_nearest_daily_data,
+    get_nearest_daily_or_weekly_data,
     get_nearest_1hr_data,
 )
 
@@ -108,7 +108,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         idx = int(curr_candle['idx'])
 
         # Get valid candles.
-        d_candle, is_even_cycle = get_nearest_daily_data(daily, curr_dt, is_even_cycle)
+        d_candle, is_even_cycle = get_nearest_daily_or_weekly_data(daily, curr_dt, is_even_cycle)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
 
@@ -161,7 +161,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                     curr_dt=curr_dt,
                     tp_pip_amount=tp_pip_amount,
                     sl_pip_amount=sl_pip_amount,
-                    instrument_point_type='index',
+                    instrument_point_type='spx500usd',
                     label=f'1_{signal}',
                     spread=spread,
                     entry_offset=atr_value / 5,
