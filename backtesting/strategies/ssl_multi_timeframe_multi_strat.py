@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 # Local.
 from backtesting.account import BackTestingAccount
-from src.indicators import append_average_true_range, append_ssl_channel
+from src.indicators import append_average_true_range, append_ssl_channel, append_ssma
 from tools.data_operations import read_oanda_data
 from tools.datetime_utils import (
     get_nearest_daily_or_weekly_data,
@@ -17,9 +17,9 @@ from tools.datetime_utils import (
 
 
 def get_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_D.csv')
-    hour = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_H1.csv')
-    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_M5.csv')
+    day = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_D.csv')
+    hour = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_H1.csv')
+    five_min = read_oanda_data('/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_M5.csv')
 
     return day, hour, five_min
 
@@ -28,31 +28,25 @@ def has_new_signal(prev: int, curr: int) -> bool:
     return prev != curr
 
 
-def check_signals(s1_params: tuple, s2_params: tuple) -> dict:
-    """ TUPLE -> (TREND, ENTRY)
-
-        S1 = D, H1
-        S2 = H1, M5
-    """
-    strategy_ssl_values_to_check = {
-        '1': s1_params,
-        '2': s2_params,
-    }
+def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int, curr_price: float, min5_ssma_val: float) -> dict:
     signals = {
         '1': None,
         '2': None,
     }
-    for i in range(1, 3):
-        strategy = str(i)
-        hi_lo_values = strategy_ssl_values_to_check[strategy]
-        trend_ssl = hi_lo_values[0]
-        entry_ssl = hi_lo_values[1]
-        if trend_ssl == 1 and entry_ssl == 1:
-            signals[strategy] = 'long'
-        elif trend_ssl == -1 and entry_ssl == -1:
-            signals[strategy] = 'short'
-    if signals['2'] != signals['1']:
-        signals['2'] = None
+
+    # Strategy one.
+    if daily_ssl == 1 and hourly_ssl == 1:
+        signals['1'] = 'long'
+    if daily_ssl == -1 and hourly_ssl == -1:
+        signals['1'] = 'short'
+
+    # Strategy two.
+    if (daily_ssl == 1 and hourly_ssl == 1 and min5_ssl == 1) \
+            or (daily_ssl == 1 and min5_ssl == 1 and (curr_price > min5_ssma_val)):
+        signals['2'] = 'long'
+    if (daily_ssl == -1 and hourly_ssl == -1 and min5_ssl == -1) \
+            or (daily_ssl == -1 and min5_ssl == - 1 and (curr_price < min5_ssma_val)):
+        signals['2'] = 'short'
 
     return signals
 
@@ -98,26 +92,27 @@ def place_trade(
         )
 
 
-# Construct data.
+# Construct data and indicators.
 daily, hr1, m5 = get_data()
 for df in [daily, hr1, m5]:
     append_ssl_channel(data=df, periods=20)
 for df in [hr1, m5]:
     append_average_true_range(df=df, prices='mid', periods=14)
+append_ssma(m5)
 
 
-def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
+def execute() -> Tuple[BackTestingAccount, List[float]]:
     is_even_cycle = False
     prev_1_entry = 0
     prev_2_entry = 0
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=equity_split)
+    account = BackTestingAccount(starting_capital=10000, equity_split=2)
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in m5[290169:360450:].iterrows():
+    for curr_dt, curr_candle in tqdm(m5[276711:346535:].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -126,14 +121,6 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
         d_candle, is_even_cycle = get_nearest_daily_or_weekly_data(daily, curr_dt, is_even_cycle)
         hr1_candle = get_nearest_1hr_data(hr1, curr_dt)
         previous_5m_candlestick = m5.iloc[idx - 1]
-
-        # Strategy 1 SSL.
-        trend_1 = d_candle['HighLowValue'].values[0]
-        entry_1 = hr1_candle['HighLowValue'].values[0]
-
-        # Strategy 2 SSL.
-        trend_2 = hr1_candle['HighLowValue'].values[0]
-        entry_2 = previous_5m_candlestick['HighLowValue']
 
         # Used to set stop loss and take profits.
         strategy_atr_values = {
@@ -149,11 +136,11 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
         lowest_tf_candles_to_check = {
             '1': {
                 'previous': prev_1_entry,
-                'current': entry_1,
+                'current': hr1_candle['HighLowValue'].values[0],
             },
             '2': {
                 'previous': prev_2_entry,
-                'current': entry_2,
+                'current': previous_5m_candlestick['HighLowValue'],
             },
         }
 
@@ -167,8 +154,11 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
 
         # Check signals and act.
         signals = check_signals(
-            s1_params=(trend_1, entry_1),
-            s2_params=(trend_2, entry_2),
+            daily_ssl=d_candle['HighLowValue'].values[0],
+            hourly_ssl=hr1_candle['HighLowValue'].values[0],
+            min5_ssl=previous_5m_candlestick['HighLowValue'],
+            curr_price=curr_candle['midOpen'],
+            min5_ssma_val=previous_5m_candlestick['SSMA50'],
         )
 
         # Prices to use to process pending and active orders.
@@ -206,7 +196,7 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
                         curr_dt=curr_dt,
                         tp_pip_amount=tp_pip_amount,
                         sl_pip_amount=sl_pip_amount,
-                        instrument_point_type='nas100usd',
+                        instrument_point_type='spx500usd',
                         label=f'{strategy}_{signal}',
                         spread=spread,
                         entry_offset=strategy_entry_offsets[strategy],
@@ -249,15 +239,15 @@ def execute(equity_split: float) -> Tuple[BackTestingAccount, List[float]]:
                     short_price=short_price,
                     partial_close_count=2,
                 )
-        prev_1_entry = entry_1
-        prev_2_entry = entry_2
+        prev_1_entry = hr1_candle['HighLowValue'].values[0]
+        prev_2_entry = previous_5m_candlestick['HighLowValue']
 
     return account, balances
 
 
 if __name__ == '__main__':
-    for es in tqdm([1.5, 2]):
-        acc, bal = execute(equity_split=es)
-        print(f'equity_split={es}')
-        print(acc)
-        print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+    acc, bal = execute()
+    print('equity_split=2')
+    print(acc)
+    print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
+    print(acc.get_closed_trades())

@@ -4,7 +4,6 @@ from typing import Tuple, Union
 # Third-party.
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
 
 
 def moving_average(values: list, window):
@@ -21,6 +20,10 @@ def exp_moving_average(values, window):
     a[:window] = a[window]
 
     return a
+
+
+def append_ssma(df: pd.DataFrame, periods: int = 50, column: str = "midClose", adjust: bool = True):
+    df[f'SSMA{periods}'] = df[column].ewm(ignore_na=False, alpha=1.0 / periods, min_periods=0, adjust=adjust).mean()
 
 
 def momentum_line(data, prices: str, time_period: int = 10):
@@ -701,7 +704,7 @@ def stochastic_signal(k: float, d: float, long_k_d: Tuple[float, float], short_k
         return 'undetermined'
 
 
-def calculate_local_high_and_low(data: DataFrame, current_index: int, look_back: int) -> Tuple[float, float]:
+def calculate_local_high_and_low(data: pd.DataFrame, current_index: int, look_back: int) -> Tuple[float, float]:
     high = float(0)
     low = float(1000)
     i = current_index
@@ -715,7 +718,7 @@ def calculate_local_high_and_low(data: DataFrame, current_index: int, look_back:
     return high, low
 
 
-def trend_signal(data: DataFrame, curr_idx: int, look_back: int) -> str:
+def trend_signal(data: pd.DataFrame, curr_idx: int, look_back: int) -> str:
     if curr_idx < 1:
         return 'undetermined'
     local_high, local_low = calculate_local_high_and_low(data, curr_idx, look_back)
