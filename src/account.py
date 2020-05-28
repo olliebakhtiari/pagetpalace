@@ -38,6 +38,24 @@ class Account(RequestMixin):
     # TODO: a lot needs to be rewritten to catch exceptions instead of allowing them to break execution and
     #       functionality needs to be added to individual method to extract necessary data.
 
+    def has_margin_available(self):
+        """ Available margin - margin in pending orders. """
+        pass
+
+    def get_margin_size_per_trade(self):
+        pass
+
+    def check_and_adjust_stops(self):
+        pass
+
+    def check_and_partially_close_profits(self):
+        pass
+
+    def delete_pending_orders(self, valid_positions: str):
+        if valid_positions not in ['long', 'short']:
+            raise ValueError('valid positions must be "long" or "short".')
+        pass
+
     def get_current_orders_and_positions(self) -> dict:
         """ Get full details for an Account client has access to. Full pending orders, open trades and open positions.
 

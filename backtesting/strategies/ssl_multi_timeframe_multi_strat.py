@@ -137,7 +137,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         }
 
         # Check for new signals, don't re-enter every candle with same entry signal.
-        lowest_tf_candles_to_check = {
+        entry_signals_to_check = {
             '1': {
                 'previous': prev_1_entry,
                 'current': hr1_candle['HighLowValue'].values[0],
@@ -185,7 +185,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
         # Place new pending orders.
         for strategy, signal in signals.items():
-            candles_to_check = lowest_tf_candles_to_check[strategy]
+            candles_to_check = entry_signals_to_check[strategy]
             if signal \
                     and has_new_signal(prev=candles_to_check['previous'], curr=candles_to_check['current']) \
                     and account.has_margin_available():
