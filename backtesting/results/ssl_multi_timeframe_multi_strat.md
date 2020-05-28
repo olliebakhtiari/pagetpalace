@@ -578,14 +578,14 @@ highest balance = £305,426.26
 lowest balance = £11,539.39
 {'3': {'wins': 364, 'losses': 212}, '1': {'wins': 96, 'losses': 31}})
 
-equity_split=2
+equity_split=2                              267186:346535:
 trades executed = 834.00
 win rate = 64.99%
 pips accumulated = 4,490.95
 final balance = £275,337.97
 highest balance = £288,951.50
 lowest balance = £10,414.99
-{'1': {'wins': 110, 'losses': 35}, '2': {'wins': 0, 'losses': 0}, '3': {'wins': 432, 'losses': 257}}
+{'1': {'wins': 110, 'losses': 35}, '3': {'wins': 432, 'losses': 257}}
 
 equity_split=2.5
 trades executed = 811.00
@@ -654,3 +654,20 @@ final balance = £162,018.92
 highest balance = £176,642.57
 lowest balance = £10,282.85
 {'2': {'wins': 374, 'losses': 236}, '1': {'wins': 92, 'losses': 38}})
+
+## SPX500USD
+## INCORPORATE 50SMA FOR 5MIN DATASET.
+    if (daily_ssl == 1 and hourly_ssl == 1 and min5_ssl == 1) \
+            or (daily_ssl == 1 and min5_ssl == 1 and (curr_price > min5_ssma_val)):
+        signals['2'] = 'long'
+    elif (daily_ssl == -1 and hourly_ssl == -1 and min5_ssl == -1) \
+            or (daily_ssl == -1 and min5_ssl == - 1 and (curr_price < min5_ssma_val)):
+        signals['2'] = 'short'
+equity_split=2
+trades executed = 1,065.00
+win rate = 63.76%
+pips accumulated = 4,672.83
+final balance = £170,555.19
+highest balance = £181,699.00
+lowest balance = £9,627.07
+ {'2': {'wins': 577, 'losses': 354}, '1': {'wins': 102, 'losses': 32}})

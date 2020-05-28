@@ -37,16 +37,20 @@ def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int, curr_price: fl
     # Strategy one.
     if daily_ssl == 1 and hourly_ssl == 1:
         signals['1'] = 'long'
-    if daily_ssl == -1 and hourly_ssl == -1:
+    elif daily_ssl == -1 and hourly_ssl == -1:
         signals['1'] = 'short'
 
     # Strategy two.
     if (daily_ssl == 1 and hourly_ssl == 1 and min5_ssl == 1) \
             or (daily_ssl == 1 and min5_ssl == 1 and (curr_price > min5_ssma_val)):
         signals['2'] = 'long'
-    if (daily_ssl == -1 and hourly_ssl == -1 and min5_ssl == -1) \
+    elif (daily_ssl == -1 and hourly_ssl == -1 and min5_ssl == -1) \
             or (daily_ssl == -1 and min5_ssl == - 1 and (curr_price < min5_ssma_val)):
         signals['2'] = 'short'
+
+    # Only trade in same direction.
+    # if signals['2'] != signals['1']:
+    #     signals['2'] = None
 
     return signals
 
@@ -112,7 +116,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[276711:346535:].iterrows()):
+    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -250,4 +254,4 @@ if __name__ == '__main__':
     print('equity_split=2')
     print(acc)
     print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
-    print(acc.get_closed_trades())
+    # print(acc.get_closed_trades())

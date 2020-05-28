@@ -10,7 +10,7 @@ from src.oanda_data import OandaInstrumentData
 from tools.logger import *
 
 
-def construct_data() -> dict:
+def get_data() -> dict:
     od = OandaInstrumentData()
     data = {}
     time_frames = ['D', 'H1', 'M5']
@@ -27,8 +27,6 @@ def construct_data() -> dict:
                     f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}',
                     exc_info=True,
                 )
-    for df in data.values():
-        append_average_true_range(df)
 
     return data
 
@@ -38,6 +36,9 @@ def get_ssl_signals(data: dict) -> dict:
 
 
 def get_atr_values(data: dict) -> dict:
+    append_average_true_range(data['H1'])
+    append_average_true_range(data['M5'])
+
     return {k: v['ATR'].iloc[-1] for k, v in data.items()}
 
 
@@ -55,7 +56,7 @@ def execute():
         monitor_and_adjust_orders()
         if now.minute % 5 == 0 and now.minute != prev_exec:
             print(prev_1_entry, prev_2_entry)
-            data = construct_data()
+            data = get_data()
             signals = get_ssl_signals(data)
             atr_values = get_atr_values(data)
             print(signals)
