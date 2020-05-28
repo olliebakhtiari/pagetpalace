@@ -65,10 +65,19 @@ def get_nearest_hr_loc(dt: datetime.datetime) -> datetime.datetime:
     return datetime.datetime(dt.year, dt.month, dt.day, dt.hour, 0, 0)
 
 
-def get_nearest_1hr_data(data_frame: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+def get_hourly_candlestick(data_frame: pd.DataFrame, curr_dt: datetime.datetime):
     hr_loc = str(get_nearest_hr_loc(curr_dt))
     idx = np.where(data_frame.index == hr_loc)[0]
-    candlestick = data_frame.iloc[idx - 1]
+
+    return data_frame.iloc[idx - 1]
+
+
+def get_nearest_1hr_data(data_frame: pd.DataFrame, curr_dt: datetime.datetime) -> pd.DataFrame:
+    candlestick = get_hourly_candlestick(data_frame, curr_dt)
+    hr_count = 1
+    while not len(candlestick.values):
+        candlestick = get_hourly_candlestick(data_frame, curr_dt - datetime.timedelta(hours=hr_count))
+        hr_count += 1
 
     return candlestick
 
