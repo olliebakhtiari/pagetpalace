@@ -1,5 +1,6 @@
 # Python standard.
 import datetime
+import math
 from typing import List
 
 # Third-party.
@@ -166,7 +167,7 @@ class OandaInstrumentData(RequestMixin):
         candles = []
         for year in range(start_year, end_year + 1):
             for month in range(1, 13):
-                if not (year == now.year and month >= now.month - 1):
+                if not (year == now.year and month >= now.month):
                     end_day = days_in_month[month]
 
                     # leap year for feb.
@@ -174,22 +175,45 @@ class OandaInstrumentData(RequestMixin):
                         end_day = 29
 
                     # Split in two halves as capped at 5000 candles per request.
-                    resp_1 = self.get_candlesticks(
-                        instrument=instrument,
-                        from_date=f'{year}-{month:02}-01T00:00:00.000000000Z',
-                        to_date=f'{year}-{month:02}-15T00:00:00.000000000Z',
-                        granularity=granularity,
-                    )
-                    resp_2 = self.get_candlesticks(
-                        instrument=instrument,
-                        from_date=f'{year}-{month:02}-15T00:00:00.000000000Z',
-                        to_date=f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
-                        granularity=granularity,
-                    )
-                    logger.info(resp_1)
-                    logger.info(resp_2)
-                    candles.extend(resp_1['candles'])
-                    candles.extend(resp_2['candles'])
+                    from_and_to_dates = [
+                        {
+                            'from': f'{year}-{month:02}-01T00:00:00.000000000Z',
+                            'to': f'{year}-{month:02}-15T00:00:00.000000000Z',
+                        },
+                        {
+                            'from': f'{year}-{month:02}-15T00:00:00.000000000Z',
+                            'to': f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
+                        },
+                    ]
+                    for dates in from_and_to_dates:
+                        resp = self.get_candlesticks(
+                            instrument=instrument,
+                            from_date=dates['from'],
+                            to_date=dates['to'],
+                            granularity=granularity,
+                        )
+                        logger.info(resp)
+                        candles.extend(resp['candles'])
+        curr_month_halfway = math.ceil(now.day) / 2
+        curr_month_from_and_to = [
+            {
+                'from': f'{now.year}-{now.month:02}-01T00:00:00.000000000Z',
+                'to': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
+            },
+            {
+                'from': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
+                'to': f'{now.year}-{now.month:02}-{now.day:02}T00:00:00.000000000Z',
+            },
+        ]
+        for dates in curr_month_from_and_to:
+            resp = self.get_candlesticks(
+                instrument=instrument,
+                from_date=dates['from'],
+                to_date=dates['to'],
+                granularity=granularity,
+            )
+            logger.info(resp)
+            candles.extend(resp['candles'])
         logger.info(candles)
         df = self.convert_to_df(candles, prices)
         logger.info(df)
@@ -214,12 +238,12 @@ class OandaInstrumentData(RequestMixin):
 
 
 if __name__ == '__main__':
-    g = 'M5'
+    g = 'D'
     od = OandaInstrumentData()
     od.write_candles_to_csv(
-        instrument='NAS100_USD',
+        instrument='SPX500_USD',
         granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/NAS100_USD/NAS100USD_{g}.csv',
+        output_loc=f'/Users/oliver/Documents/pagetpalace/data/oanda/SPX500_USD/SPX500USD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
