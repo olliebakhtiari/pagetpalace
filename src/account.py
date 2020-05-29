@@ -1,6 +1,6 @@
 # Local.
 from src.request import RequestMixin
-from config.settings import OANDA_DOMAINS
+from settings import OANDA_DOMAINS
 
 
 class Account(RequestMixin):
@@ -8,11 +8,11 @@ class Account(RequestMixin):
     VERSION = 'v3'
 
     def __init__(self, access_token: str, account_id: str, account_type: str):
-        self.url = f'{self.PROTOCOL}{self.domain}/{self.VERSION}/{account_id}/accounts'
-        self.auth_token = access_token
-        self.account_id = account_id
         self.account_type = account_type
         self.domain = OANDA_DOMAINS[self.account_type]  # LIVE-API or DEMO-API.
+        self.auth_token = access_token
+        self.account_id = account_id
+        self.url = f'{self.PROTOCOL}{self.domain}/{self.VERSION}/{account_id}/accounts'
 
         # TODO: put urls into methods.
         self.order_urls = {

@@ -8,6 +8,7 @@ from src.account import Account
 from src.indicators import get_ssl_value, append_average_true_range
 from src.oanda_data import OandaInstrumentData
 from tools.logger import *
+from settings import DEMO_V20_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
 
 
 def get_data() -> dict:
@@ -85,22 +86,21 @@ def monitor_and_adjust_orders():
 
 
 def execute():
-    account = Account(account_id='', access_token='', account_type='')
+    account = Account(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     prev_exec = -1
     prev_1_entry = 0
     prev_2_entry = 0
     while 1:
         now = datetime.datetime.now()
-        account.check_and_partially_close_profits()
-        account.check_and_adjust_stops()
+        # account.check_and_partially_close_profits()
+        # account.check_and_adjust_stops()
         if now.minute % 5 == 0 and now.minute != prev_exec:
-            print(prev_1_entry, prev_2_entry)
             data = get_data()
             signals = get_signals(data)
 
             # Remove outdated pending orders depending on entry signals.
-            if prev_1_entry != signals['H1']:
-                account.delete_pending_orders(valid_positions=signals['H1'])
+            # if prev_1_entry != signals['H1']:
+            #     account.delete_pending_orders(valid_positions=signals['H1'])
 
             strategy_atr_values = get_atr_values(data)
 
@@ -108,29 +108,26 @@ def execute():
             entry_signals_to_check = {
                 '1': {
                     'previous': prev_1_entry,
-                    'current': signals['H1'],
+                    'current': signals['1'],
                 },
                 '2': {
                     'previous': prev_2_entry,
-                    'current': signals['M5'],
+                    'current': signals['2'],
                 },
             }
-            print(signals)
-            print(strategy_atr_values)
             for strategy, signal in signals.items():
                 compare_signals = entry_signals_to_check[strategy]
                 if signal \
-                        and compare_signals['previous'] != compare_signals['current'] \
-                        and account.has_margin_available():
+                        and compare_signals['previous'] != compare_signals['current']:
+                        # and account.has_margin_available():
                     sl_pip_amount = strategy_atr_values[strategy] * 3.25
-                    margin_size = account.get_margin_size_per_trade()
-                    if margin_size > 0:
-                        tp_pip_amount = sl_pip_amount * 2.
-                        place_trade(signal=signal)
+                    # margin_size = account.get_margin_size_per_trade()
+                    # if margin_size > 0:
+                    #     tp_pip_amount = sl_pip_amount * 2.
+                    #     place_trade(signal=signal)
             prev_exec = now.minute
-            prev_1_entry = signals['H1']
-            prev_2_entry = signals['M5']
-            print(prev_1_entry, prev_2_entry)
+            prev_1_entry = signals['1']
+            prev_2_entry = signals['2']
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ from optparse import OptionParser
 import requests
 
 # Local.
-from config.settings import OANDA_DOMAINS
+from settings import OANDA_DOMAINS
 
 
 class OandaStream:

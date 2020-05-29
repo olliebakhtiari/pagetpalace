@@ -8,7 +8,7 @@ import pandas as pd
 
 # Local.
 from src.request import RequestMixin
-from config.settings import OANDA_LIVE_ACCESS_TOKEN
+from settings import OANDA_LIVE_ACCESS_TOKEN
 from tools.datetime_utils import get_days_in_months, is_leap_year
 from tools.data_operations import remove_duplicate_datetimes_from_csv
 from tools.logger import *

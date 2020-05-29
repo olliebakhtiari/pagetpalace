@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 # Local.
 from backtesting.account import BackTestingAccount
-from src.indicators import append_average_true_range, append_ssl_channel, append_ssma
+from src.indicators import append_average_true_range, append_ssl_channel
 from tools.data_operations import read_oanda_data
 from tools.datetime_utils import (
     get_nearest_daily_or_weekly_data,
@@ -28,7 +28,7 @@ def has_new_signal(prev: int, curr: int) -> bool:
     return prev != curr
 
 
-def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int, curr_price: float, min5_ssma_val: float) -> dict:
+def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int) -> dict:
     signals = {
         '1': None,
         '2': None,
@@ -41,13 +41,6 @@ def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int, curr_price: fl
         signals['1'] = 'short'
 
     # Strategy two.
-    # if (daily_ssl == 1 and hourly_ssl == 1 and min5_ssl == 1) \
-    #         or (daily_ssl == 1 and min5_ssl == 1 and (curr_price > min5_ssma_val)):
-    #     signals['2'] = 'long'
-    # elif (daily_ssl == -1 and hourly_ssl == -1 and min5_ssl == -1) \
-    #         or (daily_ssl == -1 and min5_ssl == - 1 and (curr_price < min5_ssma_val)):
-    #     signals['2'] = 'short'
-
     if hourly_ssl == 1 and min5_ssl == 1:
         signals['2'] = 'long'
     elif hourly_ssl == -1 and min5_ssl == -1:
@@ -107,7 +100,6 @@ for df in [daily, hr1, m5]:
     append_ssl_channel(data=df, periods=20)
 for df in [hr1, m5]:
     append_average_true_range(df=df, prices='mid', periods=14)
-append_ssma(m5)
 
 
 def execute() -> Tuple[BackTestingAccount, List[float]]:
@@ -120,8 +112,8 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     account = BackTestingAccount(starting_capital=10000, equity_split=2)
     prev_month_deposited = 0
 
-    # Iterate through lowest time frame of all strategies being ran. 276711 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[346275::].iterrows()):
+    # Iterate through lowest time frame of all strategies being ran. 267186 ~1 year. 21st Feb 2020: 346535.
+    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -166,8 +158,6 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
             daily_ssl=d_candle['HighLowValue'].values[0],
             hourly_ssl=hr1_candle['HighLowValue'].values[0],
             min5_ssl=previous_5m_candlestick['HighLowValue'],
-            curr_price=curr_candle['midOpen'],
-            min5_ssma_val=previous_5m_candlestick['SSMA50'],
         )
 
         # Prices to use to process pending and active orders.
