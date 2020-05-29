@@ -2,16 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe_multi_strat.md" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe_multi_strat.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/settings.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" beforeDir="false" afterPath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/account.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/account.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/settings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/oanda_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/oanda_stream.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_stream.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/order.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/tools/aws_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/aws_utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -68,28 +64,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.aws_utils">
-    <configuration name="aws_utils" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-      <module name="pagetpalace" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="$USER_HOME$/.virtualenvs/pagetpalace/bin/python3" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tools" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tools/aws_utils.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.ssl_multi_timeframe_multi_strat">
     <configuration name="ssl_multi_time_frame" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pagetpalace" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -111,9 +86,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="ssl_multi_timeframe_multi_strat" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="pagetpalace" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/.virtualenvs/pagetpalace/bin/python3" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/backtesting/strategies" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Python.ssl_multi_time_frame" />
-      <item itemvalue="Python.aws_utils" />
+      <item itemvalue="Python.ssl_multi_timeframe_multi_strat" />
     </list>
   </component>
   <component name="SvnConfiguration">

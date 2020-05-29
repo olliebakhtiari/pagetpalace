@@ -13,6 +13,3 @@ def get_config_dict_from_s3(s3_file_path: str):
 
     return json.loads(json_string)
 
-
-if __name__ == '__main__':
-    print(get_config_dict_from_s3('pagetpalacedemo.json'))

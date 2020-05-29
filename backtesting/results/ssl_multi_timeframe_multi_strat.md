@@ -671,3 +671,26 @@ final balance = £170,555.19
 highest balance = £181,699.00
 lowest balance = £9,627.07
  {'2': {'wins': 577, 'losses': 354}, '1': {'wins': 102, 'losses': 32}})
+
+
+## SPX, 1 AND 2, MARCH 2017 - END OF DATASET, 
+
+USING BOTH HR AND 5M CANDLES FOR ENTRIES
+equity_split=2
+trades executed = 2,331.00
+win rate = 62.68%
+pips accumulated = 13,239.42
+final balance = £3,557,375.63
+highest balance = £4,065,871.33
+lowest balance = £10,164.71
+{'2': {'wins': 1198, 'losses': 725}, '1': {'wins': 263, 'losses': 144}})
+
+USING JUST 5M CANDLES FOR ENTRIES
+equity_split=2
+trades executed = 2,354.00
+win rate = 62.57%
+pips accumulated = 13,614.64
+final balance = £5,519,659.94
+highest balance = £6,166,268.32
+lowest balance = £10,164.71
+defaultdict(<function BackTestingAccount.get_individual_strategy_wins_losses.<locals>.<lambda> at 0x1148aad90>, {'2': {'wins': 1196, 'losses': 725}, '1': {'wins': 277, 'losses': 155}})

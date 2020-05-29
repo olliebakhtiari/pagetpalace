@@ -8,7 +8,7 @@ import pandas as pd
 
 # Local.
 from src.request import RequestMixin
-from settings import OANDA_LIVE_ACCESS_TOKEN
+from settings import LIVE_ACCESS_TOKEN
 from tools.datetime_utils import get_days_in_months, is_leap_year
 from tools.data_operations import remove_duplicate_datetimes_from_csv
 from tools.logger import *
@@ -29,7 +29,7 @@ class OandaInstrumentData(RequestMixin):
 
     def __init__(self):
         self.url = f'{self.PROTOCOL}{self.DOMAIN}/{self.VERSION}/instruments/'
-        self.access_token = OANDA_LIVE_ACCESS_TOKEN
+        self.access_token = LIVE_ACCESS_TOKEN
         self.default_headers = {
             'Authorization': f'Bearer {self.access_token}',
             'X-Accept-Datetime-Format': 'unix',

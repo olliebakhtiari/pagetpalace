@@ -56,7 +56,8 @@ def check_signals(daily_ssl: int, hourly_ssl: int, min5_ssl: int) -> dict:
 def place_trade(
         account: BackTestingAccount,
         signal: str,
-        prev_candle: pd.DataFrame,
+        ask_high: float,
+        bid_low: float,
         curr_dt: datetime.datetime,
         instrument_point_type: str,
         tp_pip_amount: float,
@@ -67,7 +68,7 @@ def place_trade(
         margin_size: float,
 ):
     if signal == 'long':
-        entry_price = round(prev_candle['askHigh'], 5) + entry_offset
+        entry_price = round(ask_high, 5) + entry_offset
         account.open_trade(
             instrument_point_type=instrument_point_type,
             opened_at=curr_dt,
@@ -80,7 +81,7 @@ def place_trade(
             spread=spread,
         )
     elif signal == 'short':
-        entry_price = round(prev_candle['bidLow'], 5) - entry_offset
+        entry_price = round(bid_low, 5) - entry_offset
         account.open_trade(
             instrument_point_type=instrument_point_type,
             opened_at=curr_dt,
@@ -113,7 +114,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
     prev_month_deposited = 0
 
     # Iterate through lowest time frame of all strategies being ran. 267186 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
+    for curr_dt, curr_candle in tqdm(m5[144199::].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -131,6 +132,10 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
         strategy_entry_offsets = {
             '1': strategy_atr_values['1'] / 5,
             '2': strategy_atr_values['2'] / 5,
+        }
+        strategy_prev_candle_prices = {
+            '1': {'ask_high': hr1_candle['askHigh'].values[0], 'bid_low': hr1_candle['bidLow'].values[0]},
+            '2': {'ask_high': previous_5m_candlestick['askHigh'], 'bid_low': previous_5m_candlestick['bidLow']},
         }
 
         # Check for new signals, don't re-enter every candle with same entry signal.
@@ -191,7 +196,8 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
                     place_trade(
                         account=account,
                         signal=signal,
-                        prev_candle=previous_5m_candlestick,
+                        ask_high=strategy_prev_candle_prices['2']['ask_high'],
+                        bid_low=strategy_prev_candle_prices['2']['bid_low'],
                         curr_dt=curr_dt,
                         tp_pip_amount=tp_pip_amount,
                         sl_pip_amount=sl_pip_amount,
