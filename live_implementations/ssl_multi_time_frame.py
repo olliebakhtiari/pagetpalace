@@ -5,6 +5,7 @@ import time
 
 # Local.
 from src.account import Account
+from src.orders import create_market_if_touched_order
 from src.indicators import get_ssl_value, append_average_true_range
 from src.oanda_data import OandaInstrumentData
 from tools.logger import *
@@ -68,19 +69,29 @@ def get_signals(data: dict):
     return signals
 
 
-def place_trade(
+def construct_order(
         signal: str,
         ask_high: float,
         bid_low: float,
         entry_offset: float,
-        take_profit: float,
-        stop_loss: float,
-        margin_size: float,
+        tp_pip_amount: float,
+        sl_pip_amount: float,
+        units: float,
 ):
+    entry = 0
+    sl = 0
+    tp = 0
     if signal == 'long':
-        entry_price = round(ask_high + entry_offset, 1)
+        entry = round(ask_high + entry_offset, 1)
+        tp = round(entry + tp_pip_amount, 1)
+        sl = round(entry - sl_pip_amount, 1)
     elif signal == 'short':
-        entry_price = round(bid_low - entry_offset, 1)
+        entry = round(bid_low - entry_offset, 1)
+        tp = round(entry - tp_pip_amount, 1)
+        sl = round(entry + sl_pip_amount, 1)
+        units = units * -1
+
+    return create_market_if_touched_order(entry=entry, sl=sl, tp=tp, instrument='SPX500_USD', units=units)
 
 
 def monitor_and_adjust_orders():
@@ -125,26 +136,25 @@ def execute():
                     'current': signals['2'],
                 },
             }
-            print(data['M5']['askHigh'].iloc[-1])
-            print(data['M5']['bidLow'].iloc[-1])
-            # for strategy, signal in signals.items():
-            #     compare_signals = entry_signals_to_check[strategy]
-            #     if signal \
-            #             and compare_signals['previous'] != compare_signals['current'] \
-            #             and account.has_margin_available():
-            #         sl_pip_amount = strategy_atr_values[strategy] * 3.25
-            #         margin_size = account.get_margin_size_per_trade()
-            #         if margin_size > 0:
-            #             tp_pip_amount = sl_pip_amount * 2.
-            #             place_trade(
-            #                 signal=signal,
-            #                 ask_high=data['M5']['askHigh'],
-            #                 bid_low=data['M5']['bidLow'],
-            #                 entry_offset=strategy_entry_offsets[strategy],
-            #                 take_profit=tp_pip_amount,
-            #                 stop_loss=sl_pip_amount,
-            #                 margin_size=margin_size,
-            #             )
+            for strategy, signal in signals.items():
+                compare_signals = entry_signals_to_check[strategy]
+                if signal \
+                        and compare_signals['previous'] != compare_signals['current'] \
+                        and account.has_margin_available():
+                    sl_pip_amount = strategy_atr_values[strategy] * 3.25
+                    units = account.get_unit_size_per_trade()
+                    if units > 0:
+                        tp_pip_amount = sl_pip_amount * 2.
+                        order = construct_order(
+                            signal=signal,
+                            ask_high=data['M5']['askHigh'],
+                            bid_low=data['M5']['bidLow'],
+                            entry_offset=strategy_entry_offsets[strategy],
+                            tp_pip_amount=tp_pip_amount,
+                            sl_pip_amount=sl_pip_amount,
+                            units=units,
+                        )
+                        account.create_order(order)
             prev_exec = now.minute
             prev_1_entry = signals['1']
             prev_2_entry = signals['2']
