@@ -26,24 +26,6 @@ class Account(RequestMixin):
     def __str__(self):
         return f'{self.account_id} - {self.account_type}'
 
-    def has_margin_available(self):
-        """ Available margin - margin in pending orders. """
-        pass
-
-    def get_unit_size_per_trade(self):
-        pass
-
-    def check_and_adjust_stops(self):
-        pass
-
-    def check_and_partially_close_profits(self):
-        pass
-
-    def delete_pending_orders(self, valid_positions: str):
-        if valid_positions not in ['long', 'short']:
-            raise ValueError('valid positions must be "long" or "short".')
-        pass
-
     def get_current_orders_and_positions(self) -> dict:
         """ Get full details for an Account client has access to. Full pending orders, open trades and open positions.
 
@@ -166,23 +148,23 @@ class Account(RequestMixin):
         """
         return self._request(endpoint='pendingOrders', method='GET')
 
-    def get_order(self) -> dict:
+    def get_order(self, order_specifier: str) -> dict:
         """ Get details for a single Order in an Account.
 
         :return:
         """
-        return self._request(endpoint='orders/*orderSpecifier*', method='GET')
+        return self._request(endpoint=f'orders/{order_specifier}', method='GET')
 
-    def replace_order(self) -> dict:
+    def replace_order(self, order_specifier: str) -> dict:
         """ Replace an Order in an Account by simultaneously cancelling it and creating a replacement Order.
 
         :return:
         """
-        return self._request(endpoint='orders/*orderSpecifier*', method='PUT')
+        return self._request(endpoint=f'orders/{order_specifier}', method='PUT')
 
-    def cancel_order(self) -> dict:
+    def cancel_order(self, order_specifier: str) -> dict:
         """ Cancel a pending Order in an Account.
 
         :return:
         """
-        return self._request(endpoint='orders/*orderSpecifier/cancel', method='PUT')
+        return self._request(endpoint=f'orders/{order_specifier}/cancel', method='PUT')

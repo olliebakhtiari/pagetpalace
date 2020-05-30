@@ -84,9 +84,9 @@ class BackTestingAccount:
 
         # Make sure not to trade if available margin is less than or equal to 10% of total margin.
         available_minus_restricted = self._available_margin - (self._total_margin * 0.1)
-        if (margin_size > available_minus_restricted) and (available_minus_restricted < 500):
+        if (margin_size > available_minus_restricted) and (available_minus_restricted < 150):
             margin_size = 0
-        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 500):
+        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 150):
             margin_size = available_minus_restricted
 
         return margin_size

@@ -1,168 +1,233 @@
 # Python standard.
 import concurrent.futures
 import datetime
-import time
+
+# Third-party.
+import pytz
 
 # Local.
 from src.account import Account
 from src.orders import create_market_if_touched_order
 from src.indicators import get_ssl_value, append_average_true_range
 from src.oanda_data import OandaInstrumentData
-from tools.logger import *
 from settings import DEMO_V20_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
+from tools.logger import *
 
 
-def get_data() -> dict:
-    od = OandaInstrumentData()
-    data = {}
-    time_frames = ['D', 'H1', 'M5']
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future_to_tf = {}
-        for granularity in time_frames:
-            future_to_tf[executor.submit(od.get_candlesticks, 'SPX500_USD', 'ABM', granularity, 20)] = granularity
-        for future in concurrent.futures.as_completed(future_to_tf):
-            time_frame = future_to_tf[future]
-            try:
-                data[time_frame] = od.convert_to_df(future.result()['candles'], 'ABM')
-            except Exception as exc:
-                logger.error(
-                    f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}',
-                    exc_info=True,
-                )
+class SSLMultiTimeFrame:
+    UNRESTRICTED_MARGIN_CAP = 0.9
 
-    return data
+    def __init__(self, account: Account):
+        self.account = account
+        self._pending_orders_1 = []
+        self._pending_orders_2 = []
+        self._partially_closed_once = []
+        self._partially_closed_twice = []
+        self._sl_moved_once = []
+        self._sl_moved_twice = []
 
+    def check_and_adjust_stops(self):
+        pass
 
-def get_atr_values(data: dict) -> dict:
-    append_average_true_range(data['H1'])
-    append_average_true_range(data['M5'])
+    def check_and_partially_close_profits(self):
+        pass
 
-    return {
-        '1': data['H1']['ATR'].iloc[-1],
-        '2': data['M5']['ATR'].iloc[-1],
-    }
+    def sync_pending_orders(self, pending_orders_in_account: dict):
+        for local_pending_list in [self._pending_orders_1, self._pending_orders_2]:
+            for id_ in local_pending_list:
+                if id_ not in pending_orders_in_account:
+                    local_pending_list.remove(id_)
 
+    def delete_invalid_pending_orders(self, strategy: str):
+        for id_ in getattr(self, f'pending_orders_{strategy}'):
+            self.account.cancel_order(id_)
 
-def get_signals(data: dict):
-    ssl_values = {k: get_ssl_value(v) for k, v in data.items()}
-    signals = {
-        '1': None,
-        '2': None,
-    }
+    def get_unit_size_per_trade(self, balance: float, total_margin_available: float, pending_orders: dict) -> float:
+        margin_size = self._get_valid_margin_size(
+            margin_size=(balance * self.UNRESTRICTED_MARGIN_CAP) / 2,
+            usable_margin=self._margin_not_being_used_in_orders(total_margin_available, pending_orders),
+            balance=balance,
+        )
+        # TODO: convert margin size to unit size.
 
-    # Strategy one.
-    if ssl_values['D'] == 1 and ssl_values['H1'] == 1:
-        signals['1'] = 'long'
-    elif ssl_values['D'] == -1 and ssl_values['H1'] == -1:
-        signals['1'] = 'short'
+        return 1.
 
-    # Strategy two.
-    if ssl_values['H1'] == 1 and ssl_values['M5'] == 1:
-        signals['2'] = 'long'
-    elif ssl_values['H1'] == -1 and ssl_values['M5'] == -1:
-        signals['2'] = 'short'
+    @classmethod
+    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float):
+        available_minus_restricted = usable_margin - (balance * 0.1)
+        if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
+            margin_size = 0
+        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 200):
+            margin_size = available_minus_restricted
 
-    # Only trade in same direction.
-    if signals['2'] != signals['1']:
-        signals['2'] = None
+        return margin_size
 
-    return signals
+    @classmethod
+    def _margin_not_being_used_in_orders(cls, total_margin_available: float, pending_orders: dict) -> float:
+        """ Available margin - margin in pending orders. """
+        margin_tied_to_pending = 1
 
+        return total_margin_available - margin_tied_to_pending
 
-def construct_order(
-        signal: str,
-        ask_high: float,
-        bid_low: float,
-        entry_offset: float,
-        tp_pip_amount: float,
-        sl_pip_amount: float,
-        units: float,
-):
-    entry = 0
-    sl = 0
-    tp = 0
-    if signal == 'long':
-        entry = round(ask_high + entry_offset, 1)
-        tp = round(entry + tp_pip_amount, 1)
-        sl = round(entry - sl_pip_amount, 1)
-    elif signal == 'short':
-        entry = round(bid_low - entry_offset, 1)
-        tp = round(entry - tp_pip_amount, 1)
-        sl = round(entry + sl_pip_amount, 1)
-        units = units * -1
+    @classmethod
+    def get_data(cls) -> dict:
+        od = OandaInstrumentData()
+        data = {}
+        time_frames = ['D', 'H1', 'M5']
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_tf = {}
+            for granularity in time_frames:
+                future_to_tf[executor.submit(od.get_candlesticks, 'SPX500_USD', 'ABM', granularity, 20)] = granularity
+            for future in concurrent.futures.as_completed(future_to_tf):
+                time_frame = future_to_tf[future]
+                try:
+                    data[time_frame] = od.convert_to_df(future.result()['candles'], 'ABM')
+                except Exception as exc:
+                    logger.error(
+                        f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}',
+                        exc_info=True,
+                    )
 
-    return create_market_if_touched_order(entry=entry, sl=sl, tp=tp, instrument='SPX500_USD', units=units)
+        return data
 
+    @classmethod
+    def get_atr_values(cls, data: dict) -> dict:
+        append_average_true_range(data['H1'])
+        append_average_true_range(data['M5'])
 
-def monitor_and_adjust_orders():
-    pass
+        return {
+            '1': data['H1']['ATR'].iloc[-1],
+            '2': data['M5']['ATR'].iloc[-1],
+        }
 
+    @classmethod
+    def get_signals(cls, data: dict):
+        ssl_values = {k: get_ssl_value(v) for k, v in data.items()}
+        signals = {
+            '1': None,
+            '2': None,
+        }
 
-def execute():
-    account = Account(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
-    prev_exec = -1
-    prev_1_entry = 0
-    prev_2_entry = 0
+        # Strategy one.
+        if ssl_values['D'] == 1 and ssl_values['H1'] == 1:
+            signals['1'] = 'long'
+        elif ssl_values['D'] == -1 and ssl_values['H1'] == -1:
+            signals['1'] = 'short'
 
-    # Prevent doing operations more frequently than is required/correct.
-    partially_closed_once = []
-    partially_closed_twice = []
-    sl_moved_once = []
-    sl_moved_twice = []
-    while 1:
-        now = datetime.datetime.now()
-        if now.minute % 5 == 0 and now.minute != prev_exec:
-            data = get_data()
-            signals = get_signals(data)
+        # Strategy two.
+        if ssl_values['H1'] == 1 and ssl_values['M5'] == 1:
+            signals['2'] = 'long'
+        elif ssl_values['H1'] == -1 and ssl_values['M5'] == -1:
+            signals['2'] = 'short'
 
-            # Remove outdated pending orders depending on entry signals.
-            # if prev_1_entry != signals['H1']:
-            #     account.delete_pending_orders(valid_positions=signals['H1'])
+        # Only trade in same direction.
+        if signals['2'] != signals['1']:
+            signals['2'] = None
 
-            strategy_atr_values = get_atr_values(data)
-            strategy_entry_offsets = {
-                '1': strategy_atr_values['1'] / 5,
-                '2': strategy_atr_values['2'] / 5,
-            }
+        return signals
 
-            # Check for new signals, don't re-enter every candle with same entry signal.
-            entry_signals_to_check = {
-                '1': {
-                    'previous': prev_1_entry,
-                    'current': signals['1'],
-                },
-                '2': {
-                    'previous': prev_2_entry,
-                    'current': signals['2'],
-                },
-            }
-            for strategy, signal in signals.items():
-                compare_signals = entry_signals_to_check[strategy]
-                if signal \
-                        and compare_signals['previous'] != compare_signals['current'] \
-                        and account.has_margin_available():
-                    sl_pip_amount = strategy_atr_values[strategy] * 3.25
-                    units = account.get_unit_size_per_trade()
-                    if units > 0:
-                        tp_pip_amount = sl_pip_amount * 2.
-                        order = construct_order(
-                            signal=signal,
-                            ask_high=data['M5']['askHigh'],
-                            bid_low=data['M5']['bidLow'],
-                            entry_offset=strategy_entry_offsets[strategy],
-                            tp_pip_amount=tp_pip_amount,
-                            sl_pip_amount=sl_pip_amount,
-                            units=units,
-                        )
-                        account.create_order(order)
-            prev_exec = now.minute
-            prev_1_entry = signals['1']
-            prev_2_entry = signals['2']
-        # account.check_and_partially_close_profits()
-        # account.check_and_adjust_stops()
+    @classmethod
+    def construct_order(
+            cls,
+            signal: str,
+            ask_high: float,
+            bid_low: float,
+            entry_offset: float,
+            tp_pip_amount: float,
+            sl_pip_amount: float,
+            units: float,
+    ):
+        entry = 0
+        sl = 0
+        tp = 0
+        if signal == 'long':
+            entry = round(ask_high + entry_offset, 1)
+            tp = round(entry + tp_pip_amount, 1)
+            sl = round(entry - sl_pip_amount, 1)
+        elif signal == 'short':
+            entry = round(bid_low - entry_offset, 1)
+            tp = round(entry - tp_pip_amount, 1)
+            sl = round(entry + sl_pip_amount, 1)
+            units = units * -1
+
+        return create_market_if_touched_order(entry=entry, sl=sl, tp=tp, instrument='SPX500_USD', units=units)
+
+    @classmethod
+    def monitor_and_adjust_orders(cls):
+        pass
+
+    def execute(self):
+        london_tz = pytz.timezone('Europe/London')
+        prev_exec = -1
+        prev_1_entry = 0
+        prev_2_entry = 0
+        while 1:
+            now = datetime.datetime.now().astimezone(london_tz)
+            pending_orders = self.account.get_pending_orders()
+            account_summary = s.account.get_summary()['account']
+            if now.minute % 5 == 0 and now.minute != prev_exec:
+                data = self.get_data()
+                signals = self.get_signals(data)
+
+                strategy_atr_values = self.get_atr_values(data)
+                strategy_entry_offsets = {
+                    '1': strategy_atr_values['1'] / 5,
+                    '2': strategy_atr_values['2'] / 5,
+                }
+
+                # Compare signals, don't re-enter every candle with same entry signal.
+                entry_signals_to_check = {
+                    '1': {
+                        'previous': prev_1_entry,
+                        'current': signals['1'],
+                    },
+                    '2': {
+                        'previous': prev_2_entry,
+                        'current': signals['2'],
+                    },
+                }
+                # Remove outdated pending orders depending on entry signals.
+                for strategy_num, entry_signals in entry_signals_to_check.items():
+                    if entry_signals['previous'] != entry_signals['current']:
+                        self.delete_invalid_pending_orders(strategy=strategy_num)
+
+                # New orders.
+                for strategy, signal in signals.items():
+                    compare_signals = entry_signals_to_check[strategy]
+                    units = self.get_unit_size_per_trade(
+                        balance=float(account_summary['balance']),
+                        total_margin_available=float(account_summary['marginAvailable']),
+                        pending_orders=pending_orders,
+                    )
+                    if units \
+                            and signal \
+                            and compare_signals['previous'] != compare_signals['current']:
+                        sl_pip_amount = strategy_atr_values[strategy] * 3.25
+                        if units > 0:
+                            tp_pip_amount = sl_pip_amount * 2.
+                            order = self.construct_order(
+                                signal=signal,
+                                ask_high=data['M5']['askHigh'],
+                                bid_low=data['M5']['bidLow'],
+                                entry_offset=strategy_entry_offsets[strategy],
+                                tp_pip_amount=tp_pip_amount,
+                                sl_pip_amount=sl_pip_amount,
+                                units=units,
+                            )
+                            self.account.create_order(order)
+                prev_exec = now.minute
+                prev_1_entry = signals['1']
+                prev_2_entry = signals['2']
+            if account_summary['openTradeCount'] > 0 or account_summary['openPositionCount'] > 0:
+                self.check_and_partially_close_profits()
+                self.check_and_adjust_stops()
+            self.sync_pending_orders(pending_orders)
 
 
 if __name__ == '__main__':
-    # start = time.time()
-    # print(time.time() - start)
-    execute()
+    s = SSLMultiTimeFrame(
+        Account(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
+    )
+    # s.execute()
+    summary = s.account.get_summary()
+    print(summary)
