@@ -110,11 +110,12 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
     # Set up and track account.
     balances = []
-    account = BackTestingAccount(starting_capital=10000, equity_split=2)
+    account = BackTestingAccount(starting_capital=10000, equity_split=1.75)
     prev_month_deposited = 0
 
-    # Iterate through lowest time frame of all strategies being ran. 267186 ~1 year. 21st Feb 2020: 346535.
-    for curr_dt, curr_candle in tqdm(m5[267186:346535:].iterrows()):
+    # Iterate through lowest time frame of all strategies being ran.
+    # March 2017: 144199, 267186 ~1 year. 21st Feb 2020: 346535.
+    for curr_dt, curr_candle in tqdm(m5[144199::].iterrows()):
         valid_labels = []
         spread = curr_candle['askOpen'] - curr_candle['bidOpen']
         idx = int(curr_candle['idx'])
@@ -252,7 +253,7 @@ def execute() -> Tuple[BackTestingAccount, List[float]]:
 
 if __name__ == '__main__':
     acc, bal = execute()
-    print('equity_split=2')
+    print('equity_split=1.75')
     print(acc)
     print(acc.get_individual_strategy_wins_losses(['1', '2', '3']))
     # print(acc.get_closed_trades())

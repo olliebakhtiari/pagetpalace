@@ -28,19 +28,19 @@ class SSLMultiTimeFrame:
         self._sl_adjusted_2 = []
 
     def check_and_adjust_stops(self, open_trades: List[dict], check_pct: float, move_pct: float, adjusted_count: int):
-        sa1 = self._sl_adjusted_1.copy()
-        sa2 = self._sl_adjusted_2.copy()
-        ids_already_processed = sa1 + sa2 if adjusted_count == 1 else sa2
+        ids_already_processed = self._sl_adjusted_1.copy() if adjusted_count == 1 else self._sl_adjusted_2.copy()
         for trade in open_trades:
             if trade['id'] not in ids_already_processed and self._check_pct_hit(trade, check_pct):
-                pass
+                # TODO: calculate new price to set.
+                new_stop_loss_price = self._calculate_new_price(trade=trade, pct=move_pct)
+                s.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
 
     def check_and_partially_close(
             self,
             open_trades: List[dict],
             check_pct: float,
             close_pct: float,
-            partial_close_count,
+            partial_close_count: int,
     ):
         """ [{
                 'id': '5',
@@ -78,18 +78,12 @@ class SSLMultiTimeFrame:
                 }
             }]
         """
-        pc1 = self._partially_closed_1.copy()
-        pc2 = self._partially_closed_1.copy()
-        ids_already_processed = pc1 + pc2 if partial_close_count == 1 else pc2
-        # TODO: convert close_pct to units.
-        #       - look at structure of trades, only append IDs to local lists.
+        ids_processed = self._partially_closed_1.copy() if partial_close_count == 1 else self._partially_closed_1.copy()
+        # TODO: convert close_pct to units for close_amount.
         for trade in open_trades:
-            if trade not in ids_already_processed and self._check_pct_hit(trade, check_pct):
-                # self.account.close_trade(trade_specifier=, close_amount=)
+            if trade not in ids_processed and self._check_pct_hit(trade, check_pct):
+                # self.account.close_trade(trade_specifier=trade['id'], close_amount=)
                 getattr(self, f'_partially_closed_{partial_close_count}').append(trade['id'])
-        pass
-
-    def _check_pct_hit(self, trade: dict, pct: float):
         pass
 
     def add_id_to_pending_orders(self, order: dict, strategy: str):
@@ -97,35 +91,40 @@ class SSLMultiTimeFrame:
 
     def sync_pending_orders(self, pending_orders_in_account: List[dict]):
         ids_in_account = [p_o['id'] for p_o in pending_orders_in_account]
-        for local_pending_list in [self._pending_orders_1, self._pending_orders_2]:
-            for id_ in local_pending_list:
+        for local_pending in [self._pending_orders_1, self._pending_orders_2]:
+            for id_ in local_pending:
                 if id_ not in ids_in_account:
-                    local_pending_list.remove(id_)
+                    local_pending.remove(id_)
 
-    def clean_partially_closed_lists(self, open_trade_ids: List[str]):
-        for local_pc_list in [self._partially_closed_1, self._partially_closed_2]:
-            for id_ in local_pc_list:
+    def clean_local_lists(self, open_trade_ids: List[str]):
+        for locals_ in [self._partially_closed_1, self._partially_closed_2, self._sl_adjusted_1, self._sl_adjusted_2]:
+            for id_ in locals_:
                 if id_ not in open_trade_ids:
-                    local_pc_list.remove(id_)
-
-    def clean_sl_adjusted_lists(self, open_trade_ids: List[str]):
-        for local_pc_list in [self._partially_closed_1, self._partially_closed_2]:
-            for id_ in local_pc_list:
-                if id_ not in open_trade_ids:
-                    local_pc_list.remove(id_)
+                    locals_.remove(id_)
 
     def clear_pending_orders(self, strategy: str):
         for id_ in getattr(self, f'_pending_orders_{strategy}'):
             self.account.cancel_order(id_)
 
-    def get_unit_size_per_trade(self, balance: float, total_margin_available: float, pending_orders: dict) -> float:
+    def get_unit_size_per_trade(self, account_data: dict) -> float:
+        # TODO: extract required data from full account details.
         margin_size = self._get_valid_margin_size(
-            margin_size=(balance * self.UNRESTRICTED_MARGIN_CAP) / 2,
-            usable_margin=self._margin_not_being_used_in_orders(total_margin_available, pending_orders),
-            balance=balance,
+            margin_size=(account_data['balance'] * self.UNRESTRICTED_MARGIN_CAP) / 1.75,
+            usable_margin=self._margin_not_being_used_in_orders(account_data),
+            balance=account_data['balance'],
         )
         # TODO: convert margin size to unit size.
 
+        return 1.
+
+    @classmethod
+    def _check_pct_hit(cls, trade: dict, pct: float) -> bool:
+        # TODO: calculate percentage of take profit targets being hit for long and short positions.
+        return True
+
+    @classmethod
+    def _calculate_new_price(cls, trade: dict, pct: float) -> float:
+        # TODO: calculate new price based of percentage of total target profit.
         return 1.
 
     @classmethod
@@ -139,11 +138,9 @@ class SSLMultiTimeFrame:
         return margin_size
 
     @classmethod
-    def _margin_not_being_used_in_orders(cls, total_margin_available: float, pending_orders: dict) -> float:
-        """ Available margin - margin in pending orders. """
-        margin_tied_to_pending = 1
-
-        return total_margin_available - margin_tied_to_pending
+    def _margin_not_being_used_in_orders(cls, account_data: dict) -> float:
+        # TODO: Available margin - margin in pending orders.
+        return 1.
 
     @classmethod
     def get_data(cls) -> dict:
@@ -239,9 +236,9 @@ class SSLMultiTimeFrame:
         prev_2_entry = 0
         while 1:
             now = datetime.datetime.now().astimezone(london_tz)
-            pending_orders = self.account.get_pending_orders()['orders']
+            full_account_details = s.account.get_full_account_details()['account']
+            pending_orders = full_account_details['orders']
             self.sync_pending_orders(pending_orders)
-            account_summary = s.account.get_summary()['account']
             if now.minute % 5 == 0 and now.minute != prev_exec:
                 data = self.get_data()
                 signals = self.get_signals(data)
@@ -270,11 +267,7 @@ class SSLMultiTimeFrame:
                 # New orders.
                 for strategy, signal in signals.items():
                     compare_signals = entry_signals_to_check[strategy]
-                    units = self.get_unit_size_per_trade(
-                        balance=float(account_summary['balance']),
-                        total_margin_available=float(account_summary['marginAvailable']),
-                        pending_orders=pending_orders,
-                    )
+                    units = self.get_unit_size_per_trade(full_account_details)
                     if units \
                             and signal \
                             and compare_signals['previous'] != compare_signals['current']:
@@ -295,22 +288,27 @@ class SSLMultiTimeFrame:
                 prev_exec = now.minute
                 prev_1_entry = signals['1']
                 prev_2_entry = signals['2']
-            if account_summary['openTradeCount'] > 0 or account_summary['openPositionCount'] > 0:
-                open_trades = self.account.get_open_trades()['trades']
+            if full_account_details['account']['openTradeCount']:
+                open_trades = full_account_details['trades']
                 self.check_and_partially_close(open_trades, check_pct=0.35, close_pct=0.5, partial_close_count=1)
                 self.check_and_partially_close(open_trades, check_pct=0.65, close_pct=0.7, partial_close_count=2)
                 self.check_and_adjust_stops(open_trades, check_pct=0.35, move_pct=0.01, adjusted_count=1)
                 self.check_and_adjust_stops(open_trades, check_pct=0.65, move_pct=0.35, adjusted_count=2)
             if now.hour % 24 == 0:
-                open_trade_ids = [t['id'] for t in self.account.get_open_trades()['trades']]
-                self.clean_partially_closed_lists(open_trade_ids)
-                self.clean_sl_adjusted_lists(open_trade_ids)
+                open_trade_ids = [t['id'] for t in full_account_details['trades']]
+                self.clean_local_lists(open_trade_ids)
 
 
 if __name__ == '__main__':
     s = SSLMultiTimeFrame(
         Account(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
+    # d = s.account.get_full_account_details()
+    # print(d['account']['trades'])
+    print(s.account.update_stop_loss(
+        trade_specifier='5',
+        price=3000.1,
+    ))
     # s.execute()
     # summary = s.account.get_summary()
     # print(summary)

@@ -1,3 +1,6 @@
+# Python standard.
+import json
+
 # Local.
 from src.request import RequestMixin
 from settings import OANDA_DOMAINS
@@ -26,7 +29,7 @@ class Account(RequestMixin):
     def __str__(self):
         return f'{self.account_id} - {self.account_type}'
 
-    def get_current_orders_and_positions(self) -> dict:
+    def get_full_account_details(self) -> dict:
         """ Get full details for an Account client has access to. Full pending orders, open trades and open positions.
 
         :return:
@@ -69,7 +72,7 @@ class Account(RequestMixin):
         """
         return self._request(endpoint='openTrades')
 
-    def close_trade(self, trade_specifier, close_amount="ALL") -> dict:
+    def close_trade(self, trade_specifier: str, close_amount: str = "ALL") -> dict:
         """ Close (partially or fully) a specific open trade in an account.
 
         :return:
@@ -77,10 +80,32 @@ class Account(RequestMixin):
         return self._request(
             endpoint=f'trades/{trade_specifier}/close',
             method='PUT',
-            data={"units": close_amount},
+            data=json.dumps({"units": close_amount}),
         )
 
-    def update_orders(self, trade_specifier, take_profit, stop_loss, trailing_stop_loss) -> dict:
+    def update_stop_loss(self, trade_specifier: str, price: float):
+        """ Create, replace or cancel a trade's dependent orders. Stop loss only.
+
+        :return:
+        """
+        return self._request(
+            endpoint=f'trades/{trade_specifier}/orders',
+            method='PUT',
+            data=json.dumps({"stopLoss": {"timeInForce": "GTC", "price": f"{price}"}}),
+        )
+
+    def update_take_profit(self, trade_specifier: str, price: float):
+        """ Create, replace or cancel a trade's dependent orders. Take profit only.
+
+        :return:
+        """
+        return self._request(
+            endpoint=f'trades/{trade_specifier}/orders',
+            method='PUT',
+            data=json.dumps({"takeProfit": {"timeInForce": "GTC", "price": f"{price}"}}),
+        )
+
+    def update_dependent_orders(self, trade_specifier: str, take_profit_price: float, stop_loss_price: float) -> dict:
         """ Create, replace or cancel a trade's dependent orders (Take Profit, Stop Loss and Trailing Stop Loss) through
             the trade itself.
 
@@ -89,11 +114,10 @@ class Account(RequestMixin):
         return self._request(
             endpoint=f'trades/{trade_specifier}/orders',
             method='PUT',
-            data={
-                "takeProfit": take_profit,
-                "stopLoss": stop_loss,
-                "trailingStopLoss": trailing_stop_loss,
-            },
+            data=json.dumps({
+                "takeProfit": {"timeInForce": "GTC", "price": f"{take_profit_price}"},
+                "stopLoss": {"timeInForce": "GTC", "price": f"{stop_loss_price}"},
+            }),
         )
 
     def get_all_positions(self) -> dict:
