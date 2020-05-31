@@ -96,17 +96,23 @@ class SSLMultiTimeFrame:
         getattr(self, f'_pending_orders_{strategy}').append(order['orderCreateTransaction']['id'])
 
     def sync_pending_orders(self, pending_orders_in_account: List[dict]):
-        account_ids = [p_o['id'] for p_o in pending_orders_in_account]
+        ids_in_account = [p_o['id'] for p_o in pending_orders_in_account]
         for local_pending_list in [self._pending_orders_1, self._pending_orders_2]:
             for id_ in local_pending_list:
-                if id_ not in account_ids:
+                if id_ not in ids_in_account:
                     local_pending_list.remove(id_)
 
-    def sync_partially_closed_lists(self, open_trades: List[dict]):
-        pass
+    def clean_partially_closed_lists(self, open_trade_ids: List[str]):
+        for local_pc_list in [self._partially_closed_1, self._partially_closed_2]:
+            for id_ in local_pc_list:
+                if id_ not in open_trade_ids:
+                    local_pc_list.remove(id_)
 
-    def sync_sl_adjusted_lists(self, open_trades: List[dict]):
-        pass
+    def clean_sl_adjusted_lists(self, open_trade_ids: List[str]):
+        for local_pc_list in [self._partially_closed_1, self._partially_closed_2]:
+            for id_ in local_pc_list:
+                if id_ not in open_trade_ids:
+                    local_pc_list.remove(id_)
 
     def clear_pending_orders(self, strategy: str):
         for id_ in getattr(self, f'_pending_orders_{strategy}'):
@@ -295,10 +301,10 @@ class SSLMultiTimeFrame:
                 self.check_and_partially_close(open_trades, check_pct=0.65, close_pct=0.7, partial_close_count=2)
                 self.check_and_adjust_stops(open_trades, check_pct=0.35, move_pct=0.01, adjusted_count=1)
                 self.check_and_adjust_stops(open_trades, check_pct=0.65, move_pct=0.35, adjusted_count=2)
-            if now.hour % 4 == 0:
-                open_trades = self.account.get_open_trades()['trades']
-                self.sync_partially_closed_lists(open_trades)
-                self.sync_sl_adjusted_lists(open_trades)
+            if now.hour % 24 == 0:
+                open_trade_ids = [t['id'] for t in self.account.get_open_trades()['trades']]
+                self.clean_partially_closed_lists(open_trade_ids)
+                self.clean_sl_adjusted_lists(open_trade_ids)
 
 
 if __name__ == '__main__':
