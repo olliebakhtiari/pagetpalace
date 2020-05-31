@@ -21,25 +21,43 @@ class SSLMultiTimeFrame:
         self.account = account
         self._pending_orders_1 = []
         self._pending_orders_2 = []
-        self._partially_closed_once = []
-        self._partially_closed_twice = []
+        self._partially_closed_1 = []
+        self._partially_closed_2 = []
         self._sl_moved_once = []
         self._sl_moved_twice = []
 
-    def check_and_adjust_stops(self):
+    def check_and_adjust_stops(self, open_trades: dict, check_pct: float, move_pct: float, adjusted_count: int):
+        for trade in open_trades:
+            pass
+
+    def check_and_partially_close(self, open_trades: dict, check_pct: float, close_pct: float, partial_close_count):
+        partial_close_once = self._partially_closed_1.copy()
+        partial_close_twice = self._partially_closed_1.copy()
+        list_to_check = partial_close_once + partial_close_twice if partial_close_count == 1 else partial_close_twice
+        # TODO: convert close_pct to units.
+        #       - look at structure of trades, only append IDs to local lists.
+        for trade in open_trades:
+            if trade not in list_to_check and self.check_pct_hit(trade):
+                self.account.close_trade(trade_specifier=, close_amount=)
+                getattr(self, f'_partially_closed_{partial_close_count}').append(trade)
         pass
 
-    def check_and_partially_close_profits(self):
+    def check_pct_hit(self, trade: dict):
         pass
+
+    def add_to_pending_orders(self, order: dict, strategy: str):
+        # TODO: only add IDs to local lists.
+        getattr(self, f'_pending_orders_{strategy}').append(order)
 
     def sync_pending_orders(self, pending_orders_in_account: dict):
+        # TODO: only add IDs to local lists.
         for local_pending_list in [self._pending_orders_1, self._pending_orders_2]:
             for id_ in local_pending_list:
-                if id_ not in pending_orders_in_account:
+                if id_ not in pending_orders_in_account: # TODO: make this list of IDs.
                     local_pending_list.remove(id_)
 
     def delete_invalid_pending_orders(self, strategy: str):
-        for id_ in getattr(self, f'pending_orders_{strategy}'):
+        for id_ in getattr(self, f'_pending_orders_{strategy}'):
             self.account.cancel_order(id_)
 
     def get_unit_size_per_trade(self, balance: float, total_margin_available: float, pending_orders: dict) -> float:
@@ -164,11 +182,11 @@ class SSLMultiTimeFrame:
         while 1:
             now = datetime.datetime.now().astimezone(london_tz)
             pending_orders = self.account.get_pending_orders()
+            self.sync_pending_orders(pending_orders)
             account_summary = s.account.get_summary()['account']
             if now.minute % 5 == 0 and now.minute != prev_exec:
                 data = self.get_data()
                 signals = self.get_signals(data)
-
                 strategy_atr_values = self.get_atr_values(data)
                 strategy_entry_offsets = {
                     '1': strategy_atr_values['1'] / 5,
@@ -205,7 +223,7 @@ class SSLMultiTimeFrame:
                         sl_pip_amount = strategy_atr_values[strategy] * 3.25
                         if units > 0:
                             tp_pip_amount = sl_pip_amount * 2.
-                            order = self.construct_order(
+                            order_schema = self.construct_order(
                                 signal=signal,
                                 ask_high=data['M5']['askHigh'],
                                 bid_low=data['M5']['bidLow'],
@@ -214,14 +232,17 @@ class SSLMultiTimeFrame:
                                 sl_pip_amount=sl_pip_amount,
                                 units=units,
                             )
-                            self.account.create_order(order)
+                            pending_order = self.account.create_order(order_schema)
+                            self.add_to_pending_orders(pending_order, strategy)
                 prev_exec = now.minute
                 prev_1_entry = signals['1']
                 prev_2_entry = signals['2']
             if account_summary['openTradeCount'] > 0 or account_summary['openPositionCount'] > 0:
-                self.check_and_partially_close_profits()
-                self.check_and_adjust_stops()
-            self.sync_pending_orders(pending_orders)
+                open_trades = self.account.get_open_trades()
+                self.check_and_partially_close(open_trades, check_pct=0.35, close_pct=0.5, partial_close_count=1)
+                self.check_and_partially_close(open_trades, check_pct=0.65, close_pct=0.7, partial_close_count=2)
+                self.check_and_adjust_stops(open_trades, check_pct=0.35, move_pct=0.01, adjusted_count=1)
+                self.check_and_adjust_stops(open_trades, check_pct=0.65, move_pct=0.35, adjusted_count=2)
 
 
 if __name__ == '__main__':
