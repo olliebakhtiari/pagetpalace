@@ -21,7 +21,7 @@ class SSLMultiTimeFrame:
 
     def __init__(self, account: OandaAccount):
         self.account = account
-        self.pricing = OandaPricingData(
+        self._pricing = OandaPricingData(
             account_id=account.account_id,
             access_token=account.access_token,
             account_type=account.account_type,
@@ -130,6 +130,11 @@ class SSLMultiTimeFrame:
         # TODO: convert margin size to unit size.
 
         return 1.
+
+    def get_prices_to_check(self) -> dict:
+        latest_5s_prices = self._pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
+
+        return {'ask': latest_5s_prices['ask']['l'], 'bid': latest_5s_prices['bid']['h']}
 
     @classmethod
     def _check_pct_hit(cls, price: float, trade: dict, pct: float) -> bool:
@@ -330,8 +335,7 @@ class SSLMultiTimeFrame:
                 prev_2_entry = signals['2']
             if full_account_details['openTradeCount'] > 0:
                 open_trades = s.account.get_open_trades()['trades']
-                latest_prices = self.pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
-                prices_to_check = {'ask': latest_prices['ask']['l'], 'bid': latest_prices['bid']['h']}
+                prices_to_check = self.get_prices_to_check()
                 for args in [(0.35, 0.5, 1), (0.65, 0.7, 2)]:
                     self.check_and_partially_close(
                         prices=prices_to_check,
@@ -357,7 +361,7 @@ if __name__ == '__main__':
     s = SSLMultiTimeFrame(
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
-    print(s.pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1])
+    print(s.get_prices_to_check())
     # d = s.account.get_full_account_details()['account']
     # print(d['orders'])
     # print(d['trades'])
