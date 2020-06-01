@@ -43,7 +43,8 @@ class SSLMultiTimeFrame:
     ):
         ids_already_processed = self._sl_adjusted_1.copy() if adjusted_count == 1 else self._sl_adjusted_2.copy()
         for trade in open_trades:
-            if trade['id'] not in ids_already_processed and self._check_pct_hit(price, trade, check_pct):
+            if trade['id'] not in ids_already_processed and self._check_pct_hit(prices, trade, check_pct):
+
                 # TODO: calculate new price to set.
                 new_stop_loss_price = self._calculate_new_price(trade=trade, pct=move_pct)
                 s.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
@@ -95,7 +96,7 @@ class SSLMultiTimeFrame:
         ids_processed = self._partially_closed_1.copy() if partial_close_count == 1 else self._partially_closed_1.copy()
         # TODO: convert close_pct to units for close_amount.
         for trade in open_trades:
-            if trade not in ids_processed and self._check_pct_hit(trade, check_pct):
+            if trade not in ids_processed and self._check_pct_hit(prices, trade, check_pct):
                 # self.account.close_trade(trade_specifier=trade['id'], close_amount=)
                 getattr(self, f'_partially_closed_{partial_close_count}').append(trade['id'])
         pass
@@ -134,15 +135,15 @@ class SSLMultiTimeFrame:
     def get_prices_to_check(self) -> dict:
         latest_5s_prices = self._pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
 
-        return {'ask': latest_5s_prices['ask']['l'], 'bid': latest_5s_prices['bid']['h']}
+        return {'ask_low': latest_5s_prices['ask']['l'], 'bid_high': latest_5s_prices['bid']['h']}
 
     @classmethod
-    def _check_pct_hit(cls, price: float, trade: dict, pct: float) -> bool:
+    def _check_pct_hit(cls, prices: dict, trade: dict, pct: float) -> bool:
         has_hit = False
         if trade['currentUnits'] > 0:
-            has_hit = cls._check_long_pct_hit(price, trade, pct)
+            has_hit = cls._check_long_pct_hit(prices['bid_high'], trade, pct)
         elif trade['currentUnits'] < 0:
-            has_hit = cls._check_short_pct_hit(price, trade, pct)
+            has_hit = cls._check_short_pct_hit(prices['ask_low'], trade, pct)
 
         return has_hit
 
