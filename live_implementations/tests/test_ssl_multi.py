@@ -2,12 +2,15 @@
 import unittest
 
 # Local.
+from src.oanda_account import Account
 from live_implementations.ssl_multi_time_frame import SSLMultiTimeFrame
 
 
 class TestSSLMulti(unittest.TestCase):
     def setUp(self):
-        pass
+        self.s = SSLMultiTimeFrame(
+            Account(account_id='DEMO_V20_ACCOUNT_NUMBER', access_token='DEMO_ACCESS_TOKEN', account_type='DEMO_API')
+        )
 
     def test_check_and_adjust_stops(self):
         pass

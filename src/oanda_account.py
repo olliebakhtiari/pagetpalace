@@ -3,19 +3,17 @@ import json
 
 # Local.
 from src.request import RequestMixin
-from settings import OANDA_DOMAINS
+from settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 
-class Account(RequestMixin):
-    PROTOCOL = 'https://'
-    VERSION = 'v3'
+class OandaAccount(RequestMixin):
 
     def __init__(self, access_token: str, account_id: str, account_type: str):
         self.account_type = account_type
         self.domain = OANDA_DOMAINS[self.account_type]  # LIVE-API or DEMO-API.
         self.auth_token = access_token
         self.account_id = account_id
-        self.url = f'{self.PROTOCOL}{self.domain}/{self.VERSION}/accounts/{account_id}'
+        self.url = f'{PROTOCOL}{self.domain}/{OANDA_API_VERSION}/accounts/{account_id}'
         self.default_headers = {
                 'Authorization': f'Bearer {self.auth_token}',
                 'X-Accept-Datetime-Format': 'unix',

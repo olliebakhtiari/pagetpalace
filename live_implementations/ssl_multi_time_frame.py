@@ -7,10 +7,11 @@ from typing import List
 import pytz
 
 # Local.
-from src.account import Account
-from src.orders import create_market_if_touched_order
+from src.oanda_account import OandaAccount
+from src.oanda_pricing import OandaPricingData
+from src.oanda_orders import create_market_if_touched_order
 from src.indicators import get_ssl_value, append_average_true_range
-from src.oanda_data import OandaInstrumentData
+from src.oanda_instrument import OandaInstrumentData
 from settings import DEMO_V20_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
 from tools.logger import *
 
@@ -18,8 +19,13 @@ from tools.logger import *
 class SSLMultiTimeFrame:
     UNRESTRICTED_MARGIN_CAP = 0.9
 
-    def __init__(self, account: Account):
+    def __init__(self, account: OandaAccount):
         self.account = account
+        self.pricing = OandaPricingData(
+            account_id=account.account_id,
+            access_token=account.access_token,
+            account_type=account.account_type,
+        )
         self._pending_orders_1 = []
         self._pending_orders_2 = []
         self._partially_closed_1 = []
@@ -27,16 +33,24 @@ class SSLMultiTimeFrame:
         self._sl_adjusted_1 = []
         self._sl_adjusted_2 = []
 
-    def check_and_adjust_stops(self, open_trades: List[dict], check_pct: float, move_pct: float, adjusted_count: int):
+    def check_and_adjust_stops(
+            self,
+            prices: dict,
+            open_trades: List[dict],
+            check_pct: float,
+            move_pct: float,
+            adjusted_count: int,
+    ):
         ids_already_processed = self._sl_adjusted_1.copy() if adjusted_count == 1 else self._sl_adjusted_2.copy()
         for trade in open_trades:
-            if trade['id'] not in ids_already_processed and self._check_pct_hit(trade, check_pct):
+            if trade['id'] not in ids_already_processed and self._check_pct_hit(price, trade, check_pct):
                 # TODO: calculate new price to set.
                 new_stop_loss_price = self._calculate_new_price(trade=trade, pct=move_pct)
                 s.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
 
     def check_and_partially_close(
             self,
+            prices: dict,
             open_trades: List[dict],
             check_pct: float,
             close_pct: float,
@@ -118,9 +132,28 @@ class SSLMultiTimeFrame:
         return 1.
 
     @classmethod
-    def _check_pct_hit(cls, trade: dict, pct: float) -> bool:
-        # TODO: calculate percentage of take profit targets being hit for long and short positions.
-        return True
+    def _check_pct_hit(cls, price: float, trade: dict, pct: float) -> bool:
+        has_hit = False
+        if trade['currentUnits'] > 0:
+            has_hit = cls._check_long_pct_hit(price, trade, pct)
+        elif trade['currentUnits'] < 0:
+            has_hit = cls._check_short_pct_hit(price, trade, pct)
+
+        return has_hit
+
+    @classmethod
+    def _check_long_pct_hit(cls, price: float, trade: dict, pct: float):
+        full_target_pips = trade['takeProfitOrder']['price'] - trade['price']
+        pct_target_pips = full_target_pips * pct
+
+        return price >= round((trade['price'] + pct_target_pips), 1)
+
+    @classmethod
+    def _check_short_pct_hit(cls, price: float, trade: dict, pct: float):
+        full_target_pips = trade['price'] - trade['takeProfitOrder']['price']
+        pct_target_pips = full_target_pips * pct
+
+        return price <= round((trade['price'] - pct_target_pips), 1)
 
     @classmethod
     def _calculate_new_price(cls, trade: dict, pct: float) -> float:
@@ -140,7 +173,14 @@ class SSLMultiTimeFrame:
     @classmethod
     def _margin_not_being_used_in_orders(cls, account_data: dict) -> float:
         # TODO: Available margin - margin in pending orders.
-        return 1.
+        units_pending = 0
+        for order in account_data['orders']:
+            units_in_order = order.get('units')
+            if units_in_order:
+                units_pending += abs(int(units_in_order))
+        # TODO: convert units to pounds.
+
+        return units_pending
 
     @classmethod
     def get_data(cls) -> dict:
@@ -288,12 +328,26 @@ class SSLMultiTimeFrame:
                 prev_exec = now.minute
                 prev_1_entry = signals['1']
                 prev_2_entry = signals['2']
-            if full_account_details['account']['openTradeCount']:
-                open_trades = full_account_details['trades']
-                self.check_and_partially_close(open_trades, check_pct=0.35, close_pct=0.5, partial_close_count=1)
-                self.check_and_partially_close(open_trades, check_pct=0.65, close_pct=0.7, partial_close_count=2)
-                self.check_and_adjust_stops(open_trades, check_pct=0.35, move_pct=0.01, adjusted_count=1)
-                self.check_and_adjust_stops(open_trades, check_pct=0.65, move_pct=0.35, adjusted_count=2)
+            if full_account_details['openTradeCount'] > 0:
+                open_trades = s.account.get_open_trades()['trades']
+                latest_prices = self.pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
+                prices_to_check = {'ask': latest_prices['ask']['l'], 'bid': latest_prices['bid']['h']}
+                for args in [(0.35, 0.5, 1), (0.65, 0.7, 2)]:
+                    self.check_and_partially_close(
+                        prices=prices_to_check,
+                        open_trades=open_trades,
+                        check_pct=args[0],
+                        close_pct=args[1],
+                        partial_close_count=args[2],
+                    )
+                for args in [(0.35, 0.01, 1), (0.65, 0.35, 2)]:
+                    self.check_and_adjust_stops(
+                        prices=prices_to_check,
+                        open_trades=open_trades,
+                        check_pct=args[0],
+                        move_pct=args[1],
+                        adjusted_count=args[2],
+                    )
             if now.hour % 24 == 0:
                 open_trade_ids = [t['id'] for t in full_account_details['trades']]
                 self.clean_local_lists(open_trade_ids)
@@ -301,30 +355,31 @@ class SSLMultiTimeFrame:
 
 if __name__ == '__main__':
     s = SSLMultiTimeFrame(
-        Account(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
+        OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
-    # d = s.account.get_full_account_details()
-    # print(d['account']['trades'])
-    print(s.account.update_stop_loss(
-        trade_specifier='5',
-        price=3000.1,
-    ))
+    opd = OandaPricingData(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
+    print(opd.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1])
+    # d = s.account.get_full_account_details()['account']
+    # print(d['orders'])
+    # print(d['trades'])
+    # print(d['positions'])
+    # print(s.account.update_stop_loss(
+    #     trade_specifier='5',
+    #     price=3000.1,
+    # ))
     # s.execute()
-    # summary = s.account.get_summary()
-    # print(summary)
     # order = s.construct_order(
-    #     signal='short',
-    #     ask_high=3062,
-    #     bid_low=3061,
+    #     signal='long',
+    #     ask_high=3070,
+    #     bid_low=3051,
     #     entry_offset=20,
     #     tp_pip_amount=100,
     #     sl_pip_amount=100,
     #     units=1,
     # )
-    # print(order)
     # o = s.account.create_order(order)
     # print(s.account.cancel_order('12'))
     # orders = s.account.get_pending_orders()
     # for order in orders['orders']:
     #     print(order)
-    # print(s.account.get_open_trades())
+    # print(s.account.get_open_trades()['trades'])
