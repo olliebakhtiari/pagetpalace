@@ -3,8 +3,41 @@
   <component name="ChangeListManager">
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/oanda_instrument.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_instrument.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/datetime_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/account.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/orders.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_multi_timeframe_multi_strat.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/results/ssl_single_strat_2_timeframe.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/results/stochastics_results.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_multi_timeframe_multi_strat.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/ssl_single_strat_2_timeframe.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/stochastics.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/strategies/triple_timeframe_stoch.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/tests/test_account.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtesting/tests/test_order.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/fxcm/GBPUSD_Candlestick_Daily_BID.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/fxcm/GBPUSD_Candlestick_Hourly_BID.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/fxcm/GBPUSD_Candlestick_Minutely_BID.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/fxcm/GBPUSD_Candlestick_Monthly_BID.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/fxcm/GBPUSD_Candlestick_Weekly_BID.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_D.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_H1.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_H4.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_M15.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/GBP_USD/GBPUSD_M5.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/NAS100_USD/NAS100USD_D.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/NAS100_USD/NAS100USD_H1.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/NAS100_USD/NAS100USD_H4.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/NAS100_USD/NAS100USD_M15.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/NAS100_USD/NAS100USD_M5.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_D.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_H1.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_H4.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_M15.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/oanda/SPX500_USD/SPX500USD_M5.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/indicators.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/indicators.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/data_operations.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/datetime_utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/plot.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
