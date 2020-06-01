@@ -94,12 +94,11 @@ class SSLMultiTimeFrame:
             }]
         """
         ids_processed = self._partially_closed_1.copy() if partial_close_count == 1 else self._partially_closed_1.copy()
-        # TODO: convert close_pct to units for close_amount.
         for trade in open_trades:
             if trade not in ids_processed and self._check_pct_hit(prices, trade, check_pct):
-                # self.account.close_trade(trade_specifier=trade['id'], close_amount=)
+                to_close = round(float(trade['currentUnits']) * close_pct) or 1
+                self.account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
                 getattr(self, f'_partially_closed_{partial_close_count}').append(trade['id'])
-        pass
 
     def add_id_to_pending_orders(self, order: dict, strategy: str):
         getattr(self, f'_pending_orders_{strategy}').append(order['orderCreateTransaction']['id'])
