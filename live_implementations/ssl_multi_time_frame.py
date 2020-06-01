@@ -357,8 +357,7 @@ if __name__ == '__main__':
     s = SSLMultiTimeFrame(
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
-    opd = OandaPricingData(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
-    print(opd.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1])
+    print(s.pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1])
     # d = s.account.get_full_account_details()['account']
     # print(d['orders'])
     # print(d['trades'])

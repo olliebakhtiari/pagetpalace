@@ -9,7 +9,7 @@ import pandas as pd
 # Local.
 from src.request import RequestMixin
 from settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
-from tools.data_operations import remove_duplicate_datetimes_from_csv
+from tools.file_operations import remove_duplicate_datetimes_from_csv
 from tools.logger import *
 
 
