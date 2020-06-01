@@ -9,7 +9,6 @@ import pandas as pd
 # Local.
 from src.request import RequestMixin
 from settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
-from tools.datetime_utils import get_days_in_months, is_leap_year
 from tools.data_operations import remove_duplicate_datetimes_from_csv
 from tools.logger import *
 
@@ -143,11 +142,44 @@ class OandaInstrumentData(RequestMixin):
         return pd.DataFrame(data=data, columns=headers)
 
     @classmethod
+    def get_days_in_months(cls) -> dict:
+        return {
+            1: 31,
+            2: 28,  # account for leap year when using.
+            3: 31,
+            4: 30,
+            5: 31,
+            6: 30,
+            7: 31,
+            8: 31,
+            9: 30,
+            10: 31,
+            11: 30,
+            12: 31,
+        }
+
+    @classmethod
+    def is_leap_year(cls, year: int) -> bool:
+        return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+    @classmethod
     def calculate_end_date(cls, year: int, month: int, day: int):
         end_dt = datetime.datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
         td = datetime.timedelta(days=1)
 
         return str(end_dt + td).replace(' ', 'T')
+
+    def get_from_and_to_dates(self, year: int, month: int, end_day: int) -> List[dict]:
+        return [
+            {
+                'from': f'{year}-{month:02}-01T00:00:00.000000000Z',
+                'to': f'{year}-{month:02}-15T00:00:00.000000000Z',
+            },
+            {
+                'from': f'{year}-{month:02}-15T00:00:00.000000000Z',
+                'to': f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
+            },
+        ]
 
     def write_candles_to_csv(
             self,
@@ -156,9 +188,9 @@ class OandaInstrumentData(RequestMixin):
             output_loc: str,
             start_year: int,
             end_year: int,
-            prices: str
+            prices: str,
     ):
-        days_in_month = get_days_in_months()
+        days_in_month = self.get_days_in_months()
         now = datetime.datetime.now()
         candles = []
         for year in range(start_year, end_year + 1):
@@ -167,20 +199,11 @@ class OandaInstrumentData(RequestMixin):
                     end_day = days_in_month[month]
 
                     # leap year for feb.
-                    if is_leap_year(year) and month == 2:
+                    if self.is_leap_year(year) and month == 2:
                         end_day = 29
 
                     # Split in two halves as capped at 5000 candles per request.
-                    from_and_to_dates = [
-                        {
-                            'from': f'{year}-{month:02}-01T00:00:00.000000000Z',
-                            'to': f'{year}-{month:02}-15T00:00:00.000000000Z',
-                        },
-                        {
-                            'from': f'{year}-{month:02}-15T00:00:00.000000000Z',
-                            'to': f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
-                        },
-                    ]
+                    from_and_to_dates = self.get_from_and_to_dates(year, month, end_day)
                     for dates in from_and_to_dates:
                         resp = self.get_candlesticks(
                             instrument=instrument,
