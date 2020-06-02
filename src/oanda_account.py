@@ -7,6 +7,7 @@ from settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 
 class OandaAccount(RequestMixin):
+    MARGIN_RATIO = 30  # 30:1
 
     def __init__(self, access_token: str, account_id: str, account_type: str):
         self.account_type = account_type

@@ -1,6 +1,7 @@
 # Python standard.
 import concurrent.futures
 import datetime
+import math
 from typing import List
 
 # Third-party.
@@ -32,6 +33,7 @@ class SSLMultiTimeFrame:
         self._partially_closed_2 = []
         self._sl_adjusted_1 = []
         self._sl_adjusted_2 = []
+        self._last_spx500_gbp_price = 2450  # Set rough fall back price if can't get latest.
 
     def check_and_adjust_stops(
             self,
@@ -187,6 +189,26 @@ class SSLMultiTimeFrame:
 
         return units_pending
 
+    def _get_latest_spx500_gbp_price(self, retry_count: int = 0):
+        price = self._last_spx500_gbp_price
+        spx500_gbp = self._pricing.get_pricing_info(instruments=['SPX500_GBP'], include_home_conversions=False)
+        if not spx500_gbp['prices'] and retry_count < 5:
+            self._get_latest_spx500_gbp_price(retry_count=retry_count + 1)
+        elif spx500_gbp['prices']:
+            price = spx500_gbp['prices'][0]['bids'][0]['price']
+            self._last_spx500_gbp_price = price
+
+        return float(price)
+
+    def _convert_units_to_gbp(self, units: int):
+        pass
+
+    def _convert_gbp_to_max_num_units(self, margin: float):
+        """ https://www1.oanda.com/forex-trading/analysis/currency-units-calculator
+            Margin Available * (Margin Ratio) / (BASE/HOME Currency Exchange Rate)
+        """
+        return math.floor(margin * self.account.MARGIN_RATIO / self._get_latest_spx500_gbp_price())
+
     @classmethod
     def get_data(cls) -> dict:
         od = OandaInstrumentData()
@@ -269,10 +291,6 @@ class SSLMultiTimeFrame:
             units = units * -1
 
         return create_market_if_touched_order(entry=entry, sl=sl, tp=tp, instrument='SPX500_USD', units=units)
-
-    @classmethod
-    def monitor_and_adjust_orders(cls):
-        pass
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
@@ -361,8 +379,12 @@ if __name__ == '__main__':
     s = SSLMultiTimeFrame(
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
-    print(s.get_prices_to_check())
+    # print(s.get_prices_to_check())
     # d = s.account.get_full_account_details()['account']
+    # print(d)
+    # ins = s.account.get_tradeable_instruments()['instruments']
+    # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
+    print(s._convert_gbp_to_max_num_units(1000))
     # print(d['orders'])
     # print(d['trades'])
     # print(d['positions'])

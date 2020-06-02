@@ -1,3 +1,7 @@
+# Python standard.
+import datetime
+from typing import List
+
 # Local.
 from src.oanda_account import OandaAccount
 
@@ -33,8 +37,19 @@ class OandaPricingData(OandaAccount):
 
         return self._request(endpoint='candles/latest', params=params)
 
-    def get_pricing_info(self) -> dict:
-        """ Get pricing information for a specified list of instruments within an Account. """
+    def get_pricing_info(self, instruments: List[str], since: str = '', include_home_conversions: bool = False) -> dict:
+        """ Get pricing information for a specified list of instruments within an Account.
+            since: “YYYY-MM-DDTHH:MM:SS.nnnnnnnnnZ”
+        """
+        if not since:
+            td = datetime.timedelta(hours=2)
+            dt = datetime.datetime.now() - td
+            since = f'{dt.year}-{dt.month:02}-{dt.day:02}T{dt.hour:02}:{dt.minute:02}:{dt.second:02}.000000000Z'
+        params = {
+            "instruments": f"{','.join(instruments)}",
+            "since": since,
+            "includeHomeConversions": include_home_conversions,
+        }
 
-        return self._request(endpoint='pricing')
+        return self._request(endpoint='pricing', params=params)
 

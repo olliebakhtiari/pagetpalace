@@ -2,14 +2,14 @@
 import unittest
 
 # Local.
-from src.oanda_account import Account
+from src.oanda_account import OandaAccount
 from live_implementations.ssl_multi_time_frame import SSLMultiTimeFrame
 
 
 class TestSSLMulti(unittest.TestCase):
     def setUp(self):
         self.s = SSLMultiTimeFrame(
-            Account(account_id='DEMO_V20_ACCOUNT_NUMBER', access_token='DEMO_ACCESS_TOKEN', account_type='DEMO_API')
+            OandaAccount(account_id='', access_token='', account_type='')
         )
 
     def test_check_and_adjust_stops(self):
@@ -37,6 +37,9 @@ class TestSSLMulti(unittest.TestCase):
         pass
 
     def test_add_id_to_pending_orders(self):
+        pass
+
+    def test_convert_gbp_to_max_num_units(self):
         pass
 
 
