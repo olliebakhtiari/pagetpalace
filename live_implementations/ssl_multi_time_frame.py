@@ -105,24 +105,24 @@ class SSLMultiTimeFrame:
 
     def _check_pct_hit(self, prices: Dict[str, float], trade: dict, pct: float) -> bool:
         has_hit = False
-        if trade['currentUnits'] > 0:
+        if int(trade['currentUnits']) > 0:
             has_hit = self._check_long_pct_hit(prices['bid_high'], trade, pct)
-        elif trade['currentUnits'] < 0:
+        elif int(trade['currentUnits']) < 0:
             has_hit = self._check_short_pct_hit(prices['ask_low'], trade, pct)
 
         return has_hit
 
     def _check_long_pct_hit(self, price: float, trade: dict, pct: float):
-        return price >= round((trade['price'] + self._get_long_trade_pct_target_pips(trade, pct)), 1)
+        return price >= round((float(trade['price']) + self._get_long_trade_pct_target_pips(trade, pct)), 1)
 
     def _check_short_pct_hit(self, price: float, trade: dict, pct: float):
-        return price <= round((trade['price'] - self._get_short_trade_pct_target_pips(trade, pct)), 1)
+        return price <= round((float(trade['price']) - self._get_short_trade_pct_target_pips(trade, pct)), 1)
 
     def _calculate_new_sl_price(self, trade: dict, pct: float) -> float:
         price = trade['price']
-        if trade['currentUnits'] > 0:
+        if int(trade['currentUnits']) > 0:
             price = self._calculate_new_long_sl(trade, pct)
-        elif trade['currentUnits'] < 0:
+        elif int(trade['currentUnits']) < 0:
             price = self._calculate_new_short_sl(trade, pct)
 
         return float(price)
@@ -158,9 +158,6 @@ class SSLMultiTimeFrame:
         return round((self._get_latest_spx500_gbp_price() * units) / self.MARGIN_RATIO, 4)
 
     def _convert_gbp_to_max_num_units(self, margin: float) -> int:
-        """ https://www1.oanda.com/forex-trading/analysis/currency-units-calculator
-            Margin Available * (Margin Ratio) / (BASE/HOME Currency Exchange Rate)
-        """
         return math.floor((margin * self.MARGIN_RATIO) / self._get_latest_spx500_gbp_price())
 
     @classmethod
@@ -244,29 +241,33 @@ class SSLMultiTimeFrame:
                         ask_high: float,
                         bid_low: float,
                         entry_offset: float,
+                        worst_price_bound_offset: float,
                         tp_pip_amount: float,
                         sl_pip_amount: float,
                         units: float) -> dict:
-        entry = 0
-        sl = 0
-        tp = 0
+        entry = None
+        sl = None
+        tp = None
+        price_bound = None
         if signal == 'long':
             entry = round(ask_high + entry_offset, 1)
             tp = round(entry + tp_pip_amount, 1)
             sl = round(entry - sl_pip_amount, 1)
+            price_bound = round(entry + worst_price_bound_offset, 1)
         elif signal == 'short':
             entry = round(bid_low - entry_offset, 1)
             tp = round(entry - tp_pip_amount, 1)
             sl = round(entry + sl_pip_amount, 1)
+            price_bound = round(entry - worst_price_bound_offset, 1)
             units = units * -1
 
-        return create_market_if_touched_order(entry=entry, sl=sl, tp=tp, instrument='SPX500_USD', units=units)
+        return create_market_if_touched_order(entry, price_bound, sl, tp, 'SPX500_USD', units)
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
         prev_exec = -1
-        prev_1_entry = 0
-        prev_2_entry = 0
+        prev_1_entry = ''
+        prev_2_entry = ''
         while 1:
             now = datetime.datetime.now().astimezone(london_tz)
             full_account_details = s.account.get_full_account_details()['account']
@@ -276,10 +277,6 @@ class SSLMultiTimeFrame:
                 data = self.get_data()
                 signals = self.get_signals(data)
                 strategy_atr_values = self.get_atr_values(data)
-                strategy_entry_offsets = {
-                    '1': strategy_atr_values['1'] / 5,
-                    '2': strategy_atr_values['2'] / 5,
-                }
 
                 # Compare signals, don't re-enter every candle with same entry signal.
                 entry_signals_to_check = {
@@ -292,14 +289,15 @@ class SSLMultiTimeFrame:
                         'current': signals['2'],
                     },
                 }
+
                 # Remove outdated pending orders depending on entry signals.
                 for strategy_num, entry_signals in entry_signals_to_check.items():
                     if entry_signals['previous'] != entry_signals['current']:
                         self.clear_pending_orders(strategy=strategy_num)
-
                 # New orders.
                 for strategy, signal in signals.items():
                     compare_signals = entry_signals_to_check[strategy]
+                    print(compare_signals['previous'] != compare_signals['current'])
                     units = self.get_unit_size_per_trade(full_account_details)
                     if units \
                             and signal \
@@ -309,9 +307,10 @@ class SSLMultiTimeFrame:
                             tp_pip_amount = sl_pip_amount * 2.
                             order_schema = self.construct_order(
                                 signal=signal,
-                                ask_high=data['M5']['askHigh'],
-                                bid_low=data['M5']['bidLow'],
-                                entry_offset=strategy_entry_offsets[strategy],
+                                ask_high=float(data['M5']['askHigh'].values[-1]),
+                                bid_low=float(data['M5']['bidLow'].values[-1]),
+                                entry_offset=strategy_atr_values[strategy] / 5,
+                                worst_price_bound_offset=strategy_atr_values[strategy] / 2,
                                 tp_pip_amount=tp_pip_amount,
                                 sl_pip_amount=sl_pip_amount,
                                 units=units,
@@ -323,7 +322,7 @@ class SSLMultiTimeFrame:
                 prev_2_entry = signals['2']
 
             # Monitor and adjust current trades, if any.
-            if full_account_details['openTradeCount'] > 0:
+            if int(full_account_details['openTradeCount']) > 0:
                 open_trades = s.account.get_open_trades()['trades']
                 prices_to_check = self.get_prices_to_check()
                 for args in [(0.35, 0.5, 1), (0.65, 0.7, 2)]:
@@ -351,36 +350,5 @@ if __name__ == '__main__':
     s = SSLMultiTimeFrame(
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
-    # print(s.get_prices_to_check())
-    # d = s.account.get_full_account_details()['account']
-    # print(d)
-    # ins = s.account.get_tradeable_instruments()['instruments']
-    # for x in ins:
-    #     if x['name'] == 'SPX500_USD':
-    #         print(x)
-    # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
-    # print(s._convert_gbp_to_max_num_units(1000))
-    # print(s._convert_units_to_gbp(8))
-    # print(d['orders'])
-    # print(d['trades'])
-    # print(d['positions'])
-    # print(s.account.update_stop_loss(
-    #     trade_specifier='5',
-    #     price=3000.1,
-    # ))
-    # s.execute()
-    # order = s.construct_order(
-    #     signal='long',
-    #     ask_high=3070,
-    #     bid_low=3051,
-    #     entry_offset=20,
-    #     tp_pip_amount=100,
-    #     sl_pip_amount=100,
-    #     units=1,
-    # )
-    # o = s.account.create_order(order)
-    # print(s.account.cancel_order('12'))
-    # orders = s.account.get_pending_orders()
-    # for order in orders['orders']:
-    #     print(order)
-    # print(s.account.get_open_trades()['trades'])
+    s.execute()
+

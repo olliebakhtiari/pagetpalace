@@ -4,6 +4,8 @@
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" beforeDir="false" afterPath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/live_implementations/tests/test_ssl_multi.py" beforeDir="false" afterPath="$PROJECT_DIR$/live_implementations/tests/test_ssl_multi.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/oanda_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_orders.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -59,7 +61,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.ssl_multi_time_frame">
     <configuration name="ssl_multi_time_frame" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="pagetpalace" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -81,6 +83,55 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Unittests for test_ssl_multi.TestSSLMulti.test_calculate_new_sl_price" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="pagetpalace" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/live_implementations/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_ssl_multi.TestSSLMulti.test_calculate_new_sl_price&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_ssl_multi.TestSSLMulti.test_check_pct_hit" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="pagetpalace" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/live_implementations/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_ssl_multi.TestSSLMulti.test_check_pct_hit&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for test_ssl_multi.TestSSLMulti.test_get_unit_size_per_trade" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="pagetpalace" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/live_implementations/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_ssl_multi.TestSSLMulti.test_get_unit_size_per_trade&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.Unittests for test_ssl_multi.TestSSLMulti.test_calculate_new_sl_price" />
+        <item itemvalue="Python tests.Unittests for test_ssl_multi.TestSSLMulti.test_check_pct_hit" />
+        <item itemvalue="Python tests.Unittests for test_ssl_multi.TestSSLMulti.test_get_unit_size_per_trade" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
