@@ -47,9 +47,7 @@ class SSLMultiTimeFrame:
         ids_already_processed = self._sl_adjusted_1.copy() if adjusted_count == 1 else self._sl_adjusted_2.copy()
         for trade in open_trades:
             if trade['id'] not in ids_already_processed and self._check_pct_hit(prices, trade, check_pct):
-
-                # TODO: calculate new price to set.
-                new_stop_loss_price = self._calculate_new_price(trade=trade, pct=move_pct)
+                new_stop_loss_price = self._calculate_new_sl_price(trade=trade, pct=move_pct)
                 s.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
 
     def check_and_partially_close(
@@ -60,42 +58,6 @@ class SSLMultiTimeFrame:
             close_pct: float,
             partial_close_count: int,
     ):
-        """ [{
-                'id': '5',
-                'instrument': 'SPX500_USD',
-                'price': '3061.0',
-                'openTime': '2020-05-29T20:40:51.685944939Z',
-                'initialUnits': '1',
-                'initialMarginRequired': '123.8700',
-                'state': 'OPEN',
-                'currentUnits': '1',
-                'realizedPL': '0.0000',
-                'financing': '-0.5813',
-                'dividendAdjustment': '0.0000',
-                'unrealizedPL': '-0.7324',
-                'marginUsed': '123.8950',
-                'takeProfitOrder': {
-                    'id': '6',
-                    'createTime': '2020-05-29T20:40:51.685944939Z',
-                    'type': 'TAKE_PROFIT',
-                    'tradeID': '5',
-                    'price': '3161.0',
-                    'timeInForce': 'GTC',
-                    'triggerCondition': 'DEFAULT',
-                    'state': 'PENDING'
-                },
-                'stopLossOrder': {
-                    'id': '7',
-                    'createTime': '2020-05-29T20:40:51.685944939Z',
-                    'type': 'STOP_LOSS',
-                    'tradeID': '5',
-                    'price': '2961.0',
-                    'timeInForce': 'GTC',
-                    'triggerCondition': 'DEFAULT',
-                    'state': 'PENDING'
-                }
-            }]
-        """
         ids_processed = self._partially_closed_1.copy() if partial_close_count == 1 else self._partially_closed_1.copy()
         for trade in open_trades:
             if trade not in ids_processed and self._check_pct_hit(prices, trade, check_pct):
@@ -129,52 +91,44 @@ class SSLMultiTimeFrame:
             usable_margin=self._margin_not_being_used_in_orders(account_data),
             balance=account_data['balance'],
         )
+        units_to_place = self._convert_gbp_to_max_num_units(margin_size)
 
-        return self._convert_gbp_to_max_num_units(margin_size)
+        return units_to_place if units_to_place < 10000 else 10000
 
     def get_prices_to_check(self) -> dict:
         latest_5s_prices = self._pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
 
         return {'ask_low': latest_5s_prices['ask']['l'], 'bid_high': latest_5s_prices['bid']['h']}
 
-    @classmethod
-    def _check_pct_hit(cls, prices: dict, trade: dict, pct: float) -> bool:
+    def _check_pct_hit(self, prices: dict, trade: dict, pct: float) -> bool:
         has_hit = False
         if trade['currentUnits'] > 0:
-            has_hit = cls._check_long_pct_hit(prices['bid_high'], trade, pct)
+            has_hit = self._check_long_pct_hit(prices['bid_high'], trade, pct)
         elif trade['currentUnits'] < 0:
-            has_hit = cls._check_short_pct_hit(prices['ask_low'], trade, pct)
+            has_hit = self._check_short_pct_hit(prices['ask_low'], trade, pct)
 
         return has_hit
 
-    @classmethod
-    def _check_long_pct_hit(cls, price: float, trade: dict, pct: float):
-        full_target_pips = trade['takeProfitOrder']['price'] - trade['price']
-        pct_target_pips = full_target_pips * pct
+    def _check_long_pct_hit(self, price: float, trade: dict, pct: float):
+        return price >= round((trade['price'] + self._get_long_trade_pct_target_pips(trade, pct)), 1)
 
-        return price >= round((trade['price'] + pct_target_pips), 1)
+    def _check_short_pct_hit(self, price: float, trade: dict, pct: float):
+        return price <= round((trade['price'] - self._get_short_trade_pct_target_pips(trade, pct)), 1)
 
-    @classmethod
-    def _check_short_pct_hit(cls, price: float, trade: dict, pct: float):
-        full_target_pips = trade['price'] - trade['takeProfitOrder']['price']
-        pct_target_pips = full_target_pips * pct
+    def _calculate_new_sl_price(self, trade: dict, pct: float) -> float:
+        price = trade['price']
+        if trade['currentUnits'] > 0:
+            price = self._calculate_new_long_sl(trade, pct)
+        elif trade['currentUnits'] < 0:
+            price = self._calculate_new_short_sl(trade, pct)
 
-        return price <= round((trade['price'] - pct_target_pips), 1)
+        return float(price)
 
-    @classmethod
-    def _calculate_new_price(cls, trade: dict, pct: float) -> float:
-        # TODO: calculate new price based of percentage of total target profit.
-        return 1.
+    def _calculate_new_long_sl(self, trade: dict, pct: float) -> float:
+        return float(trade['price']) + self._get_long_trade_pct_target_pips(trade, pct)
 
-    @classmethod
-    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float):
-        available_minus_restricted = usable_margin - (balance * 0.1)
-        if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
-            margin_size = 0
-        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 200):
-            margin_size = available_minus_restricted
-
-        return margin_size
+    def _calculate_new_short_sl(self, trade: dict, pct: float) -> float:
+        return float(trade['price']) - self._get_short_trade_pct_target_pips(trade, pct)
 
     def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
         units_pending = 0
@@ -182,7 +136,7 @@ class SSLMultiTimeFrame:
             units_in_order = order.get('units')
             if units_in_order:
                 units_pending += abs(int(units_in_order))
-        available = account_data['marginAvailable'] - self._convert_units_to_gbp(units_pending)
+        available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
 
         return available if available > 0 else 0
 
@@ -205,6 +159,24 @@ class SSLMultiTimeFrame:
             Margin Available * (Margin Ratio) / (BASE/HOME Currency Exchange Rate)
         """
         return math.floor((margin * self.MARGIN_RATIO) / self._get_latest_spx500_gbp_price())
+
+    @classmethod
+    def _get_long_trade_pct_target_pips(cls, trade: dict, pct: float) -> float:
+        return (float(trade['takeProfitOrder']['price']) - float(trade['price'])) * pct
+
+    @classmethod
+    def _get_short_trade_pct_target_pips(cls, trade: dict, pct: float) -> float:
+        return (float(trade['price']) - float(trade['takeProfitOrder']['price'])) * pct
+
+    @classmethod
+    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float):
+        available_minus_restricted = usable_margin - (balance * 0.1)
+        if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
+            margin_size = 0
+        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 200):
+            margin_size = available_minus_restricted
+
+        return margin_size
 
     @classmethod
     def get_data(cls) -> dict:
@@ -381,10 +353,13 @@ if __name__ == '__main__':
     # print(s.get_prices_to_check())
     # d = s.account.get_full_account_details()['account']
     # print(d)
-    # ins = s.account.get_tradeable_instruments()['instruments']
+    ins = s.account.get_tradeable_instruments()['instruments']
+    for x in ins:
+        if x['name'] == 'SPX500_USD':
+            print(x)
     # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
-    print(s._convert_gbp_to_max_num_units(1000))
-    print(s._convert_units_to_gbp(8))
+    # print(s._convert_gbp_to_max_num_units(1000))
+    # print(s._convert_units_to_gbp(8))
     # print(d['orders'])
     # print(d['trades'])
     # print(d['positions'])

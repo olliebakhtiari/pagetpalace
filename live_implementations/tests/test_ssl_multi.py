@@ -7,6 +7,43 @@ from live_implementations.ssl_multi_time_frame import SSLMultiTimeFrame
 
 
 class TestSSLMulti(unittest.TestCase):
+    """ EXAMPLE TRADE OBJECT.
+            [{
+                    'id': '5',
+                    'instrument': 'SPX500_USD',
+                    'price': '3061.0',
+                    'openTime': '2020-05-29T20:40:51.685944939Z',
+                    'initialUnits': '1',
+                    'initialMarginRequired': '123.8700',
+                    'state': 'OPEN',
+                    'currentUnits': '1',
+                    'realizedPL': '0.0000',
+                    'financing': '-0.5813',
+                    'dividendAdjustment': '0.0000',
+                    'unrealizedPL': '-0.7324',
+                    'marginUsed': '123.8950',
+                    'takeProfitOrder': {
+                        'id': '6',
+                        'createTime': '2020-05-29T20:40:51.685944939Z',
+                        'type': 'TAKE_PROFIT',
+                        'tradeID': '5',
+                        'price': '3161.0',
+                        'timeInForce': 'GTC',
+                        'triggerCondition': 'DEFAULT',
+                        'state': 'PENDING'
+                    },
+                    'stopLossOrder': {
+                        'id': '7',
+                        'createTime': '2020-05-29T20:40:51.685944939Z',
+                        'type': 'STOP_LOSS',
+                        'tradeID': '5',
+                        'price': '2961.0',
+                        'timeInForce': 'GTC',
+                        'triggerCondition': 'DEFAULT',
+                        'state': 'PENDING'
+                    }
+                }]
+            """
     def setUp(self):
         self.s = SSLMultiTimeFrame(
             OandaAccount(account_id='', access_token='', account_type='')
@@ -30,7 +67,7 @@ class TestSSLMulti(unittest.TestCase):
     def test_check_pct_hit(self):
         pass
 
-    def test_calculate_new_price(self):
+    def test_calculate_new_sl_price(self):
         pass
 
     def test_get_valid_margin_size(self):
