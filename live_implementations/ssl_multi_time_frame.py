@@ -123,15 +123,13 @@ class SSLMultiTimeFrame:
             self.account.cancel_order(id_)
 
     def get_unit_size_per_trade(self, account_data: dict) -> float:
-        # TODO: extract required data from full account details.
         margin_size = self._get_valid_margin_size(
             margin_size=(account_data['balance'] * self.UNRESTRICTED_MARGIN_CAP) / 1.75,
             usable_margin=self._margin_not_being_used_in_orders(account_data),
             balance=account_data['balance'],
         )
-        # TODO: convert margin size to unit size.
 
-        return 1.
+        return self._convert_gbp_to_max_num_units(margin_size)
 
     def get_prices_to_check(self) -> dict:
         latest_5s_prices = self._pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
@@ -177,19 +175,17 @@ class SSLMultiTimeFrame:
 
         return margin_size
 
-    @classmethod
-    def _margin_not_being_used_in_orders(cls, account_data: dict) -> float:
-        # TODO: Available margin - margin in pending orders.
+    def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
         units_pending = 0
         for order in account_data['orders']:
             units_in_order = order.get('units')
             if units_in_order:
                 units_pending += abs(int(units_in_order))
-        # TODO: convert units to pounds.
+        available = account_data['marginAvailable'] - self._convert_units_to_gbp(units_pending)
 
-        return units_pending
+        return available if available > 0 else 0
 
-    def _get_latest_spx500_gbp_price(self, retry_count: int = 0):
+    def _get_latest_spx500_gbp_price(self, retry_count: int = 0) -> float:
         price = self._last_spx500_gbp_price
         spx500_gbp = self._pricing.get_pricing_info(instruments=['SPX500_GBP'], include_home_conversions=False)
         if not spx500_gbp['prices'] and retry_count < 5:
@@ -200,10 +196,10 @@ class SSLMultiTimeFrame:
 
         return float(price)
 
-    def _convert_units_to_gbp(self, units: int):
-        pass
+    def _convert_units_to_gbp(self, units: int) -> float:
+        return (self._get_latest_spx500_gbp_price() * units) / self.account.MARGIN_RATIO
 
-    def _convert_gbp_to_max_num_units(self, margin: float):
+    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
         """ https://www1.oanda.com/forex-trading/analysis/currency-units-calculator
             Margin Available * (Margin Ratio) / (BASE/HOME Currency Exchange Rate)
         """
@@ -351,6 +347,8 @@ class SSLMultiTimeFrame:
                 prev_exec = now.minute
                 prev_1_entry = signals['1']
                 prev_2_entry = signals['2']
+
+            # Monitor and adjust current trades, if any.
             if full_account_details['openTradeCount'] > 0:
                 open_trades = s.account.get_open_trades()['trades']
                 prices_to_check = self.get_prices_to_check()
@@ -380,11 +378,12 @@ if __name__ == '__main__':
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
     # print(s.get_prices_to_check())
-    # d = s.account.get_full_account_details()['account']
-    # print(d)
+    d = s.account.get_full_account_details()['account']
+    print(d)
     # ins = s.account.get_tradeable_instruments()['instruments']
     # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
-    print(s._convert_gbp_to_max_num_units(1000))
+    # print(s._convert_gbp_to_max_num_units(1000))
+    # print(s._convert_units_to_gbp(12))
     # print(d['orders'])
     # print(d['trades'])
     # print(d['positions'])
