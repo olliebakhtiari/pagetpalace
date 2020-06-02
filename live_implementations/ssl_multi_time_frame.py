@@ -2,10 +2,11 @@
 import concurrent.futures
 import datetime
 import math
-from typing import List
+from typing import List, Dict, Union
 
 # Third-party.
 import pytz
+import pandas as pd
 
 # Local.
 from src.oanda_account import OandaAccount
@@ -38,7 +39,7 @@ class SSLMultiTimeFrame:
 
     def check_and_adjust_stops(
             self,
-            prices: dict,
+            prices: Dict[str, float],
             open_trades: List[dict],
             check_pct: float,
             move_pct: float,
@@ -52,7 +53,7 @@ class SSLMultiTimeFrame:
 
     def check_and_partially_close(
             self,
-            prices: dict,
+            prices: Dict[str, float],
             open_trades: List[dict],
             check_pct: float,
             close_pct: float,
@@ -61,7 +62,8 @@ class SSLMultiTimeFrame:
         ids_processed = self._partially_closed_1.copy() if partial_close_count == 1 else self._partially_closed_1.copy()
         for trade in open_trades:
             if trade not in ids_processed and self._check_pct_hit(prices, trade, check_pct):
-                to_close = round(float(trade['currentUnits']) * close_pct) or 1
+                pct_of_units = round(float(trade['currentUnits']) * close_pct)
+                to_close = pct_of_units if pct_of_units > 1 else 1
                 self.account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
                 getattr(self, f'_partially_closed_{partial_close_count}').append(trade['id'])
 
@@ -86,21 +88,22 @@ class SSLMultiTimeFrame:
             self.account.cancel_order(id_)
 
     def get_unit_size_per_trade(self, account_data: dict) -> float:
+        balance = float(account_data['balance'])
         margin_size = self._get_valid_margin_size(
-            margin_size=(account_data['balance'] * self.UNRESTRICTED_MARGIN_CAP) / 1.75,
+            margin_size=(balance * self.UNRESTRICTED_MARGIN_CAP) / 1.75,
             usable_margin=self._margin_not_being_used_in_orders(account_data),
-            balance=account_data['balance'],
+            balance=balance,
         )
         units_to_place = self._convert_gbp_to_max_num_units(margin_size)
 
         return units_to_place if units_to_place < 10000 else 10000
 
-    def get_prices_to_check(self) -> dict:
+    def get_prices_to_check(self) -> Dict[str, float]:
         latest_5s_prices = self._pricing.get_latest_candles('SPX500_USD:S5:AB')['latestCandles'][0]['candles'][-1]
 
-        return {'ask_low': latest_5s_prices['ask']['l'], 'bid_high': latest_5s_prices['bid']['h']}
+        return {'ask_low': float(latest_5s_prices['ask']['l']), 'bid_high': float(latest_5s_prices['bid']['h'])}
 
-    def _check_pct_hit(self, prices: dict, trade: dict, pct: float) -> bool:
+    def _check_pct_hit(self, prices: Dict[str, float], trade: dict, pct: float) -> bool:
         has_hit = False
         if trade['currentUnits'] > 0:
             has_hit = self._check_long_pct_hit(prices['bid_high'], trade, pct)
@@ -138,7 +141,7 @@ class SSLMultiTimeFrame:
                 units_pending += abs(int(units_in_order))
         available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
 
-        return available if available > 0 else 0
+        return available if available > 0 else 0.
 
     def _get_latest_spx500_gbp_price(self, retry_count: int = 0) -> float:
         price = self._last_spx500_gbp_price
@@ -169,7 +172,7 @@ class SSLMultiTimeFrame:
         return (float(trade['price']) - float(trade['takeProfitOrder']['price'])) * pct
 
     @classmethod
-    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float):
+    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float) -> float:
         available_minus_restricted = usable_margin - (balance * 0.1)
         if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
             margin_size = 0
@@ -179,7 +182,7 @@ class SSLMultiTimeFrame:
         return margin_size
 
     @classmethod
-    def get_data(cls) -> dict:
+    def get_data(cls) -> Dict[str, pd.DataFrame]:
         od = OandaInstrumentData()
         data = {}
         time_frames = ['D', 'H1', 'M5']
@@ -200,7 +203,7 @@ class SSLMultiTimeFrame:
         return data
 
     @classmethod
-    def get_atr_values(cls, data: dict) -> dict:
+    def get_atr_values(cls, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
         append_average_true_range(data['H1'])
         append_average_true_range(data['M5'])
 
@@ -210,7 +213,7 @@ class SSLMultiTimeFrame:
         }
 
     @classmethod
-    def get_signals(cls, data: dict):
+    def get_signals(cls, data: Dict[str, pd.DataFrame]) -> Dict[str, Union[str, None]]:
         ssl_values = {k: get_ssl_value(v) for k, v in data.items()}
         signals = {
             '1': None,
@@ -236,16 +239,14 @@ class SSLMultiTimeFrame:
         return signals
 
     @classmethod
-    def construct_order(
-            cls,
-            signal: str,
-            ask_high: float,
-            bid_low: float,
-            entry_offset: float,
-            tp_pip_amount: float,
-            sl_pip_amount: float,
-            units: float,
-    ):
+    def construct_order(cls,
+                        signal: str,
+                        ask_high: float,
+                        bid_low: float,
+                        entry_offset: float,
+                        tp_pip_amount: float,
+                        sl_pip_amount: float,
+                        units: float) -> dict:
         entry = 0
         sl = 0
         tp = 0
@@ -353,10 +354,10 @@ if __name__ == '__main__':
     # print(s.get_prices_to_check())
     # d = s.account.get_full_account_details()['account']
     # print(d)
-    ins = s.account.get_tradeable_instruments()['instruments']
-    for x in ins:
-        if x['name'] == 'SPX500_USD':
-            print(x)
+    # ins = s.account.get_tradeable_instruments()['instruments']
+    # for x in ins:
+    #     if x['name'] == 'SPX500_USD':
+    #         print(x)
     # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
     # print(s._convert_gbp_to_max_num_units(1000))
     # print(s._convert_units_to_gbp(8))
