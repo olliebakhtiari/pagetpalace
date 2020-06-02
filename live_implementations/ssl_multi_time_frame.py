@@ -19,6 +19,7 @@ from tools.logger import *
 
 class SSLMultiTimeFrame:
     UNRESTRICTED_MARGIN_CAP = 0.9
+    MARGIN_RATIO = 20
 
     def __init__(self, account: OandaAccount):
         self.account = account
@@ -191,19 +192,19 @@ class SSLMultiTimeFrame:
         if not spx500_gbp['prices'] and retry_count < 5:
             self._get_latest_spx500_gbp_price(retry_count=retry_count + 1)
         elif spx500_gbp['prices']:
-            price = spx500_gbp['prices'][0]['bids'][0]['price']
+            price = spx500_gbp['prices'][0]['asks'][0]['price']
             self._last_spx500_gbp_price = price
 
         return float(price)
 
     def _convert_units_to_gbp(self, units: int) -> float:
-        return (self._get_latest_spx500_gbp_price() * units) / self.account.MARGIN_RATIO
+        return round((self._get_latest_spx500_gbp_price() * units) / self.MARGIN_RATIO, 4)
 
     def _convert_gbp_to_max_num_units(self, margin: float) -> int:
         """ https://www1.oanda.com/forex-trading/analysis/currency-units-calculator
             Margin Available * (Margin Ratio) / (BASE/HOME Currency Exchange Rate)
         """
-        return math.floor(margin * self.account.MARGIN_RATIO / self._get_latest_spx500_gbp_price())
+        return math.floor((margin * self.MARGIN_RATIO) / self._get_latest_spx500_gbp_price())
 
     @classmethod
     def get_data(cls) -> dict:
@@ -378,12 +379,12 @@ if __name__ == '__main__':
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
     # print(s.get_prices_to_check())
-    d = s.account.get_full_account_details()['account']
-    print(d)
+    # d = s.account.get_full_account_details()['account']
+    # print(d)
     # ins = s.account.get_tradeable_instruments()['instruments']
     # print(s._pricing.get_latest_candles('SPX500_GBP:D:AB'))
-    # print(s._convert_gbp_to_max_num_units(1000))
-    # print(s._convert_units_to_gbp(12))
+    print(s._convert_gbp_to_max_num_units(1000))
+    print(s._convert_units_to_gbp(8))
     # print(d['orders'])
     # print(d['trades'])
     # print(d['positions'])
