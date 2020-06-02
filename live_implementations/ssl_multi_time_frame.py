@@ -146,9 +146,9 @@ class SSLMultiTimeFrame:
     def _get_latest_spx500_gbp_price(self, retry_count: int = 0) -> float:
         price = self._last_spx500_gbp_price
         spx500_gbp = self._pricing.get_pricing_info(instruments=['SPX500_GBP'], include_home_conversions=False)
-        if not spx500_gbp['prices'] and retry_count < 5:
+        if not len(spx500_gbp['prices']) and retry_count < 5:
             self._get_latest_spx500_gbp_price(retry_count=retry_count + 1)
-        elif spx500_gbp['prices']:
+        elif len(spx500_gbp['prices']):
             price = spx500_gbp['prices'][0]['asks'][0]['price']
             self._last_spx500_gbp_price = price
 
