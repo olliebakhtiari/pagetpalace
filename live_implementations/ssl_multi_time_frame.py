@@ -50,6 +50,7 @@ class SSLMultiTimeFrame:
             if trade['id'] not in ids_already_processed and self._check_pct_hit(prices, trade, check_pct):
                 new_stop_loss_price = self._calculate_new_sl_price(trade=trade, pct=move_pct)
                 s.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
+                getattr(self, f'_sl_adjusted_{adjusted_count}').append(trade['id'])
 
     def check_and_partially_close(
             self,
@@ -277,7 +278,7 @@ class SSLMultiTimeFrame:
                 data = self.get_data()
                 signals = self.get_signals(data)
                 strategy_atr_values = self.get_atr_values(data)
-
+                print(now, signals)
                 # Compare signals, don't re-enter every candle with same entry signal.
                 entry_signals_to_check = {
                     '1': {
@@ -315,7 +316,11 @@ class SSLMultiTimeFrame:
                                 units=units,
                             )
                             pending_order = self.account.create_order(order_schema)
+                            print(pending_order)
                             self.add_id_to_pending_orders(pending_order, strategy)
+                            print(s._pending_orders_1, s._pending_orders_2)
+                            print(s._sl_adjusted_1, s._sl_adjusted_2)
+                            print(s._partially_closed_1, s._partially_closed_2)
                 prev_exec = now.minute
                 prev_1_entry = signals['1']
                 prev_2_entry = signals['2']
