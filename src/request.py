@@ -1,12 +1,19 @@
-# Python standard.
-import math
-import time
-
 # Third-party.
 import requests
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_result,
+    after_log,
+)
 
 # Local.
 from tools.logger import *
+
+
+def check_5xx_or_429_status_code(response: requests.Response) -> bool:
+    return response.status_code >= 500 or response.status_code == 429
 
 
 class RequestMixin:
@@ -16,51 +23,39 @@ class RequestMixin:
         self.default_params = default_params
         self.url = url
 
-    @classmethod
-    def retry_if_5xx_or_429(cls,
-                            response: requests.Response,
-                            func: str,
-                            retry_count: int,
-                            retry_wait_time: float,
-                            **kwargs) -> requests.Response:
-        if retry_count >= 4:
-            return response
-        if response.status_code >= 500 or response.status_code == 429:
-            logger.error(f'Failed request - {response.status_code}, {response.text}. Retrying...', exc_info=True)
-            time.sleep(retry_wait_time)
-            return getattr(cls, func)(**kwargs)
-
-    def _request(self,
-                 endpoint: str = '',
-                 method: str = 'GET',
-                 headers=None,
-                 params=None,
-                 data=None,
-                 retry_count: int = 0,
-                 retry_wait_time: float = 0.5) -> dict:
-        if headers is None:
-            headers = self.default_headers
-        if params is None:
-            params = self.default_params
-        if data is None:
-            data = {}
-        response = requests.request(
+    @retry(
+        retry=retry_if_result(check_5xx_or_429_status_code),
+        stop=stop_after_attempt(3),
+        after=after_log(logger, logging.ERROR),
+        wait=wait_exponential(max=5),
+        reraise=True
+    )
+    def retry_if_5xx_or_429(self,
+                            method: str,
+                            endpoint: str,
+                            headers: dict,
+                            params: dict,
+                            data: dict,) -> requests.Response:
+        return requests.request(
             method=method,
             url=f'{self.url}/{endpoint}',
             headers=headers,
             params=params,
             data=data,
         )
-        self.retry_if_5xx_or_429(
-            response,
-            func='_request',
-            endpoint=endpoint,
-            method=method,
-            headers=headers,
-            params=params,
-            data=data,
-            retry_count=retry_count + 1,
-            retry_wait_time=min(math.exp(retry_wait_time), 5),
-        )
+
+    def _request(self,
+                 endpoint: str = '',
+                 method: str = 'GET',
+                 headers=None,
+                 params=None,
+                 data=None) -> dict:
+        if headers is None:
+            headers = self.default_headers
+        if params is None:
+            params = self.default_params
+        if data is None:
+            data = {}
+        response = self.retry_if_5xx_or_429(method=method, endpoint=endpoint, headers=headers, params=params, data=data)
 
         return response.json()

@@ -297,7 +297,6 @@ class SSLMultiTimeFrame:
                 # New orders.
                 for strategy, signal in signals.items():
                     compare_signals = entry_signals_to_check[strategy]
-                    print(compare_signals['previous'] != compare_signals['current'])
                     units = self.get_unit_size_per_trade(full_account_details)
                     if units \
                             and signal \
