@@ -4,6 +4,7 @@
     <list default="true" id="807e44c9-f8d1-4e3f-a347-9e4280a838ff" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" beforeDir="false" afterPath="$PROJECT_DIR$/live_implementations/ssl_multi_time_frame.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/oanda_orders.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/oanda_orders.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />

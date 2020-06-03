@@ -11,7 +11,7 @@ import pandas as pd
 # Local.
 from src.oanda_account import OandaAccount
 from src.oanda_pricing import OandaPricingData
-from src.oanda_orders import create_market_if_touched_order
+from src.oanda_orders import create_stop_order
 from src.indicators import get_ssl_value, append_average_true_range
 from src.oanda_instrument import OandaInstrumentData
 from settings import DEMO_V20_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
@@ -192,11 +192,12 @@ class SSLMultiTimeFrame:
                 time_frame = future_to_tf[future]
                 try:
                     data[time_frame] = od.convert_to_df(future.result()['candles'], 'ABM')
-                except Exception as exc:
+                except ConnectionError as exc:
                     logger.error(
                         f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}',
                         exc_info=True,
                     )
+                    return {}
 
         return data
 
@@ -262,7 +263,7 @@ class SSLMultiTimeFrame:
             price_bound = round(entry - worst_price_bound_offset, 1)
             units = units * -1
 
-        return create_market_if_touched_order(entry, price_bound, sl, tp, 'SPX500_USD', units)
+        return create_stop_order(entry, price_bound, sl, tp, 'SPX500_USD', units)
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
@@ -271,63 +272,67 @@ class SSLMultiTimeFrame:
         prev_2_entry = ''
         while 1:
             now = datetime.datetime.now().astimezone(london_tz)
-            full_account_details = s.account.get_full_account_details()['account']
-            pending_orders = full_account_details['orders']
-            self.sync_pending_orders(pending_orders)
+            self.sync_pending_orders(self.account.get_pending_orders()['orders'])
             if now.minute % 5 == 0 and now.minute != prev_exec:
                 data = self.get_data()
-                signals = self.get_signals(data)
-                strategy_atr_values = self.get_atr_values(data)
-                print(now, signals)
-                # Compare signals, don't re-enter every candle with same entry signal.
-                entry_signals_to_check = {
-                    '1': {
-                        'previous': prev_1_entry,
-                        'current': signals['1'],
-                    },
-                    '2': {
-                        'previous': prev_2_entry,
-                        'current': signals['2'],
-                    },
-                }
+                if data:
+                    print(data)
+                    signals = self.get_signals(data)
+                    strategy_atr_values = self.get_atr_values(data)
+                    print(now, signals)
+                    # Compare signals, don't re-enter every candle with same entry signal.
+                    entry_signals_to_check = {
+                        '1': {
+                            'previous': prev_1_entry,
+                            'current': signals['1'],
+                        },
+                        '2': {
+                            'previous': prev_2_entry,
+                            'current': signals['2'],
+                        },
+                    }
 
-                # Remove outdated pending orders depending on entry signals.
-                for strategy_num, entry_signals in entry_signals_to_check.items():
-                    if entry_signals['previous'] != entry_signals['current']:
-                        self.clear_pending_orders(strategy=strategy_num)
-                # New orders.
-                for strategy, signal in signals.items():
-                    compare_signals = entry_signals_to_check[strategy]
-                    units = self.get_unit_size_per_trade(full_account_details)
-                    if units \
-                            and signal \
-                            and compare_signals['previous'] != compare_signals['current']:
-                        sl_pip_amount = strategy_atr_values[strategy] * 3.25
-                        if units > 0:
-                            tp_pip_amount = sl_pip_amount * 2.
-                            order_schema = self.construct_order(
-                                signal=signal,
-                                ask_high=float(data['M5']['askHigh'].values[-1]),
-                                bid_low=float(data['M5']['bidLow'].values[-1]),
-                                entry_offset=strategy_atr_values[strategy] / 5,
-                                worst_price_bound_offset=strategy_atr_values[strategy] / 2,
-                                tp_pip_amount=tp_pip_amount,
-                                sl_pip_amount=sl_pip_amount,
-                                units=units,
-                            )
-                            pending_order = self.account.create_order(order_schema)
-                            print(pending_order)
-                            self.add_id_to_pending_orders(pending_order, strategy)
-                            print(s._pending_orders_1, s._pending_orders_2)
-                            print(s._sl_adjusted_1, s._sl_adjusted_2)
-                            print(s._partially_closed_1, s._partially_closed_2)
-                prev_exec = now.minute
-                prev_1_entry = signals['1']
-                prev_2_entry = signals['2']
+                    # Remove outdated pending orders depending on entry signals.
+                    for strategy_num, entry_signals in entry_signals_to_check.items():
+                        if entry_signals['previous'] != entry_signals['current']:
+                            self.clear_pending_orders(strategy=strategy_num)
+
+                    # New orders.
+                    for strategy, signal in signals.items():
+                        compare_signals = entry_signals_to_check[strategy]
+                        units = self.get_unit_size_per_trade(s.account.get_full_account_details()['account'])
+                        if units \
+                                and signal \
+                                and compare_signals['previous'] != compare_signals['current']:
+                            sl_pip_amount = strategy_atr_values[strategy] * 3.25
+                            if units > 0:
+                                tp_pip_amount = sl_pip_amount * 2.
+                                order_schema = self.construct_order(
+                                    signal=signal,
+                                    ask_high=float(data['M5']['askHigh'].values[-1]),
+                                    bid_low=float(data['M5']['bidLow'].values[-1]),
+                                    entry_offset=strategy_atr_values[strategy] / 5,
+                                    worst_price_bound_offset=strategy_atr_values[strategy] / 2,
+                                    tp_pip_amount=tp_pip_amount,
+                                    sl_pip_amount=sl_pip_amount,
+                                    units=units,
+                                )
+                                try:
+                                    pending_order = self.account.create_order(order_schema)
+                                    self.add_id_to_pending_orders(pending_order, strategy)
+                                    print(pending_order)
+                                except Exception as exc:
+                                    logger.error(f'Failed to place pending order. {exc}', exc_info=True)
+                                print(s._pending_orders_1, s._pending_orders_2)
+                                print(s._sl_adjusted_1, s._sl_adjusted_2)
+                                print(s._partially_closed_1, s._partially_closed_2)
+                    prev_exec = now.minute
+                    prev_1_entry = signals['1']
+                    prev_2_entry = signals['2']
 
             # Monitor and adjust current trades, if any.
-            if int(full_account_details['openTradeCount']) > 0:
-                open_trades = s.account.get_open_trades()['trades']
+            open_trades = s.account.get_open_trades()['trades']
+            if len(open_trades) > 0:
                 prices_to_check = self.get_prices_to_check()
                 for args in [(0.35, 0.5, 1), (0.65, 0.7, 2)]:
                     self.check_and_partially_close(
@@ -346,7 +351,7 @@ class SSLMultiTimeFrame:
                         adjusted_count=args[2],
                     )
             if now.hour % 24 == 0:
-                open_trade_ids = [t['id'] for t in full_account_details['trades']]
+                open_trade_ids = [t['id'] for t in s.account.get_open_trades()['trades']]
                 self.clean_local_lists(open_trade_ids)
 
 
@@ -355,4 +360,3 @@ if __name__ == '__main__':
         OandaAccount(account_id=DEMO_V20_ACCOUNT_NUMBER, access_token=DEMO_ACCESS_TOKEN, account_type='DEMO_API')
     )
     s.execute()
-
