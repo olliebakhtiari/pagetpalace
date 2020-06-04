@@ -3,7 +3,7 @@ import datetime
 from typing import List
 
 # Local.
-from src.oanda_account import OandaAccount
+from pagetpalace.src.oanda_account import OandaAccount
 
 
 class OandaPricingData(OandaAccount):

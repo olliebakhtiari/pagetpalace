@@ -2,7 +2,7 @@
 import json
 
 # Local.
-from src.request import RequestMixin
+from pagetpalace.src.request import RequestMixin
 from settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 

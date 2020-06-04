@@ -9,7 +9,7 @@ from tenacity import (
 )
 
 # Local.
-from tools.logger import *
+from pagetpalace.tools import *
 
 
 def check_5xx_or_429_status_code(response: requests.Response) -> bool:

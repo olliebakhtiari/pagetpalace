@@ -1,5 +1,5 @@
 # Local.
-from tools.aws_utils import get_config_dict_from_s3
+from pagetpalace.tools import get_config_dict_from_s3
 
 PAGETPALACELIVE = get_config_dict_from_s3('pagetpalacelive.json')
 PAGETPALACEDEMO = get_config_dict_from_s3('pagetpalacedemo.json')
