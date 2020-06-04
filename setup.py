@@ -14,7 +14,7 @@ if sys.version_info[:2] < (3, 6):
 
 NAME = 'pagetpalace'
 DESCRIPTION = 'Used to build live implementations of strategies.'
-URL = 'https://github.com/olliebakhtiari/pagetpalace'
+URL = 'git@github.com:olliebakhtiari/pagetpalace.git'
 EMAIL = 'olliebakhtiari@gmail.com'
 AUTHOR = 'Ollie Bakhtiari'
 REQUIRES_PYTHON = '>=3.6.0'
