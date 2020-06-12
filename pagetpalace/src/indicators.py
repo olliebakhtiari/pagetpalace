@@ -4,9 +4,9 @@ import numpy as np
 
 
 def ssl_channel(data: pd.DataFrame, prices: str = 'mid', periods: int = 20) -> np.ndarray:
-    close_prices = data[f'{prices}Close'].reset_index(drop=True)
-    high_sma = data[f'{prices}High'].rolling(window=periods).mean()
-    low_sma = data[f'{prices}Low'].rolling(window=periods).mean()
+    close_prices = data[f'{prices}Close'].apply(pd.to_numeric).reset_index(drop=True)
+    high_sma = data[f'{prices}High'].apply(pd.to_numeric).rolling(window=periods).mean()
+    low_sma = data[f'{prices}Low'].apply(pd.to_numeric).rolling(window=periods).mean()
     hi_lo_vals = np.array([0 for _ in range(len(close_prices))])
     for i in range(len(high_sma)):
         if close_prices[i] > high_sma[i]:
