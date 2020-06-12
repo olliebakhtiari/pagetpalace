@@ -9,7 +9,7 @@ def get_ssl_value(df: pd.DataFrame, prices: str = 'mid') -> Union[int, None]:
     close = df[f'{prices}Close'].apply(pd.to_numeric).iloc[-1]
     if close > df[f'{prices}High'].apply(pd.to_numeric).mean():
         return 1
-    if close > df[f'{prices}Low'].apply(pd.to_numeric).mean():
+    if close < df[f'{prices}Low'].apply(pd.to_numeric).mean():
         return -1
 
 
