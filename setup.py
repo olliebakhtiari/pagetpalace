@@ -29,7 +29,6 @@ REQUIRED = [
     'jmespath',
     'numpy',
     'pandas',
-    'plotly',
     'pysimplemodel',
     'python-dateutil',
     'python-status',
