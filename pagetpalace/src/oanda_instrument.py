@@ -32,18 +32,18 @@ class OandaInstrumentData(RequestMixin):
         self.default_params = {}
         super().__init__(self.access_token, self.default_headers, self.default_params, self.url)
 
-    def get_candlesticks(self,
-                         instrument: str,
-                         prices: str = 'ABM',
-                         granularity: str = 'D',
-                         count: int = 14,
-                         from_date: str = None,
-                         to_date: str = None,
-                         smooth: bool = False,
-                         include_first: bool = True,
-                         daily_alignment: int = 22,
-                         alignment_timezone: str = 'Europe/London',
-                         weekly_alignment: str = 'Sunday') -> dict:
+    def get_complete_candlesticks(self,
+                                  instrument: str,
+                                  prices: str = 'ABM',
+                                  granularity: str = 'D',
+                                  count: int = 14,
+                                  from_date: str = None,
+                                  to_date: str = None,
+                                  smooth: bool = False,
+                                  include_first: bool = True,
+                                  daily_alignment: int = 22,
+                                  alignment_timezone: str = 'Europe/London',
+                                  weekly_alignment: str = 'Sunday') -> List[dict]:
         """ price: “M” (midpoint candles), “B” (bid candles) and “A” (ask candles).
             granularity: The granularity of the candlesticks to fetch [default=S5]
             count: The number of candlesticks to return in the response.
@@ -92,7 +92,9 @@ class OandaInstrumentData(RequestMixin):
             "alignmentTimezone": alignment_timezone,
             "weeklyAlignment": weekly_alignment,
         }
-        return self._request(endpoint=f'{instrument}/candles', params=params)
+        response = self._request(endpoint=f'{instrument}/candles', params=params)
+
+        return [candle for candle in response['candles'] if candle['complete']]
 
     @classmethod
     def convert_to_df(cls, candles: List[dict], prices: str) -> pd.DataFrame:
@@ -205,14 +207,14 @@ class OandaInstrumentData(RequestMixin):
                     # Split in two halves as capped at 5000 candles per request.
                     from_and_to_dates = self.get_from_and_to_dates(year, month, end_day)
                     for dates in from_and_to_dates:
-                        resp = self.get_candlesticks(
+                        resp = self.get_complete_candlesticks(
                             instrument=instrument,
                             from_date=dates['from'],
                             to_date=dates['to'],
                             granularity=granularity,
                         )
                         logger.info(resp)
-                        candles.extend(resp['candles'])
+                        candles.extend(candles)
         curr_month_halfway = math.ceil(now.day) / 2
         curr_month_from_and_to = [
             {
@@ -225,14 +227,14 @@ class OandaInstrumentData(RequestMixin):
             },
         ]
         for dates in curr_month_from_and_to:
-            resp = self.get_candlesticks(
+            resp = self.get_complete_candlesticks(
                 instrument=instrument,
                 from_date=dates['from'],
                 to_date=dates['to'],
                 granularity=granularity,
             )
             logger.info(resp)
-            candles.extend(resp['candles'])
+            candles.extend(candles)
         logger.info(candles)
         df = self.convert_to_df(candles, prices)
         logger.info(df)
