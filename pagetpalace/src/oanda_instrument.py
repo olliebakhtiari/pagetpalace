@@ -207,14 +207,14 @@ class OandaInstrumentData(RequestMixin):
                     # Split in two halves as capped at 5000 candles per request.
                     from_and_to_dates = self.get_from_and_to_dates(year, month, end_day)
                     for dates in from_and_to_dates:
-                        resp = self.get_complete_candlesticks(
+                        response = self.get_complete_candlesticks(
                             instrument=instrument,
                             from_date=dates['from'],
                             to_date=dates['to'],
                             granularity=granularity,
                         )
-                        logger.info(resp)
-                        candles.extend(candles)
+                        logger.info(response)
+                        candles.extend(response)
         curr_month_halfway = math.ceil(now.day) / 2
         curr_month_from_and_to = [
             {
@@ -227,14 +227,14 @@ class OandaInstrumentData(RequestMixin):
             },
         ]
         for dates in curr_month_from_and_to:
-            resp = self.get_complete_candlesticks(
+            response = self.get_complete_candlesticks(
                 instrument=instrument,
                 from_date=dates['from'],
                 to_date=dates['to'],
                 granularity=granularity,
             )
-            logger.info(resp)
-            candles.extend(candles)
+            logger.info(response)
+            candles.extend(response)
         logger.info(candles)
         df = self.convert_to_df(candles, prices)
         logger.info(df)
@@ -262,9 +262,9 @@ if __name__ == '__main__':
     g = 'M5'
     od = OandaInstrumentData()
     od.write_candles_to_csv(
-        instrument='US30_USD',
+        instrument='CN50_USD',
         granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/US30_USD/US30USD_{g}.csv',
+        output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/CN50_USD/CN50USD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
