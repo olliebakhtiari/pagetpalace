@@ -8,9 +8,9 @@ import pandas as pd
 
 # Local.
 from pagetpalace.src.request import RequestMixin
+from pagetpalace.tools.file_operations import remove_duplicate_datetimes_from_csv
+from pagetpalace.tools.logger import *
 from settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
-from pagetpalace.tools import remove_duplicate_datetimes_from_csv
-from pagetpalace.tools import *
 
 
 class OandaInstrumentData(RequestMixin):
@@ -269,3 +269,4 @@ if __name__ == '__main__':
         end_year=2020,
         prices='ABM',
     )
+
