@@ -3,7 +3,7 @@ import json
 
 # Local.
 from pagetpalace.src.request import RequestMixin
-from settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
+from pagetpalace.src.oanda.settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 
 class OandaAccount(RequestMixin):

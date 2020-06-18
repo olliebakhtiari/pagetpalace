@@ -6,7 +6,7 @@ from optparse import OptionParser
 import requests
 
 # Local.
-from settings import OANDA_DOMAINS
+from pagetpalace.src.oanda.settings import OANDA_DOMAINS
 
 
 class OandaStream:
