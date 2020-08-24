@@ -259,12 +259,13 @@ class OandaInstrumentData(RequestMixin):
 
 
 if __name__ == '__main__':
+    i = 'SPX500_USD'
     g = 'M5'
     od = OandaInstrumentData()
     od.write_candles_to_csv(
-        instrument='CN50_USD',
+        instrument=i,
         granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/CN50_USD/CN50USD_{g}.csv',
+        output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/{i}/SPX500USD_{g}.csv',
         start_year=2015,
         end_year=2020,
         prices='ABM',
