@@ -94,7 +94,13 @@ class OandaInstrumentData(RequestMixin):
         }
         response = self._request(endpoint=f'{instrument}/candles', params=params)
 
-        return [candle for candle in response['candles'] if candle['complete']]
+        try:
+            candles = [candle for candle in response['candles'] if candle['complete']]
+        except Exception as exc:
+            logger.error(exc)
+            candles = []
+
+        return candles
 
     @classmethod
     def convert_to_df(cls, candles: List[dict], prices: str) -> pd.DataFrame:
@@ -258,17 +264,17 @@ class OandaInstrumentData(RequestMixin):
         return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
 
-if __name__ == '__main__':
-    i = 'SPX500_USD'
-    g = 'M5'
-    od = OandaInstrumentData()
-    od.write_candles_to_csv(
-        instrument=i,
-        granularity=g,
-        output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/{i}/SPX500USD_{g}.csv',
-        start_year=2015,
-        end_year=2020,
-        prices='ABM',
-    )
+# if __name__ == '__main__':
+#     i = 'NAS100_USD'
+#     g = 'M5'
+#     od = OandaInstrumentData()
+#     od.write_candles_to_csv(
+#         instrument=i,
+#         granularity=g,
+#         output_loc=f'/Users/oliver/Documents/pagetpalace_backtester/data/oanda/{i}/NAS100USD_{g}.csv',
+#         start_year=2015,
+#         end_year=2020,
+#         prices='ABM',
+#     )
 
 
