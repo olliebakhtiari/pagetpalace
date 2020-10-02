@@ -94,13 +94,7 @@ class OandaInstrumentData(RequestMixin):
         }
         response = self._request(endpoint=f'{instrument}/candles', params=params)
 
-        try:
-            candles = [candle for candle in response['candles'] if candle['complete']]
-        except Exception as exc:
-            logger.error(exc)
-            candles = []
-
-        return candles
+        return [candle for candle in response['candles'] if candle['complete']]
 
     @classmethod
     def convert_to_df(cls, candles: List[dict], prices: str) -> pd.DataFrame:
