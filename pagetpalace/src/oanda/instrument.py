@@ -42,7 +42,7 @@ class OandaInstrumentData(RequestMixin):
                                   smooth: bool = False,
                                   include_first: bool = True,
                                   daily_alignment: int = 22,
-                                  alignment_timezone: str = 'America/New_York',
+                                  alignment_timezone: str = 'Europe/London',
                                   weekly_alignment: str = 'Friday') -> List[dict]:
         """ price: “M” (midpoint candles), “B” (bid candles) and “A” (ask candles).
             granularity: The granularity of the candlesticks to fetch [default=S5]
