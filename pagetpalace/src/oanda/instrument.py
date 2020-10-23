@@ -42,7 +42,7 @@ class OandaInstrumentData(RequestMixin):
                                   smooth: bool = False,
                                   include_first: bool = True,
                                   daily_alignment: int = 22,
-                                  alignment_timezone: str = 'Europe/London',
+                                  alignment_timezone: str = 'America/New_York',
                                   weekly_alignment: str = 'Friday') -> List[dict]:
         """ price: “M” (midpoint candles), “B” (bid candles) and “A” (ask candles).
             granularity: The granularity of the candlesticks to fetch [default=S5]
@@ -258,17 +258,16 @@ class OandaInstrumentData(RequestMixin):
         return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
 
-if __name__ == '__main__':
-    i = 'SPX500_USD'
-    g = 'M5'
-    od = OandaInstrumentData()
-    od.write_candles_to_csv(
-        instrument=i,
-        granularity=g,
-        output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-        start_year=2015,
-        end_year=2020,
-        prices='ABM',
-    )
-
+# if __name__ == '__main__':
+#     for g in ['H1', 'M5']:
+#         i = 'SPX500_USD'
+#         od = OandaInstrumentData()
+#         od.write_candles_to_csv(
+#             instrument=i,
+#             granularity=g,
+#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
+#             start_year=2015,
+#             end_year=2020,
+#             prices='ABM',
+#         )
 
