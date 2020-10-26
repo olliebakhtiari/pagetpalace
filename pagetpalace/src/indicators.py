@@ -36,3 +36,7 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
     data['true_range'] = data[['tr0', 'tr1', 'tr2']].max(axis=1)
 
     df['ATR'] = data['true_range'].ewm(alpha=1 / periods).mean()
+
+
+def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = "midClose"):
+    df[f'SSMA_{periods}'] = df[prices].ewm(ignore_na=False, alpha=1.0 / periods, min_periods=0, adjust=False).mean()

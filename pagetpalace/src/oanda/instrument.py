@@ -259,8 +259,8 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for g in ['H1', 'M5']:
-#         i = 'SPX500_USD'
+#     for g in ['D', 'H1', 'M5']:
+#         i = 'NAS100_USD'
 #         od = OandaInstrumentData()
 #         od.write_candles_to_csv(
 #             instrument=i,
