@@ -7,7 +7,6 @@ from pagetpalace.src.oanda.account import OandaAccount
 
 
 class OandaPricingData(OandaAccount):
-
     def __init__(self, access_token: str, account_id: str, account_type: str):
         super().__init__(access_token, account_id, account_type)
 

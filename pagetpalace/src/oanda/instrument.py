@@ -165,7 +165,7 @@ class OandaInstrumentData(RequestMixin):
         return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
     @classmethod
-    def calculate_end_date(cls, year: int, month: int, day: int):
+    def calculate_end_date(cls, year: int, month: int, day: int) -> str:
         end_dt = datetime.datetime(year=year, month=month, day=day, hour=0, minute=0, second=0)
         td = datetime.timedelta(days=1)
 
@@ -257,17 +257,4 @@ class OandaInstrumentData(RequestMixin):
         """
         return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
-
-# if __name__ == '__main__':
-#     for g in ['D', 'H1', 'M5']:
-#         i = 'NAS100_USD'
-#         od = OandaInstrumentData()
-#         od.write_candles_to_csv(
-#             instrument=i,
-#             granularity=g,
-#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-#             start_year=2015,
-#             end_year=2020,
-#             prices='ABM',
-#         )
 

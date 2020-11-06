@@ -35,7 +35,7 @@ class RequestMixin:
                             endpoint: str,
                             headers: dict,
                             params: dict,
-                            data: dict,) -> requests.Response:
+                            data: dict) -> requests.Response:
         return requests.request(
             method=method,
             url=f'{self.url}/{endpoint}',

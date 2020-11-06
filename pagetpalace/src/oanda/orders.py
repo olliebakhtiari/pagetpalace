@@ -7,7 +7,7 @@ def create_stop_order(entry: float,
                       sl: float,
                       tp: float,
                       instrument: str,
-                      units: float) -> dict:
+                      units: float):
     return json.dumps({
         "order": {
             "price": f"{entry}",
