@@ -34,7 +34,6 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
     data['tr1'] = abs(high - close.shift())
     data['tr2'] = abs(low - close.shift())
     data['true_range'] = data[['tr0', 'tr1', 'tr2']].max(axis=1)
-
     df['ATR'] = data['true_range'].ewm(alpha=1 / periods).mean()
 
 

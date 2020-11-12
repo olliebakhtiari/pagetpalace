@@ -1,44 +1,61 @@
 # Python standard.
 import abc
 import concurrent.futures
+import datetime
 import math
+import pytz
 import sys
+import time
 from typing import List, Dict
 
 # Third-party.
 import pandas as pd
 from pagetpalace.src.oanda import OandaPricingData, create_stop_order, OandaInstrumentData, OandaAccount
 from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
-from pagetpalace.src.indicators import append_ssl_channel
+from pagetpalace.src.indicators import append_ssl_channel, append_ssma, append_average_true_range
 from pagetpalace.tools.logger import *
 
 
 class SSLMultiTimeFrame:
+    _OPEN_TRADE_PARAMS = {
+        'check_1': 0.35,
+        'check_2': 0.65,
+        'sl_move_1': 0.01,
+        'sl_move_2': 0.35,
+        'close_amount_1': 0.5,
+        'close_amount_2': 0.7,
+    }
+
     def __init__(
             self,
             account: OandaAccount,
             instrument: str,
             margin_ratio: int,
             unrestricted_margin_cap: float,
-            strategy_multipliers: dict,
-            open_trade_params: dict,
+            trade_multipliers: dict,
             boundary_multipliers: dict,
             time_frames: List[str],
     ):
         """
-        _STRATEGY_MULTIPLIERS = {
-            '1': {'long': {'sl': 3, 'tp': 4}, 'short': {'sl': 2.5, 'tp': 2.5}},
-            '2': {'long': {'sl': 3.5, 'tp': 3.5}},
-        }
-        _PARAMS = {
-            'check_1': 0.35,
-            'check_2': 0.65,
-            'sl_move_1': 0.01,
-            'sl_move_2': 0.35,
-            'close_amount_1': 0.5,
-            'close_amount_2': 0.7,
-        }
-        _BOUNDARY_MULTIPLIERS = {
+        _trade_multipliers = {
+            '1': {
+                'long': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+                'short': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+            },
+            '2': {
+                'long': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+                'short': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+            },
+            '3': {
+                'long': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+                'short': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+            },
+            '4': {
+                'long': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+                'short': {'above': {'sl': 2, 'tp': 2}, 'below': {'sl': 2, 'tp': 2}},
+        },
+    }
+        _boundary_multipliers = {
             'margin_adjustment': {'1': {'long': {'above': 2, 'below': 3}, 'short': {'above': 1.25, 'below': 3.5}}},
             'reverse': {'1': {'short': {'below': 2}}}
         }
@@ -47,8 +64,7 @@ class SSLMultiTimeFrame:
         self._instrument = instrument
         self._margin_ratio = margin_ratio
         self._unrestricted_margin_cap = unrestricted_margin_cap
-        self._strategy_multipliers = strategy_multipliers
-        self._open_trade_params = open_trade_params
+        self._trade_multipliers = trade_multipliers
         self._boundary_multipliers = boundary_multipliers
         self._time_frames = time_frames
         self._pricing = OandaPricingData(account.access_token, account.account_id, account.account_type)
@@ -61,7 +77,8 @@ class SSLMultiTimeFrame:
         self._last_price = 0
 
     def _get_prices_to_check(self) -> Dict[str, float]:
-        latest_5s_prices = self._pricing.get_latest_candles(f'{self._instrument}:S5:AB')['latestCandles'][0]['candles'][-1]
+        latest_5s_prices = self._pricing.get_latest_candles(f'{self._instrument}:S5:AB')['latestCandles'][0]['candles'][
+            -1]
 
         return {'ask_low': float(latest_5s_prices['ask']['l']), 'bid_high': float(latest_5s_prices['bid']['h'])}
 
@@ -80,7 +97,7 @@ class SSLMultiTimeFrame:
                 self._account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
                 getattr(self, f'_sl_adjusted_{adjusted_count}').append(trade['id'])
 
-    def check_and_partially_close(
+    def _check_and_partially_close(
             self,
             prices: Dict[str, float],
             open_trades: List[dict],
@@ -96,10 +113,10 @@ class SSLMultiTimeFrame:
                 self._account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
                 getattr(self, f'_partially_closed_{partial_close_count}').append(trade['id'])
 
-    def add_id_to_pending_orders(self, order: dict, strategy: str):
+    def _add_id_to_pending_orders(self, order: dict, strategy: str):
         getattr(self, f'_pending_orders_{strategy}').append(order['orderCreateTransaction']['id'])
 
-    def sync_pending_orders(self, pending_orders_in_account: List[dict]):
+    def _sync_pending_orders(self, pending_orders_in_account: List[dict]):
         ids_in_account = [p_o['id'] for p_o in pending_orders_in_account]
         for local_pending in [self._pending_orders_1, self._pending_orders_2]:
             for id_ in local_pending:
@@ -112,7 +129,7 @@ class SSLMultiTimeFrame:
                 if id_ not in open_trade_ids:
                     locals_.remove(id_)
 
-    def clean_lists(self):
+    def _clean_lists(self):
         try:
             open_trade_ids = [t['id'] for t in self._account.get_open_trades()['trades']]
             self._clean_local_lists(open_trade_ids)
@@ -124,7 +141,7 @@ class SSLMultiTimeFrame:
             self._account.cancel_order(id_)
         getattr(self, f'_pending_orders_{strategy}').clear()
 
-    def check_and_clear_pending_orders(self, entry_signals_to_check: Dict[str, Dict[str, str]]):
+    def _check_and_clear_pending_orders(self, entry_signals_to_check: Dict[str, Dict[str, int]]):
         for strategy_num, entry_signals in entry_signals_to_check.items():
             if entry_signals['previous'] != entry_signals['current']:
                 try:
@@ -135,8 +152,8 @@ class SSLMultiTimeFrame:
     def _check_and_adjust_stop_losses(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
         try:
             sl_adjust_args = [
-                (self._open_trade_params['check_1'], self._open_trade_params['sl_move_1'], 1),
-                (self._open_trade_params['check_2'], self._open_trade_params['sl_move_2'], 2),
+                (self._OPEN_TRADE_PARAMS['check_1'], self._OPEN_TRADE_PARAMS['sl_move_1'], 1),
+                (self._OPEN_TRADE_PARAMS['check_2'], self._OPEN_TRADE_PARAMS['sl_move_2'], 2),
             ]
             for args in sl_adjust_args:
                 self._check_and_adjust_stops(
@@ -149,14 +166,14 @@ class SSLMultiTimeFrame:
         except Exception as exc:
             logger.error(f'Failed to check and adjust stop losses. {exc}', exc_info=True)
 
-    def _check_and_partially_close(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
+    def _partial_closures(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
         try:
             partial_close_args = [
-                (self._open_trade_params['check_1'], self._open_trade_params['close_amount_1'], 1),
-                (self._open_trade_params['check_2'], self._open_trade_params['close_amount_2'], 2),
+                (self._OPEN_TRADE_PARAMS['check_1'], self._OPEN_TRADE_PARAMS['close_amount_1'], 1),
+                (self._OPEN_TRADE_PARAMS['check_2'], self._OPEN_TRADE_PARAMS['close_amount_2'], 2),
             ]
             for args in partial_close_args:
-                self.check_and_partially_close(
+                self._check_and_partially_close(
                     prices=prices_to_check,
                     open_trades=open_trades,
                     check_pct=args[0],
@@ -166,26 +183,15 @@ class SSLMultiTimeFrame:
         except Exception as exc:
             logger.error(f'Failed to check and partially close trades. {exc}', exc_info=True)
 
-    def monitor_and_adjust_current_trades(self):
+    def _monitor_and_adjust_current_trades(self):
         try:
             open_trades = self._account.get_open_trades()['trades']
             if len(open_trades) > 0:
                 prices_to_check = self._get_prices_to_check()
-                self._check_and_partially_close(prices_to_check=prices_to_check, open_trades=open_trades)
+                self._partial_closures(prices_to_check=prices_to_check, open_trades=open_trades)
                 self._check_and_adjust_stop_losses(prices_to_check=prices_to_check, open_trades=open_trades)
         except Exception as exc:
             logger.error(f'Failed to monitor and adjust current trades. {exc}', exc_info=True)
-
-    def get_unit_size_per_trade(self, account_data: dict) -> float:
-        balance = float(account_data['balance'])
-        margin_size = self._get_valid_margin_size(
-            margin_size=(balance * self._unrestricted_margin_cap) / 1.75,
-            usable_margin=self._margin_not_being_used_in_orders(account_data),
-            balance=balance,
-        )
-        units_to_place = self._convert_gbp_to_max_num_units(margin_size)
-
-        return units_to_place if units_to_place < 10000 else 10000
 
     def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
         units_pending = 0
@@ -214,6 +220,14 @@ class SSLMultiTimeFrame:
     def _convert_gbp_to_max_num_units(self, margin: float) -> int:
         return math.floor((margin * self._margin_ratio) / self._get_latest_instrument_price())
 
+    def _get_margin_size_of_trade(self, account_data: dict) -> float:
+        balance = float(account_data['balance'])
+        return self._get_valid_margin_size(
+            margin_size=(balance * self._unrestricted_margin_cap) / 1.75,
+            usable_margin=self._margin_not_being_used_in_orders(account_data),
+            balance=balance,
+        )
+
     @classmethod
     def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float) -> float:
         available_minus_restricted = usable_margin - (balance * 0.1)
@@ -224,14 +238,14 @@ class SSLMultiTimeFrame:
 
         return margin_size
 
-    def get_data(self) -> Dict[str, pd.DataFrame]:
+    def _get_data(self) -> Dict[str, pd.DataFrame]:
         od = OandaInstrumentData()
         data = {}
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_tf = {}
             for granularity in self._time_frames:
                 future_to_tf[
-                    executor.submit(od.get_complete_candlesticks, self._instrument, 'ABM', granularity, 1000)
+                    executor.submit(od.get_complete_candlesticks, self._instrument, 'ABM', granularity, 500)
                 ] = granularity
             for future in concurrent.futures.as_completed(future_to_tf):
                 time_frame = future_to_tf[future]
@@ -267,46 +281,45 @@ class SSLMultiTimeFrame:
 
         return boundary
 
-    def is_within_valid_boundary(self,
-                                 bias: str,
-                                 atr_value: float,
-                                 smoothed_ma: float,
-                                 price: float,
-                                 strategy: str) -> bool:
-        boundary = self._calculate_boundary('margin_adjustment', bias, atr_value, smoothed_ma, price, strategy)
-
-        return not (self._calculate_atr_factor(price, smoothed_ma, atr_value) * atr_value > boundary)
-
-    def calculate_distance_factor(self,
+    def _is_within_valid_boundary(self,
                                   bias: str,
                                   atr_value: float,
                                   smoothed_ma: float,
                                   price: float,
                                   strategy: str) -> bool:
+        boundary = self._calculate_boundary('margin_adjustment', bias, atr_value, smoothed_ma, price, strategy)
+
+        return not (self._calculate_atr_factor(price, smoothed_ma, atr_value) * atr_value > boundary)
+
+    def _calculate_distance_factor(self,
+                                   bias: str,
+                                   atr_value: float,
+                                   smoothed_ma: float,
+                                   price: float,
+                                   strategy: str) -> bool:
         boundary = self._calculate_boundary('reverse', bias, atr_value, smoothed_ma, price, strategy)
 
         return self._calculate_atr_factor(price, smoothed_ma, atr_value) * atr_value >= boundary
 
-    def construct_order(self,
-                        signal: str,
-                        ask_high: float,
-                        bid_low: float,
-                        entry_offset: float,
-                        worst_price_bound_offset: float,
-                        tp_pip_amount: float,
-                        sl_pip_amount: float,
-                        units: float) -> dict:
+    def _construct_order(self,
+                         signal: str,
+                         last_close_price: float,
+                         entry_offset: float,
+                         worst_price_bound_offset: float,
+                         tp_pip_amount: float,
+                         sl_pip_amount: float,
+                         units: float) -> dict:
         entry = None
         sl = None
         tp = None
         price_bound = None
         if signal == 'long':
-            entry = round(ask_high + entry_offset, 1)
+            entry = round(last_close_price + entry_offset, 1)
             tp = round(entry + tp_pip_amount, 1)
             sl = round(entry - sl_pip_amount, 1)
             price_bound = round(entry + worst_price_bound_offset, 1)
         elif signal == 'short':
-            entry = round(bid_low - entry_offset, 1)
+            entry = round(last_close_price - entry_offset, 1)
             tp = round(entry - tp_pip_amount, 1)
             sl = round(entry + sl_pip_amount, 1)
             price_bound = round(entry - worst_price_bound_offset, 1)
@@ -314,29 +327,224 @@ class SSLMultiTimeFrame:
 
         return create_stop_order(entry, price_bound, sl, tp, self._instrument, units)
 
-    def get_ssl_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, int]:
+    def _get_ssl_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, int]:
         for df in data.values():
             append_ssl_channel(df)
 
         return {tf: data[tf].iloc[-1]['HighLowValue'] for tf in self._time_frames}
 
     @abc.abstractmethod
-    def is_reverse_trade_long_criteria_met(self) -> bool:
+    def _get_atr_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
         raise NotImplementedError('Not implemented in subclass.')
 
     @abc.abstractmethod
-    def get_atr_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+    def _get_ssma_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
         raise NotImplementedError('Not implemented in subclass.')
 
     @abc.abstractmethod
-    def get_ssma_values(self) -> Dict[str, float]:
-        raise NotImplementedError('Not implemented in subclass.')
-
-    @abc.abstractmethod
-    def get_signals(self) -> Dict[str, str]:
+    def _get_signals(self, price: float) -> Dict[str, str]:
         raise NotImplementedError('Not implemented in subclass.')
 
     @abc.abstractmethod
     def execute(self):
         """ Run the complete strategy. """
         raise NotImplementedError('Not implemented in subclass.')
+
+
+class SSLCurrencyStrategy(SSLMultiTimeFrame):
+    def __init__(self, account: OandaAccount, instrument: str, strategy_multipliers: dict, boundary_multipliers: dict):
+        super().__init__(
+            account,
+            instrument,
+            30,
+            0.9,
+            strategy_multipliers,
+            boundary_multipliers,
+            ['W', 'D', 'H4', 'M30'],
+        )
+        self._previous_signals = {'W': 0, 'D': 0, 'H4': 0, 'M30': 0}
+        self._ssl_values = {'W': 0, 'D': 0, 'H4': 0, 'M30': 0}
+        self._entry_signals = {
+            '1': {'prev': 0, 'curr': 0},
+            '2': {'prev': 0, 'curr': 0},
+            '3': {'prev': 0, 'curr': 0},
+            '4': {'prev': 0, 'curr': 0},
+        }
+        self._strategy_atr_values = {'1': 0, '2': 0, '3': 0, '4': 0}
+        self._strategy_ssma_values = {'1': 0, '2': 0, '3': 0, '4': 0}
+
+    def _update_latest_values(self, data):
+        ssmas = self._get_ssma_values(data)
+        atrs = self._get_atr_values(data)
+        self._ssl_values = self._get_ssl_values(data)
+        self._strategy_ssma_values = {'1': ssmas['M30'], '2': ssmas['H4'], '3': ssmas['M30'], '4': ssmas['H4']}
+        self._strategy_atr_values = {'1': atrs['M30'], '2': atrs['H4'], '3': atrs['M30'], '4': atrs['H4']}
+
+        # Compare signals, don't re-enter every candle with same entry signal.
+        self._entry_signals = {
+            '1': {'prev': self._previous_signals['M30'], 'curr': self._ssl_values['M30']},
+            '2': {'prev': self._previous_signals['M30'], 'curr': self._ssl_values['M30']},
+            '3': {'prev': self._previous_signals['M30'], 'curr': self._ssl_values['M30']},
+            '4': {'prev': self._previous_signals['H4'], 'curr': self._ssl_values['H4']},
+        }
+
+    def _update_previous_signals(self):
+        self._previous_signals = {
+            'W': self._ssl_values['W'],
+            'D': self._ssl_values['D'],
+            'H4': self._ssl_values['H4'],
+            'M30': self._ssl_values['M30'],
+        }
+
+    def _is_new_signal(self, strategy: str) -> bool:
+        return self._entry_signals[strategy]['previous'] != self._entry_signals[strategy]['current']
+
+    def _get_atr_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+        for df in data.values():
+            append_average_true_range(df)
+
+        return {tf: round(data[tf].iloc[-1]['ATR'], 2) for tf in self._time_frames}
+
+    def _get_ssma_values(self, data: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+        for df in data.values():
+            append_ssma(df)
+
+        return {tf: round(data[tf].iloc[-1]['SSMA_50'], 2) for tf in self._time_frames}
+
+    def _s1_is_long(self) -> bool:
+        return self._ssl_values['W'] == 1 and self._ssl_values['D'] == 1 \
+               and self._ssl_values['H4'] == 1 and self._ssl_values['M30'] == 1
+
+    def _s1_is_short(self) -> bool:
+        return self._ssl_values['W'] == -1 and self._ssl_values['D'] == -1 \
+                and self._ssl_values['H4'] == -1 and self._ssl_values['M30'] == -1
+
+    def _s2_is_long(self, price: float) -> bool:
+        return self._ssl_values['W'] == 1 and self._ssl_values['D'] == -1 \
+               and self._ssl_values['H4'] == 1 and self._ssl_values['M30'] == 1 \
+               and self._calculate_distance_factor(
+                        'long', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
+                    )
+
+    def _s2_is_short(self, price: float) -> bool:
+        return self._ssl_values['W'] == -1 and self._ssl_values['D'] == 1 \
+               and self._ssl_values['H4'] == -1 and self._ssl_values['M30'] == -1 \
+               and self._calculate_distance_factor(
+                        'short', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
+                    )
+
+    def _s3_is_long(self, price: float) -> bool:
+        return self._ssl_values['W'] == 1 and self._ssl_values['D'] == 1 \
+               and self._ssl_values['H4'] == -1 and self._ssl_values['M30'] == 1 \
+               and self._calculate_distance_factor(
+                        'long', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3'
+                    )
+
+    def _s3_is_short(self, price: float) -> bool:
+        return self._ssl_values['W'] == -1 and self._ssl_values['D'] == -1 \
+               and self._ssl_values['H4'] == 1 and self._ssl_values['M30'] == -1 \
+               and self._calculate_distance_factor(
+                        'short', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3',
+                    )
+
+    def _get_signals(self, price: float) -> Dict[str, str]:
+        signals = {'1': '', '2': '', '3': '', '4': ''}
+
+        # Strategy 1.
+        if self._s1_is_long():
+            signals['1'] = 'long'
+        if self._s1_is_short():
+            signals['1'] = 'short'
+
+        # Strategy 2.
+        if self._s2_is_long(price):
+            signals['2'] = 'long'
+        elif self._s2_is_short(price):
+            signals['2'] = 'short'
+
+        # Strategy 3.
+        if self._s3_is_long(price):
+            signals['3'] = 'long'
+        elif self._s3_is_short(price):
+            signals['3'] = 'short'
+
+        # Strategy 4.
+        if self._ssl_values['W'] == 1 and self._ssl_values['H4'] == 1:
+            signals['4'] = 'long'
+        elif self._ssl_values['W'] == -1 and self._ssl_values['H4'] == -1:
+            signals['4'] = 'short'
+
+        return signals
+
+    def _place_pending_order(self, last_close_price: float, strategy: str, signal: str, margin: float):
+        price_position = 'above' if last_close_price > self._strategy_ssma_values[strategy] else 'below'
+        sl_pip_amount = self._strategy_atr_values[strategy] * self._trade_multipliers[strategy][signal][price_position]['sl']
+        order_schema = self._construct_order(
+            signal=signal,
+            last_close_price=last_close_price,
+            entry_offset=self._strategy_atr_values[strategy] / 5,
+            worst_price_bound_offset=self._strategy_atr_values[strategy] / 2,
+            tp_pip_amount=sl_pip_amount * self._trade_multipliers[strategy][signal][price_position]['tp'],
+            sl_pip_amount=sl_pip_amount,
+            units=margin,
+        )
+        pending_order = self._account.create_order(order_schema)
+        self._add_id_to_pending_orders(pending_order, strategy)
+        logger.info(f'pending order placed: {pending_order}')
+        logger.info(f'pending_1: {self._pending_orders_1} pending_2: {self._pending_orders_2}')
+        logger.info(f'adjusted_1: {self._sl_adjusted_1} adjusted_2: {self._sl_adjusted_2}')
+        logger.info(f'closed_1: {self._partially_closed_1} closed_2: {self._partially_closed_2}')
+
+    def execute(self):
+        london_tz = pytz.timezone('Europe/London')
+        prev_exec = -1
+        is_first_run = True
+        while 1:
+            now = datetime.datetime.now().astimezone(london_tz)
+            try:
+                self._sync_pending_orders(self._account.get_pending_orders()['orders'])
+            except Exception as exc:
+                logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
+            if now.minute % 30 == 0 and now.minute != prev_exec:
+                time.sleep(8)
+                data = self._get_data()
+                if data:
+                    last_30m_close = float(data['M30']['midClose'].values[-1])
+                    self._update_latest_values(data)
+                    signals = self._get_signals(last_30m_close)
+                    logger.info(f'ssl values: {self._ssl_values}')
+                    logger.info(f'ssma values: {self._strategy_ssma_values}')
+                    logger.info(f'atr values: {self._strategy_atr_values}')
+                    logger.info(f'{now} signals: {signals}')
+
+                    # Remove outdated pending orders depending on entry signals.
+                    self._check_and_clear_pending_orders(self._entry_signals)
+
+                    # New orders.
+                    for strategy, signal in signals.items():
+                        try:
+                            margin = self._get_margin_size_of_trade(self._account.get_full_account_details()['account'])
+                            is_within_valid_boundary = self._is_within_valid_boundary(
+                                bias=signal,
+                                atr_value=self._strategy_atr_values[strategy],
+                                smoothed_ma=self._strategy_ssma_values[strategy],
+                                price=last_30m_close,
+                                strategy=strategy,
+                            )
+                            if margin > 0 and is_within_valid_boundary \
+                                    and signal and self._is_new_signal(strategy) \
+                                    and not is_first_run:
+                                self._place_pending_order(last_30m_close, strategy, signal, margin)
+                        except Exception as exc:
+                            logger.info(f'Failed place new pending order. {exc}', exc_info=True)
+                    prev_exec = now.minute
+                    is_first_run = False
+                    self._update_previous_signals()
+
+            # Monitor and adjust current trades, if any.
+            time.sleep(1)
+            self._monitor_and_adjust_current_trades()
+
+            # Remove outdated entries in local lists.
+            if now.hour % 24 == 0:
+                self._clean_lists()

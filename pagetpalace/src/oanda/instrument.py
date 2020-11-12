@@ -258,3 +258,15 @@ class OandaInstrumentData(RequestMixin):
         return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
 
+# if __name__ == '__main__':
+#     for g in ['W']:
+#         i = 'GBP_USD'
+#         od = OandaInstrumentData()
+#         od.write_candles_to_csv(
+#             instrument=i,
+#             granularity=g,
+#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
+#             start_year=2012,
+#             end_year=2020,
+#             prices='ABM',
+#         )
