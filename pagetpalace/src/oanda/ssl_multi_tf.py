@@ -77,8 +77,7 @@ class SSLMultiTimeFrame:
         self._last_price = 0
 
     def _get_prices_to_check(self) -> Dict[str, float]:
-        latest_5s_prices = self._pricing.get_latest_candles(f'{self._instrument}:S5:AB')['latestCandles'][0]['candles'][
-            -1]
+        latest_5s_prices = self._pricing.get_latest_candles(f'{self._instrument}:S5:AB')['latestCandles'][0]['candles'][-1]
 
         return {'ask_low': float(latest_5s_prices['ask']['l']), 'bid_high': float(latest_5s_prices['bid']['h'])}
 
@@ -193,16 +192,6 @@ class SSLMultiTimeFrame:
         except Exception as exc:
             logger.error(f'Failed to monitor and adjust current trades. {exc}', exc_info=True)
 
-    def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
-        units_pending = 0
-        for order in account_data['orders']:
-            units_in_order = order.get('units')
-            if units_in_order:
-                units_pending += abs(int(units_in_order))
-        available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
-
-        return available if available > 0 else 0.
-
     def _get_latest_instrument_price(self, retry_count: int = 0) -> float:
         price = self._last_price
         latest_price = self._pricing.get_pricing_info(instruments=[self._instrument], include_home_conversions=False)
@@ -217,26 +206,37 @@ class SSLMultiTimeFrame:
     def _convert_units_to_gbp(self, units: int) -> float:
         return round((self._get_latest_instrument_price() * units) / self._margin_ratio, 4)
 
-    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
-        return math.floor((margin * self._margin_ratio) / self._get_latest_instrument_price())
+    def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
+        units_pending = 0
+        for order in account_data['orders']:
+            units_in_order = order.get('units')
+            if units_in_order:
+                units_pending += abs(int(units_in_order))
+        available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
 
-    def _get_margin_size_of_trade(self, account_data: dict) -> float:
-        balance = float(account_data['balance'])
-        return self._get_valid_margin_size(
-            margin_size=(balance * self._unrestricted_margin_cap) / 1.75,
-            usable_margin=self._margin_not_being_used_in_orders(account_data),
-            balance=balance,
-        )
+        return available if available > 0 else 0.
 
     @classmethod
-    def _get_valid_margin_size(cls, margin_size: float, usable_margin: float, balance: float) -> float:
-        available_minus_restricted = usable_margin - (balance * 0.1)
+    def _adjust_according_to_restricted_margin(cls, margin_size: float, available_minus_restricted: float) -> float:
         if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
             margin_size = 0
         elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 200):
             margin_size = available_minus_restricted
 
         return margin_size
+
+    def _get_valid_margin_size(self, account_data: dict) -> float:
+        balance = float(account_data['balance'])
+        margin_size = (balance * self._unrestricted_margin_cap) / 1.75
+        available_minus_restricted = self._margin_not_being_used_in_orders(account_data) - (balance * 0.1)
+
+        return self._adjust_according_to_restricted_margin(margin_size, available_minus_restricted)
+
+    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
+        return math.floor((margin * self._margin_ratio) / self._get_latest_instrument_price())
+
+    def _get_unit_size_of_trade(self, account_data: dict) -> float:
+        return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
 
     def _get_data(self) -> Dict[str, pd.DataFrame]:
         od = OandaInstrumentData()
@@ -364,12 +364,7 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
         )
         self._previous_signals = {'W': 0, 'D': 0, 'H4': 0, 'M30': 0}
         self._ssl_values = {'W': 0, 'D': 0, 'H4': 0, 'M30': 0}
-        self._entry_signals = {
-            '1': {'prev': 0, 'curr': 0},
-            '2': {'prev': 0, 'curr': 0},
-            '3': {'prev': 0, 'curr': 0},
-            '4': {'prev': 0, 'curr': 0},
-        }
+        self._entry_signals = {str(s): {'prev': 0, 'curr': 0} for s in range(1, 5)}
         self._strategy_atr_values = {'1': 0, '2': 0, '3': 0, '4': 0}
         self._strategy_ssma_values = {'1': 0, '2': 0, '3': 0, '4': 0}
 
@@ -389,12 +384,7 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
         }
 
     def _update_previous_signals(self):
-        self._previous_signals = {
-            'W': self._ssl_values['W'],
-            'D': self._ssl_values['D'],
-            'H4': self._ssl_values['H4'],
-            'M30': self._ssl_values['M30'],
-        }
+        self._previous_signals = {tf: self._ssl_values[tf] for tf in self._time_frames}
 
     def _is_new_signal(self, strategy: str) -> bool:
         return self._entry_signals[strategy]['previous'] != self._entry_signals[strategy]['current']
@@ -447,32 +437,36 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
                         'short', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3',
                     )
 
-    def _get_signals(self, price: float) -> Dict[str, str]:
-        signals = {'1': '', '2': '', '3': '', '4': ''}
-
-        # Strategy 1.
+    def _add_signal_for_s1(self, signals: Dict[str, str]):
         if self._s1_is_long():
             signals['1'] = 'long'
         if self._s1_is_short():
             signals['1'] = 'short'
 
-        # Strategy 2.
+    def _add_signal_for_s2(self, signals: Dict[str, str], price: float):
         if self._s2_is_long(price):
             signals['2'] = 'long'
         elif self._s2_is_short(price):
             signals['2'] = 'short'
 
-        # Strategy 3.
+    def _add_signal_for_s3(self, signals: Dict[str, str], price: float):
         if self._s3_is_long(price):
             signals['3'] = 'long'
         elif self._s3_is_short(price):
             signals['3'] = 'short'
 
-        # Strategy 4.
+    def _add_signal_for_s4(self, signals: Dict[str, str]):
         if self._ssl_values['W'] == 1 and self._ssl_values['H4'] == 1:
             signals['4'] = 'long'
         elif self._ssl_values['W'] == -1 and self._ssl_values['H4'] == -1:
             signals['4'] = 'short'
+
+    def _get_signals(self, price: float) -> Dict[str, str]:
+        signals = {'1': '', '2': '', '3': '', '4': ''}
+        for i in ['1', '4']:
+            getattr(self, f'_add_signal_for_s{i}')(signals)
+        for i in ['2', '3']:
+            getattr(self, f'_add_signal_for_s{i}')(signals, price)
 
         return signals
 
@@ -523,7 +517,7 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
                     # New orders.
                     for strategy, signal in signals.items():
                         try:
-                            margin = self._get_margin_size_of_trade(self._account.get_full_account_details()['account'])
+                            units = self._get_unit_size_of_trade(self._account.get_full_account_details()['account'])
                             is_within_valid_boundary = self._is_within_valid_boundary(
                                 bias=signal,
                                 atr_value=self._strategy_atr_values[strategy],
@@ -531,10 +525,10 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
                                 price=last_30m_close,
                                 strategy=strategy,
                             )
-                            if margin > 0 and is_within_valid_boundary \
+                            if units > 0 and is_within_valid_boundary \
                                     and signal and self._is_new_signal(strategy) \
                                     and not is_first_run:
-                                self._place_pending_order(last_30m_close, strategy, signal, margin)
+                                self._place_pending_order(last_30m_close, strategy, signal, units)
                         except Exception as exc:
                             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
                     prev_exec = now.minute
