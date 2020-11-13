@@ -383,6 +383,12 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
             '4': {'prev': self._previous_signals['H4'], 'curr': self._ssl_values['H4']},
         }
 
+    def _log_latest_values(self, now, signals):
+        logger.info(f'ssl values: {self._ssl_values}')
+        logger.info(f'ssma values: {self._strategy_ssma_values}')
+        logger.info(f'atr values: {self._strategy_atr_values}')
+        logger.info(f'{now} signals: {signals}')
+
     def _update_previous_signals(self):
         self._previous_signals = {tf: self._ssl_values[tf] for tf in self._time_frames}
 
@@ -506,10 +512,7 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
                     last_30m_close = float(data['M30']['midClose'].values[-1])
                     self._update_latest_values(data)
                     signals = self._get_signals(last_30m_close)
-                    logger.info(f'ssl values: {self._ssl_values}')
-                    logger.info(f'ssma values: {self._strategy_ssma_values}')
-                    logger.info(f'atr values: {self._strategy_atr_values}')
-                    logger.info(f'{now} signals: {signals}')
+                    self._log_latest_values(now, signals)
 
                     # Remove outdated pending orders depending on entry signals.
                     self._check_and_clear_pending_orders(self._entry_signals)
