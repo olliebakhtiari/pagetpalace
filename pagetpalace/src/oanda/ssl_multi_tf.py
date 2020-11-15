@@ -405,7 +405,7 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
         for df in data.values():
             append_ssma(df)
 
-        return {tf: round(data[tf].iloc[-1]['SSMA_50'], 2) for tf in self._time_frames}
+        return {tf: round(data[tf].iloc[-1]['SSMA_50'], 5) for tf in self._time_frames}
 
     def _s1_is_long(self) -> bool:
         return self._ssl_values['W'] == 1 and self._ssl_values['D'] == 1 \
