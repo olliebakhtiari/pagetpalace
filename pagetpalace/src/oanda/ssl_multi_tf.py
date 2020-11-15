@@ -419,28 +419,28 @@ class SSLCurrencyStrategy(SSLMultiTimeFrame):
         return self._ssl_values['W'] == 1 and self._ssl_values['D'] == -1 \
                and self._ssl_values['H4'] == 1 and self._ssl_values['M30'] == 1 \
                and self._calculate_distance_factor(
-                        'long', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
+                        'short', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
                     )
 
     def _s2_is_short(self, price: float) -> bool:
         return self._ssl_values['W'] == -1 and self._ssl_values['D'] == 1 \
                and self._ssl_values['H4'] == -1 and self._ssl_values['M30'] == -1 \
                and self._calculate_distance_factor(
-                        'short', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
+                        'long', self._strategy_atr_values['2'], self._strategy_ssma_values['2'], price, '2'
                     )
 
     def _s3_is_long(self, price: float) -> bool:
         return self._ssl_values['W'] == 1 and self._ssl_values['D'] == 1 \
                and self._ssl_values['H4'] == -1 and self._ssl_values['M30'] == 1 \
                and self._calculate_distance_factor(
-                        'long', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3'
+                        'short', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3'
                     )
 
     def _s3_is_short(self, price: float) -> bool:
         return self._ssl_values['W'] == -1 and self._ssl_values['D'] == -1 \
                and self._ssl_values['H4'] == 1 and self._ssl_values['M30'] == -1 \
                and self._calculate_distance_factor(
-                        'short', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3',
+                        'long', self._strategy_atr_values['3'], self._strategy_ssma_values['3'], price, '3',
                     )
 
     def _add_signal_for_s1(self, signals: Dict[str, str]):
