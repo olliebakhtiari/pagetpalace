@@ -171,7 +171,7 @@ class OandaInstrumentData(RequestMixin):
 
         return str(end_dt + td).replace(' ', 'T')
 
-    def get_from_and_to_dates(self, year: int, month: int, end_day: int) -> List[dict]:
+    def get_from_and_to_dates_above_minute_granularity(self, year: int, month: int, end_day: int) -> List[dict]:
         return [
             {
                 'from': f'{year}-{month:02}-01T00:00:00.000000000Z',
@@ -182,6 +182,29 @@ class OandaInstrumentData(RequestMixin):
                 'to': f'{self.calculate_end_date(year, month, end_day)}.000000000Z',
             },
         ]
+
+    def get_from_and_to_dates_minute_data(self, year: int, month: int, end_day: int) -> List[dict]:
+        end_date = self.calculate_end_date(year, month, end_day)
+        dates = []
+        for day in range(1, end_day):
+            dates.append({
+                'from': f'{year}-{month:02}-{day:02}T00:00:00.000000000Z',
+                'to': f'{year}-{month:02}-{day+1:02}T00:00:00.000000000Z',
+            })
+        dates.append({
+                'from': f'{year}-{month:02}-{end_day-1}T00:00:00.000000000Z',
+                'to': f'{end_date}.000000000Z',
+            })
+
+        return dates
+
+    def get_from_and_to_dates(self, granularity: str, year: int, month: int, end_day: int) -> List[dict]:
+        if granularity == 'M1':
+            dates = self.get_from_and_to_dates_minute_data(year, month, end_day)
+        else:
+            dates = self.get_from_and_to_dates_above_minute_granularity(year, month, end_day)
+
+        return dates
 
     def write_candles_to_csv(
             self,
@@ -204,8 +227,8 @@ class OandaInstrumentData(RequestMixin):
                     if self.is_leap_year(year) and month == 2:
                         end_day = 29
 
-                    # Split in two halves as capped at 5000 candles per request.
-                    from_and_to_dates = self.get_from_and_to_dates(year, month, end_day)
+                    # Split into parts as capped at 5000 candles per request.
+                    from_and_to_dates = self.get_from_and_to_dates(granularity, year, month, end_day)
                     for dates in from_and_to_dates:
                         response = self.get_complete_candlesticks(
                             instrument=instrument,
@@ -215,26 +238,27 @@ class OandaInstrumentData(RequestMixin):
                         )
                         logger.info(response)
                         candles.extend(response)
-        curr_month_halfway = math.ceil(now.day) / 2
-        curr_month_from_and_to = [
-            {
-                'from': f'{now.year}-{now.month:02}-01T00:00:00.000000000Z',
-                'to': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
-            },
-            {
-                'from': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
-                'to': f'{now.year}-{now.month:02}-{now.day:02}T00:00:00.000000000Z',
-            },
-        ]
-        for dates in curr_month_from_and_to:
-            response = self.get_complete_candlesticks(
-                instrument=instrument,
-                from_date=dates['from'],
-                to_date=dates['to'],
-                granularity=granularity,
-            )
-            logger.info(response)
-            candles.extend(response)
+        if granularity != 'M1':
+            curr_month_halfway = math.ceil(now.day) / 2
+            curr_month_from_and_to = [
+                {
+                    'from': f'{now.year}-{now.month:02}-01T00:00:00.000000000Z',
+                    'to': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
+                },
+                {
+                    'from': f'{now.year}-{now.month:02}-{curr_month_halfway:02}T00:00:00.000000000Z',
+                    'to': f'{now.year}-{now.month:02}-{now.day:02}T00:00:00.000000000Z',
+                },
+            ]
+            for dates in curr_month_from_and_to:
+                response = self.get_complete_candlesticks(
+                    instrument=instrument,
+                    from_date=dates['from'],
+                    to_date=dates['to'],
+                    granularity=granularity,
+                )
+                logger.info(response)
+                candles.extend(response)
         logger.info(candles)
         df = self.convert_to_df(candles, prices)
         logger.info(df)
@@ -259,14 +283,14 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for g in ['W']:
-#         i = 'GBP_USD'
+#     for g in ['M1']:
+#         i = 'EUR_USD'
 #         od = OandaInstrumentData()
 #         od.write_candles_to_csv(
 #             instrument=i,
 #             granularity=g,
 #             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-#             start_year=2012,
+#             start_year=2017,
 #             end_year=2020,
 #             prices='ABM',
 #         )
