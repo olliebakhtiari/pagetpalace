@@ -21,7 +21,7 @@ def ssl_channel(data: pd.DataFrame, prices: str = 'mid', periods: int = 20) -> n
 
 def append_ssl_channel(data: pd.DataFrame, periods: int = 20):
     hlv = ssl_channel(data, periods=periods)
-    data['HighLowValue'] = hlv
+    data[f'HighLowValue_{periods}_period'] = hlv
 
 
 def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: int = 14):
@@ -34,7 +34,7 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
     data['tr1'] = abs(high - close.shift())
     data['tr2'] = abs(low - close.shift())
     data['true_range'] = data[['tr0', 'tr1', 'tr2']].max(axis=1)
-    df['ATR'] = data['true_range'].ewm(alpha=1 / periods).mean()
+    df[f'ATR_{periods}'] = data['true_range'].ewm(alpha=1 / periods).mean()
 
 
 def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = "midClose"):
