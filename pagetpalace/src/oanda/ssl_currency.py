@@ -1,13 +1,14 @@
 # Python standard.
-from datetime import datetime
 import pytz
 import time
+from datetime import datetime
 from typing import Dict
 
 # Local.
 from pagetpalace.src.oanda import OandaAccount
-from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
+from pagetpalace.src.oanda.settings import DEMO_ACCESS_TOKEN, DEMO_ACCOUNT_NUMBER
+from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.tools.logger import *
 
 
@@ -41,7 +42,7 @@ class SSLCurrency(SSLMultiTimeFrame):
         self._atr_values['M30'] = round(self._latest_data['M30'].iloc[-1]['ATR_14'], 2)
 
     def _update_ssma_values(self):
-        append_ssma(self._latest_data('M30'))
+        append_ssma(self._latest_data['M30'])
         self._ssma_values['M30'] = round(self._latest_data['M30'].iloc[-1]['SSMA_50'], 5)
 
     def _log_latest_values(self, now, signals):
@@ -115,3 +116,4 @@ class SSLCurrency(SSLMultiTimeFrame):
             # Remove outdated entries in local lists.
             if now.hour % 24 == 0:
                 self._clean_lists()
+

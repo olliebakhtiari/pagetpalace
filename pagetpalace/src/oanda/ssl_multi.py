@@ -6,9 +6,9 @@ import sys
 from typing import List, Dict
 
 # Third-party.
+from pagetpalace.src.indicators import append_ssl_channel
 from pagetpalace.src.oanda import OandaPricingData, create_stop_order, OandaInstrumentData, OandaAccount
 from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
-from pagetpalace.src.indicators import append_ssl_channel
 from pagetpalace.tools.logger import *
 
 
