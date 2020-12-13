@@ -7,7 +7,6 @@ from typing import Dict
 # Local.
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
-from pagetpalace.src.oanda.settings import DEMO_ACCESS_TOKEN, DEMO_ACCOUNT_NUMBER
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.tools.logger import *
 
