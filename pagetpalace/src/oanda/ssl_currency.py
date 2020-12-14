@@ -38,7 +38,7 @@ class SSLCurrency(SSLMultiTimeFrame):
 
     def _update_atr_values(self):
         append_average_true_range(self._latest_data['M30'])
-        self._atr_values['M30'] = round(self._latest_data['M30'].iloc[-1]['ATR_14'], 2)
+        self._atr_values['M30'] = round(self._latest_data['M30'].iloc[-1]['ATR_14'], 5)
 
     def _update_ssma_values(self):
         append_ssma(self._latest_data['M30'])
