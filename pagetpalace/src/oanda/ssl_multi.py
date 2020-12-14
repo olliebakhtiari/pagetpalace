@@ -123,8 +123,8 @@ class SSLMultiTimeFrame:
 
     def _clean_local_lists(self, open_trade_ids: List[str]):
         all_locals_lists = []
-        all_locals_lists.extend(list(self.partial_closure_params.values()))
-        all_locals_lists.extend(list(self.stop_loss_move_params.values()))
+        all_locals_lists.extend(list(self._sl_adjusted.values()))
+        all_locals_lists.extend(list(self._partially_closed.values()))
         for local_list in all_locals_lists:
             for id_ in local_list:
                 if id_ not in open_trade_ids:
