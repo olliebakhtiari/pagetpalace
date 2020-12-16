@@ -32,7 +32,7 @@ class SSLMultiTimeFrame:
     ):
         """
             boundary_multipliers = {
-                'margin_adjustment': {
+                'continuation': {
                     'D': {'long': {'above': 100, 'below': 100}, 'short': {'above': 100, 'below': 100}},
                     'M5': {'long': {'above': 100, 'below': 100}, 'short': {'above': 100, 'below': 100}},
                 },
@@ -289,14 +289,12 @@ class SSLMultiTimeFrame:
         return boundary
 
     def _is_within_valid_boundary(self, bias: str, price: float, timeframe: str) -> bool:
-        boundary = self._calculate_boundary('margin_adjustment', bias, price, timeframe)
+        return not (self._calculate_atr_factor(price, timeframe) * self._atr_values[timeframe]
+                    > self._calculate_boundary('continuation', bias, price, timeframe))
 
-        return not (self._calculate_atr_factor(price, timeframe) * self._atr_values[timeframe] > boundary)
-
-    def _calculate_distance_factor(self, bias: str, price: float, timeframe: str) -> bool:
-        boundary = self._calculate_boundary('reverse', bias, price, timeframe)
-
-        return self._calculate_atr_factor(price, timeframe) * self._atr_values[timeframe] >= boundary
+    def _has_met_reverse_trade_condition(self, bias: str, price: float, timeframe: str) -> bool:
+        return self._calculate_atr_factor(price, timeframe) * self._atr_values[timeframe] \
+               >= self._calculate_boundary('reverse', bias, price, timeframe)
 
     def _update_latest_data(self):
         od = OandaInstrumentData()
