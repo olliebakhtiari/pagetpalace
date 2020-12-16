@@ -303,7 +303,7 @@ class SSLMultiTimeFrame:
             future_to_tf = {}
             for granularity in self.time_frames:
                 future_to_tf[
-                    executor.submit(od.get_complete_candlesticks, self.instrument, 'ABM', granularity, 750)
+                    executor.submit(od.get_complete_candlesticks, self.instrument, 'ABM', granularity, 1000)
                 ] = granularity
             for future in concurrent.futures.as_completed(future_to_tf):
                 time_frame = future_to_tf[future]
