@@ -86,7 +86,7 @@ class SSLCurrency(SSLMultiTimeFrame):
                         if signal:
                             try:
                                 spread = float(self._latest_data['M30']['askOpen'].values[-1]) \
-                                         - float(self._latest_data['M30']['midOpen'].values[-1])
+                                         - float(self._latest_data['M30']['bidOpen'].values[-1])
                                 units = self._get_unit_size_of_trade(self.account.get_full_account_details()['account'])
                                 is_within_valid_boundary = self._is_within_valid_boundary(signal, last_30m_close, 'M30')
                                 if units > 0 and spread <= 0.0004 and is_within_valid_boundary \
