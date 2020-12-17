@@ -13,11 +13,11 @@ def check_pct_hit(prices: Dict[str, float], trade: dict, pct: float) -> bool:
 
 
 def _check_long_pct_hit(price: float, trade: dict, pct: float) -> bool:
-    return price >= round((float(trade['price']) + _get_long_trade_pct_target_pips(trade, pct)), 1)
+    return price >= round((float(trade['price']) + _get_long_trade_pct_target_pips(trade, pct)), 5)
 
 
 def _check_short_pct_hit(price: float, trade: dict, pct: float) -> bool:
-    return price <= round((float(trade['price']) - _get_short_trade_pct_target_pips(trade, pct)), 1)
+    return price <= round((float(trade['price']) - _get_short_trade_pct_target_pips(trade, pct)), 5)
 
 
 def calculate_new_sl_price(trade: dict, pct: float) -> float:
@@ -27,7 +27,7 @@ def calculate_new_sl_price(trade: dict, pct: float) -> float:
     elif int(trade['currentUnits']) < 0:
         price = _calculate_new_short_sl(trade, pct)
 
-    return round(float(price), 1)
+    return round(float(price), 5)
 
 
 def _calculate_new_long_sl(trade: dict, pct: float) -> float:
