@@ -63,8 +63,8 @@ class SSLMultiTimeFrame:
         self.partial_closure_params = partial_closure_params
         self._pricing = OandaPricingData(account.access_token, account.account_id, account.account_type)
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
-        self._partially_closed = {i: [] for i in range(len(self.partial_closure_params.keys()))}
-        self._sl_adjusted = {i: [] for i in range(len(self.stop_loss_move_params.keys()))}
+        self._partially_closed = {i + 1: [] for i in range(len(self.partial_closure_params.keys()))}
+        self._sl_adjusted = {i + 1: [] for i in range(len(self.stop_loss_move_params.keys()))}
         self._latest_price = 0
         init_empty = {tf: 0 for tf in self.time_frames}
         self._latest_data = {}
