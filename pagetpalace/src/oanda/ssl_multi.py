@@ -153,14 +153,14 @@ class SSLMultiTimeFrame:
 
     def _check_and_adjust_stop_losses(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
         try:
-            for count, values in self.stop_loss_move_params:
+            for count, values in self.stop_loss_move_params.values():
                 self._check_and_adjust_stops(prices_to_check, open_trades, values['check'], values['move'], count)
         except Exception as exc:
             logger.error(f'Failed to check and adjust stop losses. {exc}', exc_info=True)
 
     def _partial_closures(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
         try:
-            for count, values in self.partial_closure_params:
+            for count, values in self.partial_closure_params.values():
                 self._check_and_partially_close(prices_to_check, open_trades, values['check'], values['close'], count)
         except Exception as exc:
             logger.error(f'Failed to check and partially close trades. {exc}', exc_info=True)
