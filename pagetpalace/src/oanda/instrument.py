@@ -282,7 +282,7 @@ class OandaInstrumentData(RequestMixin):
         return self._request(endpoint=f'{instrument}/positionBook', params={"time": time} if time else {})
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 #     for g in ['M1']:
 #         i = 'EUR_USD'
 #         od = OandaInstrumentData()
@@ -294,5 +294,5 @@ if __name__ == '__main__':
 #             end_year=2020,
 #             prices='ABM',
 #         )
-    od = OandaInstrumentData()
-    print(od.get_complete_candlesticks(instrument='GBP_USD', granularity='M30', count=48))
+#     od = OandaInstrumentData()
+#     print(od.get_complete_candlesticks(instrument='GBP_USD', granularity='M30', count=48))
