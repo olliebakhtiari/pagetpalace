@@ -7,6 +7,8 @@ from pagetpalace.src.oanda.settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VE
 
 
 class OandaAccount(RequestMixin):
+    ACCOUNT_CURRENCY = 'GBP'
+    
     def __init__(self, access_token: str, account_id: str, account_type: str):
         self.account_type = account_type
         self.domain = OANDA_DOMAINS[self.account_type]  # LIVE-API or DEMO-API.

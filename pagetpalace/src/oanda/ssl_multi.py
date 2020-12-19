@@ -54,6 +54,7 @@ class SSLMultiTimeFrame:
         self.unrestricted_margin_cap = unrestricted_margin_cap
         self.account = account
         self.instrument = instrument
+        self.base_currency = instrument.split('_')[0]
         self.time_frames = time_frames
         self.entry_timeframe = entry_timeframe
         self.sub_strategies_count = sub_strategies_count
@@ -187,7 +188,19 @@ class SSLMultiTimeFrame:
         return float(price)
 
     def _convert_units_to_gbp(self, units: int) -> float:
+        if self.base_currency == self.account.ACCOUNT_CURRENCY:
+            return round(units / self.margin_ratio, 4)
+
         return round((self._get_latest_instrument_price() * units) / self.margin_ratio, 4)
+
+    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
+        if self.base_currency == self.account.ACCOUNT_CURRENCY:
+            return math.floor(margin * self.margin_ratio)
+
+        return math.floor((margin * self.margin_ratio) / self._get_latest_instrument_price())
+
+    def _get_unit_size_of_trade(self, account_data: dict) -> float:
+        return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
 
     def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
         units_pending = 0
@@ -215,12 +228,6 @@ class SSLMultiTimeFrame:
                                      - (balance * (1 - self.unrestricted_margin_cap))
 
         return self._adjust_according_to_restricted_margin(margin_size, available_minus_restricted)
-
-    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
-        return math.floor((margin * self.margin_ratio) / self._get_latest_instrument_price())
-
-    def _get_unit_size_of_trade(self, account_data: dict) -> float:
-        return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
 
     def _construct_order(self,
                          signal: str,
