@@ -18,6 +18,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                  account: OandaAccount,
                  instrument: str,
                  boundary_multipliers: dict,
+                 hammer_pin_coefficients: dict,
                  partial_closure_params: dict = None,
     ):
         super().__init__(
@@ -33,6 +34,13 @@ class SSLHammerPin(SSLMultiTimeFrame):
             partial_closure_params=partial_closure_params,
             ssl_periods=10,
         )
+        """ 
+            hammer_pin_coefficients = {
+                'long': {'body': 2, 'head_tail': 5}, 
+                'short': {'body': 6, 'head_tail': 3},
+            }
+        """
+        self.hammer_pin_coefficients = hammer_pin_coefficients
 
     def _check_and_clear_pending_orders(self):
         """ Overwrite method to clear regardless of new signal, clear based on time. (A trade has an hour to fill). """
@@ -52,14 +60,16 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _is_long_signal(self, prev_candle) -> bool:
         bias = 'long'
-        hammer_pin_signal = get_hammer_pin_signal(prev_candle, 5, 3)
+        coeffs = self.hammer_pin_coefficients[bias]
+        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
         midlow_20_distance_met = self._has_met_reverse_trade_condition(bias, prev_candle['midLow'].values[0], 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_20_distance_met
 
     def _is_short_signal(self, prev_candle) -> bool:
         bias = 'short'
-        hammer_pin_signal = get_hammer_pin_signal(prev_candle, 2, 5)
+        coeffs = self.hammer_pin_coefficients[bias]
+        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
         midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, prev_candle['midHigh'].values[0], 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
@@ -150,6 +160,7 @@ if __name__ == '__main__':
         account=OandaAccount(access_token=DEMO_ACCESS_TOKEN, account_id=DEMO_ACCOUNT_NUMBER, account_type='DEMO_API'),
         instrument='EUR_GBP',
         boundary_multipliers={'reverse': {'H1': {'long': {'below': 1}, 'short': {'above': 2}}}},
+        hammer_pin_coefficients={'long': {'body': 5, 'head_tail': 3}, 'short': {'body': 2, 'head_tail': 5}},
         partial_closure_params={1: {'check': 0.8, 'close': 0.3}},
     )
     eur_gbp.execute()
