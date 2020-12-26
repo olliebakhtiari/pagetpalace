@@ -24,8 +24,8 @@ class SSLMultiTimeFrame:
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
-            trade_multipliers: dict,
             boundary_multipliers: dict,
+            trade_multipliers: dict = None,
             stop_loss_move_params: dict = None,
             partial_closure_params: dict = None,
             ssl_periods: int = 20,
@@ -64,8 +64,8 @@ class SSLMultiTimeFrame:
         self.partial_closure_params = partial_closure_params
         self._pricing = OandaPricingData(account.access_token, account.account_id, account.account_type)
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
-        self._partially_closed = {i + 1: [] for i in range(len(self.partial_closure_params.keys()))}
-        self._sl_adjusted = {i + 1: [] for i in range(len(self.stop_loss_move_params.keys()))}
+        self._partially_closed = self._init_partially_closed()
+        self._sl_adjusted = self._init_sl_adjusted()
         self._latest_price = 0
         init_empty = {tf: 0 for tf in self.time_frames}
         self._latest_data = {}
@@ -75,6 +75,12 @@ class SSLMultiTimeFrame:
         self._ssma_values = {}
         self._entry_signals = {}
         self.ssl_periods = ssl_periods
+
+    def _init_partially_closed(self) -> dict:
+        return {i+1: [] for i in range(len(self.partial_closure_params.keys()))} if self.partial_closure_params else {}
+
+    def _init_sl_adjusted(self) -> dict:
+        return {i+1: [] for i in range(len(self.stop_loss_move_params.keys()))} if self.stop_loss_move_params else {}
 
     def _get_prices_to_check(self) -> Dict[str, float]:
         latest_5s_prices = self._pricing.get_latest_candles(f'{self.instrument}:S5:AB')['latestCandles'][0]['candles'][-1]
@@ -150,7 +156,7 @@ class SSLMultiTimeFrame:
             try:
                 self._clear_pending_orders()
             except Exception as exc:
-                logger.error(f'Failed to clear pending orders.  {exc}', exc_info=True)
+                logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
 
     def _check_and_adjust_stop_losses(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
         try:
@@ -361,6 +367,12 @@ class SSLMultiTimeFrame:
     @abc.abstractmethod
     def _get_signals(self, **kwargs) -> Dict[str, str]:
         raise NotImplementedError('Not implemented in subclass.')
+
+    def _log_latest_values(self, now, signals):
+        logger.info(f'ssl values: {self._current_ssl_values}')
+        logger.info(f'ssma values: {self._ssma_values}')
+        logger.info(f'atr values: {self._atr_values}')
+        logger.info(f'{now} signals: {signals}')
 
     @abc.abstractmethod
     def execute(self):

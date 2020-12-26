@@ -22,18 +22,18 @@ class SSLCurrency(SSLMultiTimeFrame):
             partial_closure_params: dict = None,
     ):
         super().__init__(
-            2,
-            30,
-            0.9,
-            account,
-            instrument,
-            ['W', 'D', 'H4', 'M30'],
-            'M30',
-            1,
-            trade_multipliers,
-            boundary_multipliers,
-            stop_loss_move_params,
-            partial_closure_params,
+            equity_split=2,
+            margin_ratio=30,
+            unrestricted_margin_cap=0.9,
+            account=account,
+            instrument=instrument,
+            time_frames=['W', 'D', 'H4', 'M30'],
+            entry_timeframe='M30',
+            sub_strategies_count=1,
+            trade_multipliers=trade_multipliers,
+            boundary_multipliers=boundary_multipliers,
+            stop_loss_move_params=stop_loss_move_params,
+            partial_closure_params=partial_closure_params,
         )
 
     def _update_atr_values(self):
@@ -43,12 +43,6 @@ class SSLCurrency(SSLMultiTimeFrame):
     def _update_ssma_values(self):
         append_ssma(self._latest_data['M30'])
         self._ssma_values['M30'] = round(self._latest_data['M30'].iloc[-1]['SSMA_50'], 5)
-
-    def _log_latest_values(self, now, signals):
-        logger.info(f'ssl values: {self._current_ssl_values}')
-        logger.info(f'ssma values: {self._ssma_values}')
-        logger.info(f'atr values: {self._atr_values}')
-        logger.info(f'{now} signals: {signals}')
 
     def _get_signals(self) -> Dict[str, str]:
         signals = {'1': ''}

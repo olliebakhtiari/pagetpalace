@@ -1,3 +1,6 @@
+# Python standard.
+from typing import Dict
+
 # Third-party.
 import pandas as pd
 import numpy as np
@@ -39,3 +42,49 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
 
 def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = "midClose"):
     df[f'SSMA_{periods}'] = df[prices].ewm(ignore_na=False, alpha=1.0 / periods, min_periods=0, adjust=False).mean()
+
+
+def is_long_green_hammer(prices: Dict[str, float], body_coeff: float, head_tail_coeff: float) -> bool:
+    return (prices['o'] - prices['l'] > (body_coeff*(prices['c'] - prices['o']))) \
+            and ((head_tail_coeff*(prices['h'] - prices['c'])) < prices['o'] - prices['l'])
+
+
+def is_long_red_hammer(prices: Dict[str, float], body_coeff: float, head_tail_coeff: float) -> bool:
+    return (prices['c'] - prices['l'] > (body_coeff*(prices['o'] - prices['c']))) \
+           and ((head_tail_coeff*(prices['h'] - prices['o'])) < prices['c'] - prices['l'])
+
+
+def is_short_green_pin(prices: Dict[str, float], body_coeff: float, head_tail_coeff: float) -> bool:
+    return (prices['h'] - prices['c'] > (body_coeff*(prices['c'] - prices['o']))) \
+           and ((head_tail_coeff*(prices['o'] - prices['l'])) < prices['h'] - prices['c'])
+
+
+def is_short_red_pin(prices: Dict[str, float], body_coeff: float, head_tail_coeff: float) -> bool:
+    return (prices['h'] - prices['o'] > (body_coeff*(prices['o'] - prices['c']))) \
+           and ((head_tail_coeff*(prices['c'] - prices['l'])) < prices['h'] - prices['o'])
+
+
+def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coeff: float) -> str:
+    signal = ''
+    prices = {
+        'o': candle['midOpen'].values[0],
+        'h': candle['midHigh'].values[0],
+        'l': candle['midLow'].values[0],
+        'c': candle['midClose'].values[0],
+    }
+    if prices['c'] > prices['o']:
+
+        # Green candle
+        if is_long_green_hammer(prices, body_coeff, head_tail_coeff):
+            signal = 'long'
+        elif is_short_green_pin(prices, body_coeff, head_tail_coeff):
+            signal = 'short'
+    else:
+
+        # Red candle
+        if is_long_red_hammer(prices, body_coeff, head_tail_coeff):
+            signal = 'long'
+        elif is_short_red_pin(prices, body_coeff, head_tail_coeff):
+            signal = 'short'
+
+    return signal

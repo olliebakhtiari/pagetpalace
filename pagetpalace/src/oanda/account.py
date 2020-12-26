@@ -11,7 +11,7 @@ class OandaAccount(RequestMixin):
     
     def __init__(self, access_token: str, account_id: str, account_type: str):
         self.account_type = account_type
-        self.domain = OANDA_DOMAINS[self.account_type]  # LIVE-API or DEMO-API.
+        self.domain = OANDA_DOMAINS[self.account_type]  # LIVE_API or DEMO_API.
         self.auth_token = access_token
         self.account_id = account_id
         self.url = f'{PROTOCOL}{self.domain}/{OANDA_API_VERSION}/accounts/{account_id}'
