@@ -67,10 +67,10 @@ def is_short_red_pin(prices: Dict[str, float], body_coeff: float, head_tail_coef
 def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coeff: float) -> str:
     signal = ''
     prices = {
-        'o': candle['midOpen'].values[0],
-        'h': candle['midHigh'].values[0],
-        'l': candle['midLow'].values[0],
-        'c': candle['midClose'].values[0],
+        'o': float(candle['midOpen'].values[0]),
+        'h': float(candle['midHigh'].values[0]),
+        'l': float(candle['midLow'].values[0]),
+        'c': float(candle['midClose'].values[0]),
     }
     if prices['c'] > prices['o']:
 
