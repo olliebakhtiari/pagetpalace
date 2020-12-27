@@ -62,7 +62,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         bias = 'long'
         coeffs = self.hammer_pin_coefficients[bias]
         hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midlow_20_distance_met = self._has_met_reverse_trade_condition(bias, prev_candle['midLow'].values[0], 'H1')
+        midlow_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midLow'].values[0]), 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_20_distance_met
 
@@ -70,7 +70,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         bias = 'short'
         coeffs = self.hammer_pin_coefficients[bias]
         hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, prev_candle['midHigh'].values[0], 'H1')
+        midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh'].values[0]), 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
 
@@ -92,9 +92,9 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _get_price_to_use_for_entry_offset(self, signal: str) -> float:
         if signal == 'long':
-            price = self._latest_data['H1']['midHigh'].values[0]
+            price = float(self._latest_data['H1']['midHigh'].values[0])
         else:
-            price = self._latest_data['H1']['midLow'].values[0]
+            price = float(self._latest_data['H1']['midLow'].values[0])
 
         return price
 
@@ -131,7 +131,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                     self._update_latest_data()
                     if self._latest_data:
                         self._update_current_indicators_and_signals()
-                        signals = self._get_signals()
+                        signals = self._get_signals(prev_candle=self._latest_data['H1'])
                         self._log_latest_values(now, signals)
 
                         # New orders.
