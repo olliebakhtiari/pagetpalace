@@ -126,6 +126,10 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 except Exception as exc:
                     logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != prev_exec:
+
+                    # Remove pending orders every hour.
+                    self._check_and_clear_pending_orders()
+
                     time.sleep(8)
                     self._update_latest_data()
                     if self._latest_data:
@@ -141,9 +145,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         prev_exec = now.hour
                         is_first_run = False
                         self._update_previous_ssl_values()
-
-                # Remove pending orders every hour.
-                self._check_and_clear_pending_orders()
 
                 # Monitor and adjust current trades, if any.
                 time.sleep(1)
