@@ -134,7 +134,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                     self._update_latest_data()
                     if self._latest_data:
                         self._update_current_indicators_and_signals()
-                        signals = self._get_signals(prev_candle=self._latest_data['H1'])
+                        signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
                         self._log_latest_values(now, signals)
 
                         # New orders.
