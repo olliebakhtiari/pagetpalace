@@ -8,7 +8,6 @@ from typing import Dict, Union
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
-from pagetpalace.src.oanda.settings import DEMO_ACCESS_TOKEN, DEMO_ACCOUNT_NUMBER
 from pagetpalace.src.signal import Signal
 from pagetpalace.tools.logger import *
 
@@ -83,7 +82,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
         return signal
 
-    def _get_signals(self, **kwargs) -> Dict[str, Signal]:
+    def _get_signals(self, **kwargs) -> Dict[str, Union[Signal, None]]:
         return {'1': self._get_s1_signal(kwargs['prev_candle'])}
 
     @classmethod
@@ -153,15 +152,3 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 # Remove outdated entries in local lists.
                 if now.hour % 24 == 0:
                     self._clean_lists()
-
-
-if __name__ == '__main__':
-    eur_gbp = SSLHammerPin(
-        account=OandaAccount(access_token=DEMO_ACCESS_TOKEN, account_id=DEMO_ACCOUNT_NUMBER, account_type='DEMO_API'),
-        instrument='EUR_GBP',
-        boundary_multipliers={'reverse': {'H1': {'long': {'below': 1}, 'short': {'above': 2}}}},
-        hammer_pin_coefficients={'long': {'body': 5, 'head_tail': 3}, 'short': {'body': 2, 'head_tail': 5}},
-        partial_closure_params={1: {'check': 0.8, 'close': 0.3}},
-    )
-    eur_gbp.execute()
-
