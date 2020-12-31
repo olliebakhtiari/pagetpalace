@@ -18,6 +18,8 @@ class SSLHammerPin(SSLMultiTimeFrame):
                  instrument: str,
                  boundary_multipliers: dict,
                  hammer_pin_coefficients: dict,
+                 trading_restriction: str,
+                 spread_cap: float = None,
                  partial_closure_params: dict = None,
     ):
         super().__init__(
@@ -40,6 +42,8 @@ class SSLHammerPin(SSLMultiTimeFrame):
             }
         """
         self.hammer_pin_coefficients = hammer_pin_coefficients
+        self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
+        self.spread_cap = spread_cap
 
     def _check_and_clear_pending_orders(self):
         """ Overwrite method to clear regardless of new signal, clear based on time. (A trade has an hour to fill). """
@@ -86,8 +90,21 @@ class SSLHammerPin(SSLMultiTimeFrame):
         return {'1': self._get_s1_signal(kwargs['prev_candle'])}
 
     @classmethod
-    def _is_within_trading_hours(cls, curr_dt: datetime) -> bool:
+    def _is_within_trading_hours(cls, curr_dt) -> bool:
         return 7 <= curr_dt.hour < 22
+
+    def _is_within_spread_cap(self, spread: float) -> bool:
+        return spread <= self.spread_cap
+
+    def _is_within_trading_restriction(self, curr_dt) -> bool:
+        if self.trading_restriction == 'trading_hours':
+            is_valid = self._is_within_trading_hours(curr_dt)
+        elif self.trading_restriction == 'spread_cap':
+            is_valid = self._is_within_spread_cap(self.spread_cap)
+        else:
+            raise ValueError('Trading restriction not recognised.')
+
+        return is_valid
 
     def _get_price_to_use_for_entry_offset(self, signal: str) -> float:
         if signal == 'long':
@@ -126,19 +143,18 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 except Exception as exc:
                     logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != prev_exec:
-
-                    # Remove pending orders every hour.
-                    self._check_and_clear_pending_orders()
-
+                    prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
                     time.sleep(8)
                     self._update_latest_data()
+                    if prev_latest_candle_datetime != self._latest_data['H1'].iloc[-1]['datetime']:
+                        self._check_and_clear_pending_orders()
                     if self._latest_data:
                         self._update_current_indicators_and_signals()
                         signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
                         self._log_latest_values(now, signals)
 
                         # New orders.
-                        if self._is_within_trading_hours(now):
+                        if self._is_within_trading_restriction(now):
                             for strategy, signal in signals.items():
                                 if signal and not is_first_run:
                                     self._place_new_pending_order_if_units_available(strategy, signal)
