@@ -8,7 +8,6 @@ from typing import Dict, Union
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
-from pagetpalace.src.signal import Signal
 from pagetpalace.tools.logger import *
 
 
@@ -17,6 +16,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                  account: OandaAccount,
                  instrument: str,
                  boundary_multipliers: dict,
+                 trade_multipliers: dict,
                  hammer_pin_coefficients: dict,
                  trading_restriction: str,
                  spread_cap: float = None,
@@ -32,6 +32,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             entry_timeframe='H1',
             sub_strategies_count=1,
             boundary_multipliers=boundary_multipliers,
+            trade_multipliers=trade_multipliers,
             partial_closure_params=partial_closure_params,
             ssl_periods=10,
         )
@@ -77,16 +78,16 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
 
-    def _get_s1_signal(self, prev_candle) -> Union[Signal, None]:
+    def _get_s1_signal(self, prev_candle) -> Union[str, None]:
         signal = None
         if self._is_long_signal(prev_candle):
-            signal = Signal('reverse', 'long', 4., 2.5)
+            signal = 'long'
         elif self._is_short_signal(prev_candle):
-            signal = Signal('reverse', 'short', 1., 3.5)
+            signal = 'short'
 
         return signal
 
-    def _get_signals(self, **kwargs) -> Dict[str, Union[Signal, None]]:
+    def _get_signals(self, **kwargs) -> Dict[str, Union[str, None]]:
         return {'1': self._get_s1_signal(kwargs['prev_candle'])}
 
     @classmethod
@@ -114,18 +115,18 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
         return price
 
-    def _place_new_pending_order_if_units_available(self, strategy: str, signal: Signal):
+    def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
         try:
             units = self._get_unit_size_of_trade(self.account.get_full_account_details()['account'])
             if units > 0:
-                sl_pip_amount = self._atr_values[self.entry_timeframe] * signal.stop_loss_multiplier
+                sl_pip_amount = self._atr_values[self.entry_timeframe] * self.trade_multipliers[strategy][signal]['sl']
                 self._place_pending_order(
-                    price_to_offset_from=self._get_price_to_use_for_entry_offset(signal.bias),
+                    price_to_offset_from=self._get_price_to_use_for_entry_offset(signal),
                     entry_offset=self._atr_values[self.entry_timeframe] / 7,
                     sl_pip_amount=sl_pip_amount,
-                    tp_pip_amount=sl_pip_amount * signal.take_profit_multiplier,
+                    tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
                     strategy=strategy,
-                    signal=signal.bias,
+                    signal=signal,
                     margin=units,
                 )
         except Exception as exc:
