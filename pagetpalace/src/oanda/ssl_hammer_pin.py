@@ -45,6 +45,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
         self.spread_cap = spread_cap
+        self._prev_latest_candle_datetime = None
 
     def _check_and_clear_pending_orders(self):
         """ Overwrite method to clear regardless of new signal, clear based on time. (A trade has an hour to fill). """
@@ -144,12 +145,11 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 except Exception as exc:
                     logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != prev_exec:
-                    prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
                     time.sleep(8)
                     self._update_latest_data()
-                    if prev_latest_candle_datetime != self._latest_data['H1'].iloc[-1]['datetime']:
-                        self._check_and_clear_pending_orders()
                     if self._latest_data:
+                        if self._prev_latest_candle_datetime != self._latest_data['H1'].iloc[-1]['datetime']:
+                            self._check_and_clear_pending_orders()
                         self._update_current_indicators_and_signals()
                         signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
                         self._log_latest_values(now, signals)
@@ -162,6 +162,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         prev_exec = now.hour
                         is_first_run = False
                         self._update_previous_ssl_values()
+                        self._prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
 
                 # Monitor and adjust current trades, if any.
                 time.sleep(1)
