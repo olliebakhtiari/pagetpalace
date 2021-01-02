@@ -2,12 +2,13 @@
 import json
 
 # Local.
+from pagetpalace.src.instrument_attributes import BaseCurrencies
 from pagetpalace.src.request import RequestMixin
 from pagetpalace.src.oanda.settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 
 class OandaAccount(RequestMixin):
-    ACCOUNT_CURRENCY = 'GBP'
+    ACCOUNT_CURRENCY = BaseCurrencies.GBP
     
     def __init__(self, access_token: str, account_id: str, account_type: str):
         self.account_type = account_type

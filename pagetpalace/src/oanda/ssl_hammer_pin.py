@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Local.
+from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
@@ -14,7 +15,7 @@ from pagetpalace.tools.logger import *
 class SSLHammerPin(SSLMultiTimeFrame):
     def __init__(self,
                  account: OandaAccount,
-                 instrument: str,
+                 instrument: Instrument,
                  boundary_multipliers: dict,
                  trade_multipliers: dict,
                  hammer_pin_coefficients: dict,
@@ -24,7 +25,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
     ):
         super().__init__(
             equity_split=1.75,
-            margin_ratio=30,
             unrestricted_margin_cap=0.9,
             account=account,
             instrument=instrument,
@@ -128,7 +128,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                     tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
                     strategy=strategy,
                     signal=signal,
-                    margin=units,
+                    units=units,
                 )
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)

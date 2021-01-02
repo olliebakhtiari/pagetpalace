@@ -5,10 +5,12 @@ import math
 import sys
 from typing import List, Dict
 
-# Third-party.
+# Local.
+from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_ssl_channel
 from pagetpalace.src.oanda import OandaPricingData, create_stop_order, OandaInstrumentData, OandaAccount
 from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
+from pagetpalace.src.risk_manager import RiskManager
 from pagetpalace.tools.logger import *
 
 
@@ -17,10 +19,9 @@ class SSLMultiTimeFrame:
     def __init__(
             self,
             equity_split: float,
-            margin_ratio: int,
             unrestricted_margin_cap: float,
             account: OandaAccount,
-            instrument: str,
+            instrument: Instrument,
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
@@ -49,12 +50,11 @@ class SSLMultiTimeFrame:
             stop_loss_move_params = {1: {'check': 0.35, 'move': 0.01}}
             partial_close_params = {1: {'check': 0.35, 'close': 0.5}}
         """
+        self.ssl_periods = ssl_periods
         self.equity_split = equity_split
-        self.margin_ratio = margin_ratio
         self.unrestricted_margin_cap = unrestricted_margin_cap
         self.account = account
         self.instrument = instrument
-        self.base_currency = instrument.split('_')[0]
         self.time_frames = time_frames
         self.entry_timeframe = entry_timeframe
         self.sub_strategies_count = sub_strategies_count
@@ -74,7 +74,7 @@ class SSLMultiTimeFrame:
         self._atr_values = {}
         self._ssma_values = {}
         self._entry_signals = {}
-        self.ssl_periods = ssl_periods
+        self._risk_manager = RiskManager(self.instrument)
 
     def _init_partially_closed(self) -> dict:
         return {i+1: [] for i in range(len(self.partial_closure_params.keys()))} if self.partial_closure_params else {}
@@ -83,7 +83,8 @@ class SSLMultiTimeFrame:
         return {i+1: [] for i in range(len(self.stop_loss_move_params.keys()))} if self.stop_loss_move_params else {}
 
     def _get_prices_to_check(self) -> Dict[str, float]:
-        latest_5s_prices = self._pricing.get_latest_candles(f'{self.instrument}:S5:AB')['latestCandles'][0]['candles'][-1]
+        tf_and_prices_id = f'{self.instrument.symbol}:S5:AB'
+        latest_5s_prices = self._pricing.get_latest_candles(tf_and_prices_id)['latestCandles'][0]['candles'][-1]
 
         return {'ask_low': float(latest_5s_prices['ask']['l']), 'bid_high': float(latest_5s_prices['bid']['h'])}
 
@@ -184,7 +185,7 @@ class SSLMultiTimeFrame:
 
     def _get_latest_instrument_price(self, retry_count: int = 0) -> float:
         price = self._latest_price
-        latest_price = self._pricing.get_pricing_info(instruments=[self.instrument], include_home_conversions=False)
+        latest_price = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
         if not len(latest_price['prices']) and retry_count < 5:
             self._get_latest_instrument_price(retry_count=retry_count + 1)
         elif len(latest_price['prices']):
@@ -194,16 +195,16 @@ class SSLMultiTimeFrame:
         return float(price)
 
     def _convert_units_to_gbp(self, units: int) -> float:
-        if self.base_currency == self.account.ACCOUNT_CURRENCY:
-            return round(units / self.margin_ratio, 4)
+        if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
+            return round(units / self.instrument.leverage, 4)
 
-        return round((self._get_latest_instrument_price() * units) / self.margin_ratio, 4)
+        return round((self._get_latest_instrument_price() * units) / self.instrument.leverage, 4)
 
     def _convert_gbp_to_max_num_units(self, margin: float) -> int:
-        if self.base_currency == self.account.ACCOUNT_CURRENCY:
-            return math.floor(margin * self.margin_ratio)
+        if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
+            return math.floor(margin * self.instrument.leverage)
 
-        return math.floor((margin * self.margin_ratio) / self._get_latest_instrument_price())
+        return math.floor((margin * self.instrument.leverage) / self._get_latest_instrument_price())
 
     def _get_unit_size_of_trade(self, account_data: dict) -> float:
         return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
@@ -243,10 +244,12 @@ class SSLMultiTimeFrame:
                          tp_pip_amount: float,
                          sl_pip_amount: float,
                          units: float) -> dict:
-        entry = None
-        sl = None
-        tp = None
-        price_bound = None
+        units = self._risk_manager.calculate_unit_size_within_max_risk(
+            self.account.get_full_account_details()['account']['balance'],
+            units,
+            last_close_price,
+            sl_pip_amount
+        )
         if signal == 'long':
             entry = round(last_close_price + entry_offset, 5)
             tp = round(entry + tp_pip_amount, 5)
@@ -258,8 +261,10 @@ class SSLMultiTimeFrame:
             sl = round(entry + sl_pip_amount, 5)
             price_bound = round(entry - worst_price_bound_offset, 5)
             units = units * -1
+        else:
+            raise ValueError('Invalid signal received.')
 
-        return create_stop_order(entry, price_bound, sl, tp, self.instrument, units)
+        return create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, units)
 
     def _place_pending_order(
             self,
@@ -269,7 +274,7 @@ class SSLMultiTimeFrame:
             tp_pip_amount: float,
             strategy: str,
             signal: str,
-            margin: float,
+            units: float,
     ):
         order_schema = self._construct_order(
             signal=signal,
@@ -278,7 +283,7 @@ class SSLMultiTimeFrame:
             worst_price_bound_offset=self._atr_values[self.entry_timeframe] / 2,
             tp_pip_amount=tp_pip_amount,
             sl_pip_amount=sl_pip_amount,
-            units=margin,
+            units=units,
         )
         pending_order = self.account.create_order(order_schema)
         self._add_id_to_pending_orders(pending_order, strategy)
@@ -316,7 +321,7 @@ class SSLMultiTimeFrame:
             future_to_tf = {}
             for granularity in self.time_frames:
                 future_to_tf[
-                    executor.submit(od.get_complete_candlesticks, self.instrument, 'ABM', granularity, 1000)
+                    executor.submit(od.get_complete_candlesticks, self.instrument.symbol, 'ABM', granularity, 1000)
                 ] = granularity
             for future in concurrent.futures.as_completed(future_to_tf):
                 time_frame = future_to_tf[future]

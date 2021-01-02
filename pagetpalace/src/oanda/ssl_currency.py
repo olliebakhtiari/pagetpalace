@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Dict
 
 # Local.
+from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
@@ -15,7 +16,7 @@ class SSLCurrency(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
-            instrument: str,
+            instrument: Instrument,
             trade_multipliers: dict,
             boundary_multipliers: dict,
             stop_loss_move_params: dict = None,
@@ -23,7 +24,6 @@ class SSLCurrency(SSLMultiTimeFrame):
     ):
         super().__init__(
             equity_split=2,
-            margin_ratio=30,
             unrestricted_margin_cap=0.9,
             account=account,
             instrument=instrument,
@@ -94,7 +94,7 @@ class SSLCurrency(SSLMultiTimeFrame):
                                         tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
                                         strategy=strategy,
                                         signal=signal,
-                                        margin=units,
+                                        units=units,
                                     )
                             except Exception as exc:
                                 logger.info(f'Failed place new pending order. {exc}', exc_info=True)
@@ -109,4 +109,3 @@ class SSLCurrency(SSLMultiTimeFrame):
             # Remove outdated entries in local lists.
             if now.hour % 24 == 0:
                 self._clean_lists()
-
