@@ -6,7 +6,7 @@ from pagetpalace.src.oanda.settings import DEMO_ACCESS_TOKEN, DEMO_ACCOUNT_NUMBE
 
 
 class RiskManager:
-    MAX_RISK_PCT = 0.20
+    MAX_RISK_PCT = 0.15
 
     def __init__(self, instrument: Instrument):
         self.instrument = instrument

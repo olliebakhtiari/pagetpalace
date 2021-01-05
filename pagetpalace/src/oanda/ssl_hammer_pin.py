@@ -13,15 +13,17 @@ from pagetpalace.tools.logger import *
 
 
 class SSLHammerPin(SSLMultiTimeFrame):
-    def __init__(self,
-                 account: OandaAccount,
-                 instrument: Instrument,
-                 boundary_multipliers: dict,
-                 trade_multipliers: dict,
-                 hammer_pin_coefficients: dict,
-                 trading_restriction: str,
-                 spread_cap: float = None,
-                 partial_closure_params: dict = None,
+    def __init__(
+            self,
+            account: OandaAccount,
+            instrument: Instrument,
+            boundary_multipliers: dict,
+            trade_multipliers: dict,
+            hammer_pin_coefficients: dict,
+            trading_restriction: str,
+            spread_cap: float = None,
+            partial_closure_params: dict = None,
+            stop_loss_move_params: dict = None,
     ):
         super().__init__(
             equity_split=1.75,
@@ -34,14 +36,10 @@ class SSLHammerPin(SSLMultiTimeFrame):
             boundary_multipliers=boundary_multipliers,
             trade_multipliers=trade_multipliers,
             partial_closure_params=partial_closure_params,
+            stop_loss_move_params=stop_loss_move_params,
             ssl_periods=10,
         )
-        """ 
-            hammer_pin_coefficients = {
-                'long': {'body': 2, 'head_tail': 5}, 
-                'short': {'body': 6, 'head_tail': 3},
-            }
-        """
+        """ hammer_pin_coefficients = {'long': {'body': 2, 'head_tail': 5}, 'short': {'body': 6, 'head_tail': 3}} """
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
         self.spread_cap = spread_cap
@@ -95,14 +93,15 @@ class SSLHammerPin(SSLMultiTimeFrame):
     def _is_within_trading_hours(cls, curr_dt) -> bool:
         return 7 <= curr_dt.hour < 22
 
-    def _is_within_spread_cap(self, spread: float) -> bool:
-        return spread <= self.spread_cap
+    def _is_within_spread_cap(self) -> bool:
+        return float(self._latest_data['H1']['askOpen'].values[-1]) \
+               - float(self._latest_data['H1']['bidOpen'].values[-1]) <= self.spread_cap
 
     def _is_within_trading_restriction(self, curr_dt) -> bool:
         if self.trading_restriction == 'trading_hours':
             is_valid = self._is_within_trading_hours(curr_dt)
         elif self.trading_restriction == 'spread_cap':
-            is_valid = self._is_within_spread_cap(self.spread_cap)
+            is_valid = self._is_within_spread_cap()
         else:
             raise ValueError('Trading restriction not recognised.')
 

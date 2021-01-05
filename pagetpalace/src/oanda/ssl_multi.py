@@ -60,8 +60,8 @@ class SSLMultiTimeFrame:
         self.sub_strategies_count = sub_strategies_count
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
-        self.stop_loss_move_params = stop_loss_move_params
-        self.partial_closure_params = partial_closure_params
+        self.stop_loss_move_params = stop_loss_move_params if stop_loss_move_params else {}
+        self.partial_closure_params = partial_closure_params if partial_closure_params else {}
         self._pricing = OandaPricingData(account.access_token, account.account_id, account.account_type)
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
         self._partially_closed = self._init_partially_closed()
