@@ -6,8 +6,8 @@ from .settings import (
     LIVE_ACCESS_TOKEN,
     DEMO_ACCESS_TOKEN,
     DEMO_ACCOUNT_NUMBER,
-    NAS_ACCOUNT_NUMBER,
-    SPX_ACCOUNT_NUMBER,
+    NAS100_ACCOUNT_NUMBER,
+    SPX500_ACCOUNT_NUMBER,
     GBP_USD_ACCOUNT_NUMBER,
 )
 from .ssl_currency import SSLCurrency
