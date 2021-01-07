@@ -11,14 +11,14 @@ class RiskManager:
     def __init__(self, instrument: Instrument):
         self.instrument = instrument
         self.current_max_risk_in_margin = None
-        self._latest_exchange_rate = None
+        self._latest_exchange_rates = None
         if instrument.exchange_rate_pair:
             self._oanda_pricing = OandaPricingData(DEMO_ACCESS_TOKEN, DEMO_ACCOUNT_NUMBER, 'DEMO_API')
-            self._latest_exchange_rate = self._oanda_pricing.get_pricing_info([self.instrument.exchange_rate_pair])
+            self._latest_exchange_rates = self._oanda_pricing.get_pricing_info([self.instrument.exchange_rate_pair])
 
     def _get_denominator(self, entry_price: float):
         if self.instrument.exchange_rate_pair:
-            denominator = self._latest_exchange_rate
+            denominator = float(self._latest_exchange_rates['prices'][0]['asks'][0]['price'])
         elif self.instrument.type_ == InstrumentTypes.CURRENCY and self.instrument.base_currency == BaseCurrencies.GBP:
             denominator = entry_price
         else:

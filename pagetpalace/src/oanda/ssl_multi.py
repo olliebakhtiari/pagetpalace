@@ -189,10 +189,10 @@ class SSLMultiTimeFrame:
         if not len(latest_price['prices']) and retry_count < 5:
             self._get_latest_instrument_price(retry_count=retry_count + 1)
         elif len(latest_price['prices']):
-            price = latest_price['prices'][0]['asks'][0]['price']
+            price = float(latest_price['prices'][0]['asks'][0]['price'])
             self._latest_price = price
 
-        return float(price)
+        return price
 
     def _convert_units_to_gbp(self, units: int) -> float:
         if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
@@ -245,7 +245,7 @@ class SSLMultiTimeFrame:
                          sl_pip_amount: float,
                          units: float) -> dict:
         units = self._risk_manager.calculate_unit_size_within_max_risk(
-            self.account.get_full_account_details()['account']['balance'],
+            float(self.account.get_full_account_details()['account']['balance']),
             units,
             last_close_price,
             sl_pip_amount
