@@ -183,11 +183,11 @@ class SSLMultiTimeFrame:
         except Exception as exc:
             logger.error(f'Failed to monitor and adjust current trades. {exc}', exc_info=True)
 
-    def _get_latest_instrument_price(self, retry_count: int = 0) -> float:
+    def _get_latest_instrument_price(self, symbol: str, retry_count: int = 0) -> float:
         price = self._latest_price
         latest_price = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
         if not len(latest_price['prices']) and retry_count < 5:
-            self._get_latest_instrument_price(retry_count=retry_count + 1)
+            self._get_latest_instrument_price(symbol, retry_count=retry_count + 1)
         elif len(latest_price['prices']):
             price = float(latest_price['prices'][0]['asks'][0]['price'])
             self._latest_price = price
@@ -198,13 +198,13 @@ class SSLMultiTimeFrame:
         if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
             return round(units / self.instrument.leverage, 4)
 
-        return round((self._get_latest_instrument_price() * units) / self.instrument.leverage, 4)
+        return round((self._get_latest_instrument_price(self.instrument.symbol) * units) / self.instrument.leverage, 4)
 
     def _convert_gbp_to_max_num_units(self, margin: float) -> int:
         if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
             return math.floor(margin * self.instrument.leverage)
 
-        return math.floor((margin * self.instrument.leverage) / self._get_latest_instrument_price())
+        return math.floor((margin * self.instrument.leverage) / self._get_latest_instrument_price(self.instrument.symbol))
 
     def _get_unit_size_of_trade(self, account_data: dict) -> float:
         return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
@@ -244,6 +244,7 @@ class SSLMultiTimeFrame:
                          tp_pip_amount: float,
                          sl_pip_amount: float,
                          units: float) -> dict:
+        precision = self.instrument.price_precision
         units = self._risk_manager.calculate_unit_size_within_max_risk(
             float(self.account.get_full_account_details()['account']['balance']),
             units,
@@ -251,15 +252,15 @@ class SSLMultiTimeFrame:
             sl_pip_amount
         )
         if signal == 'long':
-            entry = round(last_close_price + entry_offset, 5)
-            tp = round(entry + tp_pip_amount, 5)
-            sl = round(entry - sl_pip_amount, 5)
-            price_bound = round(entry + worst_price_bound_offset, 5)
+            entry = round(last_close_price + entry_offset, precision)
+            tp = round(entry + tp_pip_amount, precision)
+            sl = round(entry - sl_pip_amount, precision)
+            price_bound = round(entry + worst_price_bound_offset, precision)
         elif signal == 'short':
-            entry = round(last_close_price - entry_offset, 5)
-            tp = round(entry - tp_pip_amount, 5)
-            sl = round(entry + sl_pip_amount, 5)
-            price_bound = round(entry - worst_price_bound_offset, 5)
+            entry = round(last_close_price - entry_offset, precision)
+            tp = round(entry - tp_pip_amount, precision)
+            sl = round(entry + sl_pip_amount, precision)
+            price_bound = round(entry - worst_price_bound_offset, precision)
             units = units * -1
         else:
             raise ValueError('Invalid signal received.')
