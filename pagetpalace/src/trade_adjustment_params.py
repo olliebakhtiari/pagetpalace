@@ -11,7 +11,7 @@ class TradeAdjustmentParameters:
         return f'instrument_symbol - {self.instrument_symbol}, params - {self.params}'
 
     @property
-    def instrument_symbol(self):
+    def instrument_symbol(self) -> str:
         return self._instrument_symbol
 
     @instrument_symbol.setter
@@ -19,6 +19,12 @@ class TradeAdjustmentParameters:
         if len(value.split('_')) < 2:
             raise ValueError('Invalid symbol specified.')
         self._instrument_symbol = value
+
+    @classmethod
+    def _validate_check_values_ascending(cls, params: Dict[int, Dict[str, float]]):
+        check_pcts = [v['check'] for v in params.values()]
+        if len(params.values()) > 1 and not all(check_pcts[i-1] < check_pcts[i] for i in range(1, len(check_pcts))):
+            raise ValueError('"check" percentages need to be in ascending order.')
 
     @classmethod
     def _check_valid_input(cls, all_params: List['TradeAdjustmentParameters']):
@@ -29,13 +35,13 @@ class TradeAdjustmentParameters:
                 raise TypeError('All members of list must be TradeAdjustmentParameter object.')
 
     @staticmethod
-    def init_pair_to_params(all_params: List['TradeAdjustmentParameters']) -> dict:
+    def init_pair_to_params(all_params: List['TradeAdjustmentParameters']) -> Dict[str, Dict[int, Dict[str, float]]]:
         TradeAdjustmentParameters._check_valid_input(all_params)
 
         return {p.instrument_symbol: p.params for p in all_params} if all_params else {}
 
     @staticmethod
-    def init_local_history(all_params: List['TradeAdjustmentParameters']) -> dict:
+    def init_local_history(all_params: List['TradeAdjustmentParameters']) -> Dict[str, Dict[int, list]]:
         TradeAdjustmentParameters._check_valid_input(all_params)
         init = {}
         if all_params:
@@ -51,7 +57,7 @@ class StopLossMoveParams(TradeAdjustmentParameters):
         super().__init__(instrument_symbol, params)
 
     @property
-    def params(self):
+    def params(self) -> Dict[int, Dict[str, float]]:
         return self._params
 
     @params.setter
@@ -60,6 +66,7 @@ class StopLossMoveParams(TradeAdjustmentParameters):
             raise ValueError('Keys in params not valid.')
         if any(not (d.get('check') and d.get('move')) for d in value.values()):
             raise ValueError('"check" or "move" keys missing in params.')
+        self._validate_check_values_ascending(value)
         self._params = value
 
 
@@ -69,7 +76,7 @@ class PartialClosureParams(TradeAdjustmentParameters):
         super().__init__(instrument_symbol, params)
 
     @property
-    def params(self):
+    def params(self) -> Dict[int, Dict[str, float]]:
         return self._params
 
     @params.setter
@@ -78,4 +85,5 @@ class PartialClosureParams(TradeAdjustmentParameters):
             raise ValueError('Keys in params not valid.')
         if any(not (d.get('check') and d.get('close')) for d in value.values()):
             raise ValueError('"check" or "close" keys missing in params.')
+        self._validate_check_values_ascending(value)
         self._params = value
