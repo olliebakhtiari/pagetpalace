@@ -8,9 +8,9 @@ import pandas as pd
 
 # Local.
 from pagetpalace.src.request import RequestMixin
+from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
 from pagetpalace.tools.file_operations import remove_duplicate_datetimes_from_csv
 from pagetpalace.tools.logger import *
-from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
 
 
 class OandaInstrumentData(RequestMixin):
@@ -284,7 +284,7 @@ class OandaInstrumentData(RequestMixin):
 
 # if __name__ == '__main__':
 #     for g in ['D', 'H1']:
-#         i = 'IN50_USD'
+#         i = 'EUR_USD'
 #         od = OandaInstrumentData()
 #         od.write_candles_to_csv(
 #             instrument=i,

@@ -5,10 +5,12 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Local.
-from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
+from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
+from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
+from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.tools.logger import *
 
 
@@ -16,27 +18,27 @@ class SSLHammerPin(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
+            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             boundary_multipliers: dict,
             trade_multipliers: dict,
             hammer_pin_coefficients: dict,
             trading_restriction: str,
             spread_cap: float = None,
-            partial_closure_params: dict = None,
-            stop_loss_move_params: dict = None,
+            live_trade_monitor: LiveTradeMonitor = None,
     ):
         super().__init__(
             equity_split=1.75,
             unrestricted_margin_cap=0.9,
             account=account,
+            pricing_data_retriever=pricing_data_retriever,
             instrument=instrument,
             time_frames=['D', 'H1'],
             entry_timeframe='H1',
             sub_strategies_count=1,
             boundary_multipliers=boundary_multipliers,
             trade_multipliers=trade_multipliers,
-            partial_closure_params=partial_closure_params,
-            stop_loss_move_params=stop_loss_move_params,
+            live_trade_monitor=live_trade_monitor,
             ssl_periods=10,
         )
         """ hammer_pin_coefficients = {'long': {'body': 2, 'head_tail': 5}, 'short': {'body': 6, 'head_tail': 3}} """
@@ -162,11 +164,3 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         is_first_run = False
                         self._update_previous_ssl_values()
                         self._prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
-
-                # Monitor and adjust current trades, if any.
-                time.sleep(1)
-                self._monitor_and_adjust_current_trades()
-
-                # Remove outdated entries in local lists.
-                if now.hour % 24 == 0:
-                    self._clean_lists()

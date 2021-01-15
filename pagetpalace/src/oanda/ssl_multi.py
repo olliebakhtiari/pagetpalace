@@ -8,8 +8,8 @@ from typing import List, Dict
 # Local.
 from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_ssl_channel
-from pagetpalace.src.oanda import OandaPricingData, create_stop_order, OandaInstrumentData, OandaAccount
-from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
+from pagetpalace.src.oanda import create_stop_order, OandaAccount, OandaInstrumentData, OandaPricingData
+from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.risk_manager import RiskManager
 from pagetpalace.tools.logger import *
 
@@ -21,14 +21,14 @@ class SSLMultiTimeFrame:
             equity_split: float,
             unrestricted_margin_cap: float,
             account: OandaAccount,
+            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
             boundary_multipliers: dict,
+            live_trade_monitor: LiveTradeMonitor,
             trade_multipliers: dict = None,
-            stop_loss_move_params: dict = None,
-            partial_closure_params: dict = None,
             ssl_periods: int = 20,
     ):
         """
@@ -47,8 +47,6 @@ class SSLMultiTimeFrame:
                 '3': {'long': {'sl': 2, 'tp': 2}, 'short': {'sl': 2, 'tp': 2}},
                 '4': {'long': {'sl': 2, 'tp': 2}, 'short': {'sl': 2, 'tp': 2}},
             }
-            stop_loss_move_params = {1: {'check': 0.35, 'move': 0.01}}
-            partial_close_params = {1: {'check': 0.35, 'close': 0.5}}
         """
         self.ssl_periods = ssl_periods
         self.equity_split = equity_split
@@ -60,12 +58,8 @@ class SSLMultiTimeFrame:
         self.sub_strategies_count = sub_strategies_count
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
-        self.stop_loss_move_params = stop_loss_move_params if stop_loss_move_params else {}
-        self.partial_closure_params = partial_closure_params if partial_closure_params else {}
-        self._pricing = OandaPricingData(account.access_token, account.account_id, account.account_type)
+        self._pricing = pricing_data_retriever
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
-        self._partially_closed = self._init_partially_closed()
-        self._sl_adjusted = self._init_sl_adjusted()
         self._latest_price = 0
         init_empty = {tf: 0 for tf in self.time_frames}
         self._latest_data = {}
@@ -74,50 +68,8 @@ class SSLMultiTimeFrame:
         self._atr_values = {}
         self._ssma_values = {}
         self._entry_signals = {}
+        self._live_trade_monitor = live_trade_monitor
         self._risk_manager = RiskManager(self.instrument)
-
-    def _init_partially_closed(self) -> dict:
-        return {i+1: [] for i in range(len(self.partial_closure_params.keys()))} if self.partial_closure_params else {}
-
-    def _init_sl_adjusted(self) -> dict:
-        return {i+1: [] for i in range(len(self.stop_loss_move_params.keys()))} if self.stop_loss_move_params else {}
-
-    def _get_prices_to_check(self) -> Dict[str, float]:
-        tf_and_prices_id = f'{self.instrument.symbol}:S5:AB'
-        latest_5s_prices = self._pricing.get_latest_candles(tf_and_prices_id)['latestCandles'][0]['candles'][-1]
-
-        return {'ask_low': float(latest_5s_prices['ask']['l']), 'bid_high': float(latest_5s_prices['bid']['h'])}
-
-    def _check_and_adjust_stops(
-            self,
-            prices: Dict[str, float],
-            open_trades: List[dict],
-            check_pct: float,
-            move_pct: float,
-            adjusted_count: int,
-    ):
-        ids_already_processed = self._sl_adjusted[adjusted_count].copy()
-        for trade in open_trades:
-            if trade['id'] not in ids_already_processed and check_pct_hit(prices, trade, check_pct):
-                new_stop_loss_price = calculate_new_sl_price(trade=trade, pct=move_pct)
-                self.account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
-                self._sl_adjusted[adjusted_count].append(trade['id'])
-
-    def _check_and_partially_close(
-            self,
-            prices: Dict[str, float],
-            open_trades: List[dict],
-            check_pct: float,
-            close_pct: float,
-            partial_close_count: int,
-    ):
-        ids_processed = self._partially_closed[partial_close_count].copy()
-        for trade in open_trades:
-            if trade['id'] not in ids_processed and check_pct_hit(prices, trade, check_pct):
-                pct_of_units = round(abs(float(trade['currentUnits'])) * close_pct)
-                to_close = pct_of_units if pct_of_units > 1 else 1
-                self.account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
-                self._partially_closed[partial_close_count].append(trade['id'])
 
     def _add_id_to_pending_orders(self, order: dict, strategy: str):
         self._pending_orders[strategy].append(order['orderCreateTransaction']['id'])
@@ -128,22 +80,6 @@ class SSLMultiTimeFrame:
             for id_ in local_pending:
                 if id_ not in ids_in_account:
                     local_pending.remove(id_)
-
-    def _clean_local_lists(self, open_trade_ids: List[str]):
-        all_locals_lists = []
-        all_locals_lists.extend(list(self._sl_adjusted.values()))
-        all_locals_lists.extend(list(self._partially_closed.values()))
-        for local_list in all_locals_lists:
-            for id_ in local_list:
-                if id_ not in open_trade_ids:
-                    local_list.remove(id_)
-
-    def _clean_lists(self):
-        try:
-            open_trade_ids = [t['id'] for t in self.account.get_open_trades()['trades']]
-            self._clean_local_lists(open_trade_ids)
-        except Exception as exc:
-            logger.info(f'Failed to clean lists. {exc}', exc_info=True)
 
     def _clear_pending_orders(self):
         for orders in list(self._pending_orders.values()):
@@ -158,30 +94,6 @@ class SSLMultiTimeFrame:
                 self._clear_pending_orders()
             except Exception as exc:
                 logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-
-    def _check_and_adjust_stop_losses(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
-        try:
-            for count, values in self.stop_loss_move_params.items():
-                self._check_and_adjust_stops(prices_to_check, open_trades, values['check'], values['move'], count)
-        except Exception as exc:
-            logger.error(f'Failed to check and adjust stop losses. {exc}', exc_info=True)
-
-    def _partial_closures(self, prices_to_check: Dict[str, float], open_trades: List[dict]):
-        try:
-            for count, values in self.partial_closure_params.items():
-                self._check_and_partially_close(prices_to_check, open_trades, values['check'], values['close'], count)
-        except Exception as exc:
-            logger.error(f'Failed to check and partially close trades. {exc}', exc_info=True)
-
-    def _monitor_and_adjust_current_trades(self):
-        try:
-            open_trades = self.account.get_open_trades()['trades']
-            if len(open_trades) > 0:
-                prices_to_check = self._get_prices_to_check()
-                self._partial_closures(prices_to_check=prices_to_check, open_trades=open_trades)
-                self._check_and_adjust_stop_losses(prices_to_check=prices_to_check, open_trades=open_trades)
-        except Exception as exc:
-            logger.error(f'Failed to monitor and adjust current trades. {exc}', exc_info=True)
 
     def _get_latest_instrument_price(self, symbol: str, retry_count: int = 0) -> float:
         price = self._latest_price
@@ -290,8 +202,8 @@ class SSLMultiTimeFrame:
         self._add_id_to_pending_orders(pending_order, strategy)
         logger.info(f'pending order placed: {pending_order}')
         logger.info(f'pending_orders: {self._pending_orders}')
-        logger.info(f'sl_adjusted: {self._sl_adjusted}')
-        logger.info(f'partially_closed: {self._partially_closed}')
+        logger.info(f'sl_adjusted: {self._live_trade_monitor.sl_adjusted}')
+        logger.info(f'partially_closed: {self._live_trade_monitor.partially_closed}')
 
     def _calculate_atr_factor(self, price: float, timeframe: str) -> float:
         return abs((price - self._ssma_values[timeframe]) / self._atr_values[timeframe])

@@ -6,9 +6,10 @@ from typing import Dict
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda import OandaAccount
-from pagetpalace.src.indicators import append_average_true_range, append_ssma
+from pagetpalace.src.oanda import OandaAccount, OandaPricingData
+from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
+from pagetpalace.src.indicators import append_average_true_range, append_ssma
 from pagetpalace.tools.logger import *
 
 
@@ -16,24 +17,24 @@ class SSLInvestment(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
+            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             trade_multipliers: dict,
             boundary_multipliers: dict,
-            stop_loss_move_params: dict = None,
-            partial_closure_params: dict = None,
+            live_trade_monitor: LiveTradeMonitor,
     ):
         super().__init__(
             equity_split=1.75,
             unrestricted_margin_cap=0.9,
             account=account,
+            pricing_data_retriever=pricing_data_retriever,
             instrument=instrument,
             time_frames=['D', 'H1', 'M5'],
             entry_timeframe='M5',
             sub_strategies_count=2,
             trade_multipliers=trade_multipliers,
             boundary_multipliers=boundary_multipliers,
-            stop_loss_move_params=stop_loss_move_params,
-            partial_closure_params=partial_closure_params,
+            live_trade_monitor=live_trade_monitor,
         )
 
     def _update_atr_values(self):
@@ -146,8 +147,9 @@ class SSLInvestment(SSLMultiTimeFrame):
                 is_first_run = False
 
             # Monitor and adjust current trades, if any.
-            self._monitor_and_adjust_current_trades()
+            time.sleep(1)
+            self._live_trade_monitor.monitor_and_adjust_current_trades()
 
             # Remove outdated entries in local lists.
             if now.hour % 24 == 0:
-                self._clean_lists()
+                self._live_trade_monitor.clean_lists()
