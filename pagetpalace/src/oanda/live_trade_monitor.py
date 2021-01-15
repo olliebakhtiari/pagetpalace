@@ -67,6 +67,7 @@ class LiveTradeMonitor:
             if trade['id'] not in self.sl_adjusted[symbol][count]:
                 has_pct_hit = check_pct_hit(prices, trade, percentages['check'])
                 if has_pct_hit:
+                    logger.info(f'Adjusting stop loss for: {trade}')
                     new_stop_loss_price = calculate_new_sl_price(trade=trade, pct=percentages['move'])
                     self._account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
                     self.sl_adjusted[symbol][count].append(trade['id'])
@@ -90,6 +91,7 @@ class LiveTradeMonitor:
             if trade['id'] not in self.partially_closed[symbol][count]:
                 is_pct_hit = check_pct_hit(prices, trade, percentages['check'])
                 if is_pct_hit:
+                    logger.info(f'Partially closing for: {trade}')
                     pct_of_units = round(abs(float(trade['currentUnits'])) * percentages['close'])
                     to_close = pct_of_units if pct_of_units > 1 else 1
                     self._account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
