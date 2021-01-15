@@ -1,7 +1,6 @@
 # Python standard.
 import abc
 import concurrent.futures
-import math
 import sys
 from typing import List, Dict
 
@@ -10,6 +9,8 @@ from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_ssl_channel
 from pagetpalace.src.oanda import create_stop_order, OandaAccount, OandaInstrumentData, OandaPricingData
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
+from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
+from pagetpalace.src.oanda.unit_conversions import UnitConversions
 from pagetpalace.src.risk_manager import RiskManager
 from pagetpalace.tools.logger import *
 
@@ -19,9 +20,7 @@ class SSLMultiTimeFrame:
     def __init__(
             self,
             equity_split: float,
-            unrestricted_margin_cap: float,
             account: OandaAccount,
-            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             time_frames: List[str],
             entry_timeframe: str,
@@ -50,7 +49,6 @@ class SSLMultiTimeFrame:
         """
         self.ssl_periods = ssl_periods
         self.equity_split = equity_split
-        self.unrestricted_margin_cap = unrestricted_margin_cap
         self.account = account
         self.instrument = instrument
         self.time_frames = time_frames
@@ -58,7 +56,7 @@ class SSLMultiTimeFrame:
         self.sub_strategies_count = sub_strategies_count
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
-        self._pricing = pricing_data_retriever
+        self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
         self._latest_price = 0
         init_empty = {tf: 0 for tf in self.time_frames}
@@ -95,58 +93,9 @@ class SSLMultiTimeFrame:
             except Exception as exc:
                 logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
 
-    def _get_latest_instrument_price(self, symbol: str, retry_count: int = 0) -> float:
-        price = self._latest_price
-        latest_price = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
-        if not len(latest_price['prices']) and retry_count < 5:
-            self._get_latest_instrument_price(symbol, retry_count=retry_count + 1)
-        elif len(latest_price['prices']):
-            price = float(latest_price['prices'][0]['asks'][0]['price'])
-            self._latest_price = price
-
-        return price
-
-    def _convert_units_to_gbp(self, units: int) -> float:
-        if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
-            return round(units / self.instrument.leverage, 4)
-
-        return round((self._get_latest_instrument_price(self.instrument.symbol) * units) / self.instrument.leverage, 4)
-
-    def _convert_gbp_to_max_num_units(self, margin: float) -> int:
-        if self.instrument.base_currency == self.account.ACCOUNT_CURRENCY:
-            return math.floor(margin * self.instrument.leverage)
-
-        return math.floor((margin * self.instrument.leverage) / self._get_latest_instrument_price(self.instrument.symbol))
-
-    def _get_unit_size_of_trade(self, account_data: dict) -> float:
-        return self._convert_gbp_to_max_num_units(self._get_valid_margin_size(account_data))
-
-    def _margin_not_being_used_in_orders(self, account_data: dict) -> float:
-        units_pending = 0
-        for order in account_data['orders']:
-            units_in_order = order.get('units')
-            if units_in_order:
-                units_pending += abs(int(units_in_order))
-        available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
-
-        return available if available > 0 else 0.
-
-    @classmethod
-    def _adjust_according_to_restricted_margin(cls, margin_size: float, available_minus_restricted: float) -> float:
-        if (margin_size > available_minus_restricted) and (available_minus_restricted < 200):
-            margin_size = 0
-        elif (margin_size > available_minus_restricted) and (available_minus_restricted >= 200):
-            margin_size = available_minus_restricted
-
-        return margin_size
-
-    def _get_valid_margin_size(self, account_data: dict) -> float:
-        balance = float(account_data['balance'])
-        margin_size = (balance * self.unrestricted_margin_cap) / self.equity_split
-        available_minus_restricted = self._margin_not_being_used_in_orders(account_data) \
-                                     - (balance * (1 - self.unrestricted_margin_cap))
-
-        return self._adjust_according_to_restricted_margin(margin_size, available_minus_restricted)
+    def _get_unit_size_of_trade(self, entry_price: float) -> float:
+        return UnitConversions(self.instrument, entry_price) \
+            .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
     def _construct_order(self,
                          signal: str,

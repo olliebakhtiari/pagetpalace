@@ -6,7 +6,7 @@ from typing import Dict
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda import OandaAccount, OandaPricingData
+from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
@@ -17,7 +17,6 @@ class SSLInvestment(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
-            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             trade_multipliers: dict,
             boundary_multipliers: dict,
@@ -25,9 +24,7 @@ class SSLInvestment(SSLMultiTimeFrame):
     ):
         super().__init__(
             equity_split=1.75,
-            unrestricted_margin_cap=0.9,
             account=account,
-            pricing_data_retriever=pricing_data_retriever,
             instrument=instrument,
             time_frames=['D', 'H1', 'M5'],
             entry_timeframe='M5',
@@ -100,7 +97,7 @@ class SSLInvestment(SSLMultiTimeFrame):
 
     def _place_new_pending_order_if_units_available(self, price_to_offset_from: float, strategy: str, signal: str):
         try:
-            units = self._get_unit_size_of_trade(self.account.get_full_account_details()['account'])
+            units = self._get_unit_size_of_trade(price_to_offset_from)
             if units > 0:
                 sl_pip_amount = self._atr_values['H1' if strategy == '1' else 'M5'] \
                                 * self.trade_multipliers[strategy][signal]['sl']

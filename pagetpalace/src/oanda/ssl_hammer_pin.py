@@ -10,7 +10,6 @@ from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
-from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.tools.logger import *
 
 
@@ -18,7 +17,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
-            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             boundary_multipliers: dict,
             trade_multipliers: dict,
@@ -29,9 +27,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
     ):
         super().__init__(
             equity_split=1.75,
-            unrestricted_margin_cap=0.9,
             account=account,
-            pricing_data_retriever=pricing_data_retriever,
             instrument=instrument,
             time_frames=['D', 'H1'],
             entry_timeframe='H1',
@@ -118,12 +114,13 @@ class SSLHammerPin(SSLMultiTimeFrame):
         return price
 
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
+        entry_price = self._get_price_to_use_for_entry_offset(signal)
         try:
-            units = self._get_unit_size_of_trade(self.account.get_full_account_details()['account'])
+            units = self._get_unit_size_of_trade(entry_price)
             if units > 0:
                 sl_pip_amount = self._atr_values[self.entry_timeframe] * self.trade_multipliers[strategy][signal]['sl']
                 self._place_pending_order(
-                    price_to_offset_from=self._get_price_to_use_for_entry_offset(signal),
+                    price_to_offset_from=entry_price,
                     entry_offset=self._atr_values[self.entry_timeframe] / 7,
                     sl_pip_amount=sl_pip_amount,
                     tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],

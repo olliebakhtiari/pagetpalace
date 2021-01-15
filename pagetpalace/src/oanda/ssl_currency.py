@@ -7,7 +7,7 @@ from typing import Dict
 # Local.
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda import OandaAccount, OandaPricingData
+from pagetpalace.src.oanda import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.tools.logger import *
@@ -17,7 +17,6 @@ class SSLCurrency(SSLMultiTimeFrame):
     def __init__(
             self,
             account: OandaAccount,
-            pricing_data_retriever: OandaPricingData,
             instrument: Instrument,
             trade_multipliers: dict,
             boundary_multipliers: dict,
@@ -25,9 +24,7 @@ class SSLCurrency(SSLMultiTimeFrame):
     ):
         super().__init__(
             equity_split=2,
-            unrestricted_margin_cap=0.9,
             account=account,
-            pricing_data_retriever=pricing_data_retriever,
             instrument=instrument,
             time_frames=['W', 'D', 'H4', 'M30'],
             entry_timeframe='M30',
@@ -82,7 +79,7 @@ class SSLCurrency(SSLMultiTimeFrame):
                             try:
                                 spread = float(self._latest_data['M30']['askOpen'].values[-1]) \
                                          - float(self._latest_data['M30']['bidOpen'].values[-1])
-                                units = self._get_unit_size_of_trade(self.account.get_full_account_details()['account'])
+                                units = self._get_unit_size_of_trade(last_30m_close)
                                 is_within_valid_boundary = self._is_within_valid_boundary(signal, last_30m_close, 'M30')
                                 if units > 0 and spread <= 0.0004 and is_within_valid_boundary \
                                         and self._has_new_signal() and not is_first_run:

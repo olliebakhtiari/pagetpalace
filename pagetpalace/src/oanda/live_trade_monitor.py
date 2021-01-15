@@ -4,8 +4,9 @@ from typing import Dict, List
 
 # Local.
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
 from pagetpalace.src.oanda.pricing import OandaPricingData
+from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
+from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 from pagetpalace.src.trade_adjustment_params import PartialClosureParams, StopLossMoveParams, TradeAdjustmentParameters
 from pagetpalace.tools.logger import *
 
@@ -14,12 +15,11 @@ class LiveTradeMonitor:
     def __init__(
             self,
             account: OandaAccount,
-            pricing: OandaPricingData,
             stop_loss_move_params: List[StopLossMoveParams] = None,
             partial_closure_params: List[PartialClosureParams] = None,
     ):
         self._account = account
-        self._pricing = pricing
+        self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
         self.stop_loss_move_params = TradeAdjustmentParameters.init_pair_to_params(stop_loss_move_params)
         self.partial_closure_params = TradeAdjustmentParameters.init_pair_to_params(partial_closure_params)
         self.partially_closed = TradeAdjustmentParameters.init_local_history(partial_closure_params)
