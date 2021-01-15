@@ -7,6 +7,9 @@ class TradeAdjustmentParameters:
         self.instrument_symbol = instrument_symbol
         self.params = params
 
+    def __str__(self):
+        return f'instrument_symbol - {self.instrument_symbol}, params - {self.params}'
+
     @property
     def instrument_symbol(self):
         return self._instrument_symbol
@@ -17,12 +20,23 @@ class TradeAdjustmentParameters:
             raise ValueError('Invalid symbol specified.')
         self._instrument_symbol = value
 
+    @classmethod
+    def _check_valid_input(cls, all_params: List['TradeAdjustmentParameters']):
+        if all_params:
+            if not isinstance(all_params, list):
+                raise TypeError('Parameters must be a list of TradeAdjustmentParameters.')
+            if all_params and any(not isinstance(p, (StopLossMoveParams, PartialClosureParams)) for p in all_params):
+                raise TypeError('All members of list must be TradeAdjustmentParameter object.')
+
     @staticmethod
-    def init_local_map(all_params: List['TradeAdjustmentParameters']) -> dict:
-        if not isinstance(all_params, list):
-            raise TypeError('Parameters must be a list of TradeAdjustmentParameters.')
-        if all_params and any(not isinstance(p, (StopLossMoveParams, PartialClosureParams)) for p in all_params):
-            raise TypeError('All members of list must be TradeAdjustmentParameter object.')
+    def init_pair_to_params(all_params: List['TradeAdjustmentParameters']) -> dict:
+        TradeAdjustmentParameters._check_valid_input(all_params)
+
+        return {p.instrument_symbol: p.params for p in all_params} if all_params else {}
+
+    @staticmethod
+    def init_local_history(all_params: List['TradeAdjustmentParameters']) -> dict:
+        TradeAdjustmentParameters._check_valid_input(all_params)
         init = {}
         if all_params:
             for params_obj in all_params:
