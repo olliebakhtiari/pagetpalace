@@ -80,10 +80,15 @@ class LiveTradeMonitor:
         if self.stop_loss_move_params:
             for trade in open_trades:
                 symbol = trade['instrument']
-                try:
-                    self._check_and_adjust_stops(prices_to_check[symbol], trade, self.stop_loss_move_params[symbol])
-                except Exception as exc:
-                    logger.error(f'Failed to check and adjust stop losses. {exc}', exc_info=True)
+                if symbol in self.sl_adjusted.keys():
+                    try:
+                        self._check_and_adjust_stops(
+                            prices_to_check[symbol],
+                            trade,
+                            self.stop_loss_move_params[symbol],
+                        )
+                    except Exception as exc:
+                        logger.error(f'Failed to check and adjust stop losses. {exc}', exc_info=True)
 
     def _check_and_partially_close(self, prices: Dict[str, float], trade: dict, params: Dict[int, Dict[str, float]]):
         symbol = trade['instrument']
@@ -105,10 +110,15 @@ class LiveTradeMonitor:
         if self.partial_closure_params:
             for trade in open_trades:
                 symbol = trade['instrument']
-                try:
-                    self._check_and_partially_close(prices_to_check[symbol], trade, self.partial_closure_params[symbol])
-                except Exception as exc:
-                    logger.error(f'Failed to check and partially close trades. {exc}', exc_info=True)
+                if symbol in self.partially_closed.keys():
+                    try:
+                        self._check_and_partially_close(
+                            prices_to_check[symbol],
+                            trade,
+                            self.partial_closure_params[symbol],
+                        )
+                    except Exception as exc:
+                        logger.error(f'Failed to check and partially close trades. {exc}', exc_info=True)
 
     def monitor_and_adjust_current_trades(self):
         try:
