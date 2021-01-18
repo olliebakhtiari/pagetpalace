@@ -37,7 +37,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             live_trade_monitor=live_trade_monitor,
             ssl_periods=10,
         )
-        """ hammer_pin_coefficients = {'long': {'body': 2, 'head_tail': 5}, 'short': {'body': 6, 'head_tail': 3}} """
+        """ hammer_pin_coefficients = {'long': {'body': 2, 'head_tail': 5} """
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
         self.spread_cap = spread_cap
@@ -67,20 +67,10 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_20_distance_met
 
-    def _is_short_signal(self, prev_candle) -> bool:
-        bias = 'short'
-        coeffs = self.hammer_pin_coefficients[bias]
-        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh']), 'H1')
-
-        return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
-
     def _get_s1_signal(self, prev_candle) -> Union[str, None]:
         signal = None
         if self._is_long_signal(prev_candle):
             signal = 'long'
-        elif self._is_short_signal(prev_candle):
-            signal = 'short'
 
         return signal
 
