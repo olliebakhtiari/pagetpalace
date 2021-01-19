@@ -1,3 +1,7 @@
+# Python standard.
+import inspect
+from typing import Dict
+
 # Local.
 from pagetpalace.src.instrument_attributes import InstrumentDecimalRatio, InstrumentLeverage, InstrumentTypes
 
@@ -21,6 +25,9 @@ class Instrument:
         self.price_precision = price_precision
         self.exchange_rate_data = exchange_rate_data if exchange_rate_data else {}
 
+    def __str__(self):
+        return ' - '.join(f'{k}: {v}' for k, v in self.__dict__.items())
+
 
 class Currency(Instrument):
     def __init__(
@@ -42,11 +49,11 @@ class Currency(Instrument):
 
 
 class Commodity(Instrument):
-    def __init__(self, symbol: str, price_precision: int, exchange_rate_data: dict = None):
+    def __init__(self, symbol: str, leverage: int, price_precision: int, exchange_rate_data: dict = None):
         super().__init__(
             symbol,
             InstrumentTypes.COMMODITY,
-            InstrumentLeverage.COMMODITY,
+            leverage,
             InstrumentDecimalRatio.COMMODITY,
             price_precision,
             exchange_rate_data,
@@ -71,9 +78,21 @@ class CurrencyPairs:
 
 
 class Commodities:
-    BCO_USD = Commodity('BCO_USD', 3, {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
+    BCO_USD = Commodity('BCO_USD', 10, 3, {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
+    GOLD = Commodity('XAU_USD', 20, 3, {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
 
 
 class Indices:
     NAS100_USD = Index('NAS100_USD', {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
     SPX500_USD = Index('SPX500_USD', {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
+
+
+def get_all_instruments() -> Dict[str, Instrument]:
+    all_instruments = {}
+    for instrument_class in [CurrencyPairs, Commodities, Indices]:
+        class_attributes = inspect.getmembers(instrument_class, lambda a: not(inspect.isroutine(a)))
+        for name, attribute in class_attributes:
+            if not (name.startswith('__') and name.endswith('__')):
+                all_instruments[name] = attribute
+
+    return all_instruments
