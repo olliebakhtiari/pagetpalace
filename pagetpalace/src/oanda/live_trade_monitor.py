@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Dict, List
 
 # Local.
+from pagetpalace.src.instruments import get_all_instruments
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
@@ -12,6 +13,8 @@ from pagetpalace.tools.logger import *
 
 
 class LiveTradeMonitor:
+    ALL_INSTRUMENTS = get_all_instruments()
+
     def __init__(
             self,
             account: OandaAccount,
@@ -69,7 +72,10 @@ class LiveTradeMonitor:
                 if has_pct_hit:
                     logger.info(f'Adjusting stop loss for: {trade}')
                     new_stop_loss_price = calculate_new_sl_price(trade=trade, pct=percentages['move'])
-                    self._account.update_stop_loss(trade_specifier=trade['id'], price=new_stop_loss_price)
+                    self._account.update_stop_loss(
+                        trade_specifier=trade['id'],
+                        price=round(new_stop_loss_price, self.ALL_INSTRUMENTS[symbol].price_precision),
+                    )
                     self.sl_adjusted[symbol][count].append(trade['id'])
                 else:
 
