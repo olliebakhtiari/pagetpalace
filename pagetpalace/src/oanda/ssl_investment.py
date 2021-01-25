@@ -6,7 +6,7 @@ from typing import Dict
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda import OandaAccount
+from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.src.indicators import append_average_true_range, append_ssma
@@ -104,6 +104,7 @@ class SSLInvestment(SSLMultiTimeFrame):
                 self._place_pending_order(
                     price_to_offset_from=price_to_offset_from,
                     entry_offset=self._atr_values[self.entry_timeframe] / 5,
+                    worst_price_bound_offset=self._atr_values[self.entry_timeframe] / 2,
                     sl_pip_amount=sl_pip_amount,
                     tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
                     strategy=strategy,

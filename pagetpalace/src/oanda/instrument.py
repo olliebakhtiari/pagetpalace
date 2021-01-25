@@ -283,15 +283,15 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for g in ['M5']:
-#         i = 'GBP_CAD'
+#     for g in ['H1']:
+#         i = 'GBP_USD'
 #         od = OandaInstrumentData()
 #         od.write_candles_to_csv(
 #             instrument=i,
 #             granularity=g,
-#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
+#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
 #             start_year=2012,
-#             end_year=2020,
+#             end_year=2021,
 #             prices='ABM',
 #         )
 #     od = OandaInstrumentData()
