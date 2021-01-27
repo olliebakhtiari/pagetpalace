@@ -2,7 +2,7 @@
 import pytz
 import time
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 # Local.
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
@@ -22,6 +22,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             trade_multipliers: dict,
             hammer_pin_coefficients: dict,
             trading_restriction: str,
+            directions: List[str],
             spread_cap: float = None,
             live_trade_monitor: LiveTradeMonitor = None,
     ):
@@ -37,9 +38,9 @@ class SSLHammerPin(SSLMultiTimeFrame):
             live_trade_monitor=live_trade_monitor,
             ssl_periods=10,
         )
-        """ hammer_pin_coefficients = {'long': {'body': 2, 'head_tail': 5} """
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
+        self.directions = directions
         self.spread_cap = spread_cap
         self._prev_latest_candle_datetime = None
 
@@ -67,10 +68,20 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_20_distance_met
 
+    def _is_short_signal(self, prev_candle) -> bool:
+        bias = 'short'
+        coeffs = self.hammer_pin_coefficients[bias]
+        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
+        midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh']), 'H1')
+
+        return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
+
     def _get_s1_signal(self, prev_candle) -> Union[str, None]:
         signal = None
         if self._is_long_signal(prev_candle):
             signal = 'long'
+        elif self._is_short_signal(prev_candle):
+            signal = 'short'
 
         return signal
 
@@ -146,7 +157,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         # New orders.
                         if self._is_within_trading_restriction(now):
                             for strategy, signal in signals.items():
-                                if signal and not is_first_run:
+                                if signal and signal in self.directions and not is_first_run:
                                     self._place_new_pending_order_if_units_available(strategy, signal)
                         prev_exec = now.hour
                         is_first_run = False
