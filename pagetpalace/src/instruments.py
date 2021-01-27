@@ -61,11 +61,11 @@ class Commodity(Instrument):
 
 
 class Index(Instrument):
-    def __init__(self, symbol: str, exchange_rate_data: dict = None):
+    def __init__(self, symbol: str, leverage: int, exchange_rate_data: dict = None):
         super().__init__(
             symbol,
             InstrumentTypes.INDEX,
-            InstrumentLeverage.INDEX,
+            leverage,
             InstrumentDecimalRatio.INDEX,
             1,
             exchange_rate_data,
@@ -77,14 +77,19 @@ class CurrencyPairs:
     GBP_USD = Currency('GBP_USD', InstrumentLeverage.CURRENCY, 1e4, 5)
 
 
+class CurrencyConversions:
+    POUND_DOLLAR_CONVERSION = {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False}
+
+
 class Commodities:
-    BCO_USD = Commodity('BCO_USD', 10, 3, {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
-    GOLD = Commodity('XAU_USD', 20, 3, {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
+    BCO_USD = Commodity('BCO_USD', 10, 3, CurrencyConversions.POUND_DOLLAR_CONVERSION)
+    GOLD = Commodity('XAU_USD', 20, 3, CurrencyConversions.POUND_DOLLAR_CONVERSION)
 
 
 class Indices:
-    NAS100_USD = Index('NAS100_USD', {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
-    SPX500_USD = Index('SPX500_USD', {'symbol': CurrencyPairs.GBP_USD.symbol, 'inverse_required': False})
+    IN50_USD = Index('IN50_USD', 10, CurrencyConversions.POUND_DOLLAR_CONVERSION)
+    NAS100_USD = Index('NAS100_USD', InstrumentLeverage.INDEX, CurrencyConversions.POUND_DOLLAR_CONVERSION)
+    SPX500_USD = Index('SPX500_USD', InstrumentLeverage.INDEX, CurrencyConversions.POUND_DOLLAR_CONVERSION)
 
 
 def get_all_instruments() -> Dict[str, Instrument]:
