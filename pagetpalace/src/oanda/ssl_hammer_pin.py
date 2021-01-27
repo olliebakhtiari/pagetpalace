@@ -2,7 +2,7 @@
 import pytz
 import time
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 # Local.
 from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
@@ -22,7 +22,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
             trade_multipliers: dict,
             hammer_pin_coefficients: dict,
             trading_restriction: str,
-            directions: List[str],
             spread_cap: float = None,
             live_trade_monitor: LiveTradeMonitor = None,
     ):
@@ -40,7 +39,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         )
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
-        self.directions = directions
+        self.directions = tuple(hammer_pin_coefficients.keys())
         self.spread_cap = spread_cap
         self._prev_latest_candle_datetime = None
 
