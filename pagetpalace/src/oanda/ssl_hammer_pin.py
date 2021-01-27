@@ -77,10 +77,12 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _get_s1_signal(self, prev_candle) -> Union[str, None]:
         signal = None
-        if self._is_long_signal(prev_candle):
-            signal = 'long'
-        elif self._is_short_signal(prev_candle):
-            signal = 'short'
+        long = 'long'
+        short = 'short'
+        if long in self.directions and self._is_long_signal(prev_candle):
+            signal = long
+        elif short in self.directions and self._is_short_signal(prev_candle):
+            signal = short
 
         return signal
 
@@ -156,7 +158,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         # New orders.
                         if self._is_within_trading_restriction(now):
                             for strategy, signal in signals.items():
-                                if signal and signal in self.directions and not is_first_run:
+                                if signal and not is_first_run:
                                     self._place_new_pending_order_if_units_available(strategy, signal)
                         prev_exec = now.hour
                         is_first_run = False
