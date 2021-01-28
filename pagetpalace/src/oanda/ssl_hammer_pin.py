@@ -149,18 +149,18 @@ class SSLHammerPin(SSLMultiTimeFrame):
                     time.sleep(8)
                     self._update_latest_data()
                     if self._latest_data:
+                        prev_exec = now.hour
                         if self._prev_latest_candle_datetime != self._latest_data['H1'].iloc[-1]['datetime']:
                             self._check_and_clear_pending_orders()
-                        self._update_current_indicators_and_signals()
-                        signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
-                        self._log_latest_values(now, signals)
+                            self._update_current_indicators_and_signals()
+                            signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
+                            self._log_latest_values(now, signals)
 
-                        # New orders.
-                        if self._is_within_trading_restriction(now):
-                            for strategy, signal in signals.items():
-                                if signal and not is_first_run:
-                                    self._place_new_pending_order_if_units_available(strategy, signal)
-                        prev_exec = now.hour
-                        is_first_run = False
-                        self._update_previous_ssl_values()
-                        self._prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
+                            # New orders.
+                            if self._is_within_trading_restriction(now):
+                                for strategy, signal in signals.items():
+                                    if signal and not is_first_run:
+                                        self._place_new_pending_order_if_units_available(strategy, signal)
+                            is_first_run = False
+                            self._update_previous_ssl_values()
+                            self._prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']

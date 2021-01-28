@@ -77,6 +77,7 @@ class LiveTradeMonitor:
                         price=round(new_stop_loss_price, self.ALL_INSTRUMENTS[symbol].price_precision),
                     )
                     self.sl_adjusted[symbol][count].append(trade['id'])
+                    logger.info(f'sl_adjusted: {self.sl_adjusted}')
                 else:
 
                     # No need to check subsequent targets if the previous hasn't been hit. "check" pct's are ascending.
@@ -107,6 +108,7 @@ class LiveTradeMonitor:
                     to_close = pct_of_units if pct_of_units > 1 else 1
                     self._account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
                     self.partially_closed[symbol][count].append(trade['id'])
+                    logger.info(f'partially_closed: {self.partially_closed}')
                 else:
 
                     # No need to check subsequent targets if the previous hasn't been hit. "check" pct's are ascending.

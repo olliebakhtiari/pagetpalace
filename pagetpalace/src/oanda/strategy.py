@@ -117,8 +117,6 @@ class Strategy:
         self._add_id_to_pending_orders(pending_order, strategy)
         logger.info(f'pending order placed: {pending_order}')
         logger.info(f'pending_orders: {self._pending_orders}')
-        logger.info(f'sl_adjusted: {self._live_trade_monitor.sl_adjusted}')
-        logger.info(f'partially_closed: {self._live_trade_monitor.partially_closed}')
 
     def _update_latest_data(self):
         od = OandaInstrumentData()

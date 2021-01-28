@@ -283,8 +283,8 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for g in ['H1']:
-#         i = 'GBP_USD'
+#     for g in ['H1', 'D']:
+#         i = 'IN50_USD'
 #         od = OandaInstrumentData()
 #         od.write_candles_to_csv(
 #             instrument=i,
