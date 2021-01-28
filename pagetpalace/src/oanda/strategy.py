@@ -1,6 +1,7 @@
 # Python standard.
 import abc
 import concurrent.futures
+import math
 from typing import List, Dict
 
 # Local.
@@ -91,7 +92,7 @@ class Strategy:
         else:
             raise ValueError('Invalid signal received.')
 
-        return create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, units)
+        return create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
 
     def _place_pending_order(
             self,
