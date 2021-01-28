@@ -137,7 +137,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
         prev_exec = -1
-        is_first_run = True
         while 1:
             now = datetime.now().astimezone(london_tz)
             if now.isoweekday() != 6:
@@ -159,8 +158,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                             # New orders.
                             if self._is_within_trading_restriction(now):
                                 for strategy, signal in signals.items():
-                                    if signal and not is_first_run:
+                                    if signal:
                                         self._place_new_pending_order_if_units_available(strategy, signal)
-                            is_first_run = False
                             self._update_previous_ssl_values()
                             self._prev_latest_candle_datetime = self._latest_data['H1'].iloc[-1]['datetime']
