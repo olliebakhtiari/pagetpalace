@@ -82,7 +82,7 @@ class SSLCurrency(SSLMultiTimeFrame):
                                 units = self._get_unit_size_of_trade(last_30m_close)
                                 is_within_valid_boundary = self._is_within_valid_boundary(signal, last_30m_close, 'M30')
                                 if units > 0 and spread <= 0.0004 and is_within_valid_boundary \
-                                        and self._has_new_signal() and not is_first_run:
+                                        and self._has_new_entry_signal() and not is_first_run:
                                     sl_pip_amount = self._atr_values[self.entry_timeframe] \
                                                     * self.trade_multipliers[strategy][signal]['sl']
                                     self._place_pending_order(

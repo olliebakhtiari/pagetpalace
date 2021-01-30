@@ -1,7 +1,7 @@
 # Python standard.
 import abc
 import sys
-from typing import List
+from typing import Dict, List
 
 # Local.
 from pagetpalace.src.instruments import Instrument
@@ -25,7 +25,7 @@ class SSLMultiTimeFrame(Strategy):
             boundary_multipliers: dict,
             live_trade_monitor: LiveTradeMonitor,
             trade_multipliers: dict = None,
-            ssl_periods: int = 20,
+            ssl_periods: Dict[str, int] = None,
     ):
         """
             boundary_multipliers = {
@@ -53,7 +53,7 @@ class SSLMultiTimeFrame(Strategy):
             sub_strategies_count,
             live_trade_monitor,
         )
-        self.ssl_periods = ssl_periods
+        self.ssl_periods = {tf: 20 for tf in time_frames} if not ssl_periods else ssl_periods
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
         init_empty = {tf: 0 for tf in self.time_frames}
@@ -64,7 +64,7 @@ class SSLMultiTimeFrame(Strategy):
         self._entry_signals = {}
 
     def _check_and_clear_pending_orders(self):
-        if self._has_new_signal():
+        if self._has_new_entry_signal():
             try:
                 self._clear_pending_orders()
             except Exception as exc:
@@ -101,10 +101,10 @@ class SSLMultiTimeFrame(Strategy):
         raise NotImplementedError('Not implemented in subclass.')
 
     def _update_current_ssl_values(self):
-        for df in self._latest_data.values():
-            append_ssl_channel(df, periods=self.ssl_periods)
+        for tf, df in self._latest_data.items():
+            append_ssl_channel(df, periods=self.ssl_periods[tf])
         self._current_ssl_values = {
-            tf: self._latest_data[tf].iloc[-1][f'HighLowValue_{self.ssl_periods}_period'] for tf in self.time_frames
+            tf: self._latest_data[tf].iloc[-1][f'HighLowValue_{self.ssl_periods[tf]}_period'] for tf in self.time_frames
         }
 
     def _update_previous_ssl_values(self):
@@ -116,7 +116,7 @@ class SSLMultiTimeFrame(Strategy):
             'current': self._current_ssl_values[self.entry_timeframe],
         }
 
-    def _has_new_signal(self) -> bool:
+    def _has_new_entry_signal(self) -> bool:
         return self._entry_signals['previous'] != self._entry_signals['current']
 
     def _update_current_indicators_and_signals(self):

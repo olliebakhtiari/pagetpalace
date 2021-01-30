@@ -24,18 +24,20 @@ class SSLHammerPin(SSLMultiTimeFrame):
             trading_restriction: str,
             spread_cap: float = None,
             live_trade_monitor: LiveTradeMonitor = None,
+            ssl_periods: Dict[str, int] = None,
     ):
+        time_frames = ['D', 'H1']
         super().__init__(
             equity_split=1.75,
             account=account,
             instrument=instrument,
-            time_frames=['D', 'H1'],
+            time_frames=time_frames,
             entry_timeframe='H1',
             sub_strategies_count=1,
             boundary_multipliers=boundary_multipliers,
             trade_multipliers=trade_multipliers,
             live_trade_monitor=live_trade_monitor,
-            ssl_periods=10,
+            ssl_periods={tf: 10 for tf in time_frames} if not ssl_periods else ssl_periods,
         )
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
