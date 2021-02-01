@@ -53,8 +53,7 @@ class SSLInvestment(SSLMultiTimeFrame):
         try:
             units = self._get_unit_size_of_trade(price_to_offset_from)
             if units > 0:
-                sl_pip_amount = self._atr_values[self.entry_timeframe] \
-                                * self.trade_multipliers[strategy][signal]['sl']
+                sl_pip_amount = self._atr_values[self.entry_timeframe] * self.trade_multipliers[strategy][signal]['sl']
                 self._place_pending_order(
                     price_to_offset_from=price_to_offset_from,
                     entry_offset=self._atr_values[self.entry_timeframe] / 5,
