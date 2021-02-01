@@ -78,7 +78,7 @@ class SSLInvestment(SSLMultiTimeFrame):
                 self._sync_pending_orders(self.account.get_pending_orders()['orders'])
             except Exception as exc:
                 logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
-            if now.minute % 5 == 0 and now.minute != prev_exec:
+            if now.minute == 0 and now.hour != prev_exec:
                 time.sleep(8.1)
                 self._update_latest_data()
                 if self._latest_data:
