@@ -93,7 +93,7 @@ class SSLInvestment(SSLMultiTimeFrame):
                     for strategy, signal in signals.items():
                         if signal and self._has_new_entry_signal() and not is_first_run:
                             self._place_new_pending_order_if_units_available(last_h1_close, strategy, signal)
-                prev_exec = now.minute
+                prev_exec = now.hour
                 self._update_previous_ssl_values()
                 is_first_run = False
 
