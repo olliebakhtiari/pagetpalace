@@ -25,6 +25,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             spread_cap: float = None,
             live_trade_monitor: LiveTradeMonitor = None,
             ssl_periods: Dict[str, int] = None,
+            wait_time_precedence: int = 1,
     ):
         time_frames = ['D', 'H1']
         super().__init__(
@@ -44,6 +45,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         self.directions = tuple(hammer_pin_coefficients.keys())
         self.spread_cap = spread_cap
         self._prev_latest_candle_datetime = None
+        self._wait_time_precedence = wait_time_precedence
 
     def _check_and_clear_pending_orders(self):
         """ Overwrite method to clear regardless of new signal, clear based on time. (A trade has an hour to fill). """
@@ -147,7 +149,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 except Exception as exc:
                     logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != prev_exec:
-                    time.sleep(8)
+                    time.sleep(8 + (self._wait_time_precedence / 10))
                     self._update_latest_data()
                     if self._latest_data:
                         prev_exec = now.hour

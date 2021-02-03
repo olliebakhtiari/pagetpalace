@@ -283,16 +283,16 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for g in ['H1', 'D']:
-#         i = 'IN50_USD'
-#         od = OandaInstrumentData()
-#         od.write_candles_to_csv(
-#             instrument=i,
-#             granularity=g,
-#             output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-#             start_year=2012,
-#             end_year=2021,
-#             prices='ABM',
-#         )
+#     for i in ['XAU_GBP', 'XPT_GBP']:
+#         for g in ['D']:
+#             od = OandaInstrumentData()
+#             od.write_candles_to_csv(
+#                 instrument=i,
+#                 granularity=g,
+#                 output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
+#                 start_year=2012,
+#                 end_year=2021,
+#                 prices='ABM',
+#             )
 #     od = OandaInstrumentData()
-#     print(od.get_complete_candlesticks(instrument='GBP_USD', granularity='M30', count=48))
+#     print(od.get_complete_candlesticks(instrument='XAU_USD', granularity='H1', count=3))
