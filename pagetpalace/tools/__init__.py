@@ -1,3 +1,4 @@
 from .aws_utils import *
-from .logger import *
+from .email_sender import EmailSender
 from .file_operations import *
+from .logger import *

@@ -53,6 +53,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             self._clear_pending_orders()
         except Exception as exc:
             logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
+            self._send_mail_alert(error_source='clear_pending')
 
     def _update_atr_values(self):
         for tf in self.time_frames:
@@ -137,6 +138,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 )
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
+            self._send_mail_alert(error_source='place_order')
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')

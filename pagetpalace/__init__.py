@@ -1,2 +1,3 @@
+from .config import EMAIL_ADDRESS, EMAIL_ACCOUNT_PASSWORD, EMAIL_DEFAULT_RECEIVERS, PAGETPALACELIVE, PAGETPALACEDEMO
 from .src import *
 from .tools import *

@@ -6,7 +6,7 @@ from typing import List, Dict
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda.orders import create_stop_order
+from pagetpalace.src.oanda.orders import Orders
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.instrument import OandaInstrumentData
 from pagetpalace.src.oanda.pricing import OandaPricingData
@@ -14,6 +14,7 @@ from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 from pagetpalace.src.oanda.unit_conversions import UnitConversions
 from pagetpalace.src.risk_manager import RiskManager
+from pagetpalace.tools.email_sender import EmailSender
 from pagetpalace.tools.logger import *
 
 
@@ -42,6 +43,18 @@ class Strategy:
         self._latest_price = 0
         self._latest_data = {}
 
+    def _send_mail_alert(self, error_source: str, exc_msg: str = ''):
+        error_source_to_msgs = {
+            'place_order': 'Failed to place pending order',
+            'get_data': 'Failed to retrieve latest data',
+            'clear_pending': 'Failed to clear pending orders',
+        }
+        msg = f'{error_source_to_msgs[error_source]} for {self.instrument}.'
+        try:
+            EmailSender().send_mail(subject=msg.upper(), body=f'{msg}, {exc_msg}. Check if manual action required.')
+        except Exception as exc:
+            logger.error(f'Failed to send email alert. {exc}', exc_info=True)
+
     def _add_id_to_pending_orders(self, order: dict, strategy: str):
         self._pending_orders[strategy].append(order['orderCreateTransaction']['id'])
 
@@ -53,11 +66,15 @@ class Strategy:
                     local_pending.remove(id_)
 
     def _clear_pending_orders(self):
-        for orders in list(self._pending_orders.values()):
-            for id_ in orders:
-                self.account.cancel_order(id_)
-        for key in list(self._pending_orders.keys()):
-            self._pending_orders[key].clear()
+        try:
+            for orders in list(self._pending_orders.values()):
+                for id_ in orders:
+                    self.account.cancel_order(id_)
+            for key in list(self._pending_orders.keys()):
+                self._pending_orders[key].clear()
+        except Exception as exc:
+            logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
+            self._send_mail_alert(error_source='clear_pending')
 
     def _get_unit_size_of_trade(self, entry_price: float) -> float:
         return UnitConversions(self.instrument, entry_price) \
@@ -92,7 +109,7 @@ class Strategy:
         else:
             raise ValueError('Invalid signal received.')
 
-        return create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
+        return Orders.create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
 
     def _place_pending_order(
             self,
@@ -133,10 +150,9 @@ class Strategy:
                 try:
                     data[time_frame] = od.convert_to_df(future.result(), 'ABM')
                 except ConnectionError as exc:
-                    logger.error(
-                        f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}',
-                        exc_info=True,
-                    )
+                    msg = f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}'
+                    logger.error(msg, exc_info=True)
+                    self._send_mail_alert(error_source='get_data', exc_msg=msg)
                     self._latest_data = {}
                     return
         self._latest_data = data
