@@ -26,10 +26,11 @@ class SSLHammerPin(SSLMultiTimeFrame):
             live_trade_monitor: LiveTradeMonitor = None,
             ssl_periods: Dict[str, int] = None,
             wait_time_precedence: int = 1,
+            equity_split: float = 1.75,
     ):
         time_frames = ['D', 'H1']
         super().__init__(
-            equity_split=1.75,
+            equity_split=equity_split,
             account=account,
             instrument=instrument,
             time_frames=time_frames,
