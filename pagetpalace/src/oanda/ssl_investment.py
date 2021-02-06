@@ -74,34 +74,35 @@ class SSLInvestment(SSLMultiTimeFrame):
         is_first_run = True
         while 1:
             now = datetime.now().astimezone(london_tz)
-            try:
-                self._sync_pending_orders(self.account.get_pending_orders()['orders'])
-            except Exception as exc:
-                logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
-            if now.minute == 0 and now.hour != prev_exec:
-                time.sleep(8.1)
-                self._update_latest_data()
-                if self._latest_data:
-                    self._update_current_indicators_and_signals()
-                    last_h1_close = float(self._latest_data['H1']['midClose'].values[-1])
-                    signals = self._get_signals(price=last_h1_close)
-                    self._log_latest_values(now, signals)
+            if now.isoweekday() != 6:
+                try:
+                    self._sync_pending_orders(self.account.get_pending_orders()['orders'])
+                except Exception as exc:
+                    logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
+                if now.minute == 0 and now.hour != prev_exec:
+                    time.sleep(8.1)
+                    self._update_latest_data()
+                    if self._latest_data:
+                        self._update_current_indicators_and_signals()
+                        last_h1_close = float(self._latest_data['H1']['midClose'].values[-1])
+                        signals = self._get_signals(price=last_h1_close)
+                        self._log_latest_values(now, signals)
 
-                    # Remove outdated pending orders depending on entry signals.
-                    self._check_and_clear_pending_orders()
+                        # Remove outdated pending orders depending on entry signals.
+                        self._check_and_clear_pending_orders()
 
-                    # New orders.
-                    for strategy, signal in signals.items():
-                        if signal and self._has_new_entry_signal() and not is_first_run:
-                            self._place_new_pending_order_if_units_available(last_h1_close, strategy, signal)
-                prev_exec = now.hour
-                self._update_previous_ssl_values()
-                is_first_run = False
+                        # New orders.
+                        for strategy, signal in signals.items():
+                            if signal and self._has_new_entry_signal() and not is_first_run:
+                                self._place_new_pending_order_if_units_available(last_h1_close, strategy, signal)
+                    prev_exec = now.hour
+                    self._update_previous_ssl_values()
+                    is_first_run = False
 
-            # Monitor and adjust current trades, if any.
-            time.sleep(1.1)
-            self._live_trade_monitor.monitor_and_adjust_current_trades()
+                # Monitor and adjust current trades, if any.
+                time.sleep(1.1)
+                self._live_trade_monitor.monitor_and_adjust_current_trades()
 
-            # Remove outdated entries in local lists.
-            if now.hour % 24 == 0:
-                self._live_trade_monitor.clean_lists()
+                # Remove outdated entries in local lists.
+                if now.hour % 24 == 0:
+                    self._live_trade_monitor.clean_lists()
