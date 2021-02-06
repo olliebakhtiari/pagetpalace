@@ -102,7 +102,7 @@ class OandaAccount(RequestMixin):
     def close_instrument_position(self, instrument: str) -> dict:
         return self._request(endpoint=f'positions/{instrument}/close', method='PUT')
 
-    def create_order(self, order: dict) -> dict:
+    def create_order(self, order: str) -> dict:
         """ https://developer.oanda.com/rest-live-v20/order-df/#OrderRequest """
         return self._request(endpoint='orders', method='POST', data=order)
 

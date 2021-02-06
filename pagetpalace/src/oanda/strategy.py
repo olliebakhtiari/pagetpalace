@@ -87,7 +87,7 @@ class Strategy:
                          worst_price_bound_offset: float,
                          tp_pip_amount: float,
                          sl_pip_amount: float,
-                         units: float) -> dict:
+                         units: float) -> str:
         precision = self.instrument.price_precision
         units = self._risk_manager.calculate_unit_size_within_max_risk(
             float(self.account.get_full_account_details()['account']['balance']),

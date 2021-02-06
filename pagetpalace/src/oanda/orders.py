@@ -11,7 +11,7 @@ class Orders:
                           sl: float,
                           tp: float,
                           instrument: str,
-                          units: float):
+                          units: float) -> str:
         return json.dumps({
             "order": {
                 "price": f"{entry}",
