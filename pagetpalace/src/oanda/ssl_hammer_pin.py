@@ -9,7 +9,6 @@ from pagetpalace.src.indicators import append_average_true_range, append_ssma, g
 from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
-from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.tools.logger import *
 
 
@@ -23,7 +22,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
             hammer_pin_coefficients: dict,
             trading_restriction: str,
             spread_cap: float = None,
-            live_trade_monitor: LiveTradeMonitor = None,
             ssl_periods: Dict[str, int] = None,
             wait_time_precedence: int = 1,
             equity_split: float = 1.75,
@@ -38,7 +36,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             sub_strategies_count=1,
             boundary_multipliers=boundary_multipliers,
             trade_multipliers=trade_multipliers,
-            live_trade_monitor=live_trade_monitor,
+            live_trade_monitor=None,
             ssl_periods={tf: 10 for tf in time_frames} if not ssl_periods else ssl_periods,
         )
         self.hammer_pin_coefficients = hammer_pin_coefficients

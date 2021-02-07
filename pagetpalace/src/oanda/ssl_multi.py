@@ -1,7 +1,7 @@
 # Python standard.
 import abc
 import sys
-from typing import Dict, List
+from typing import Dict, List, Union
 
 # Local.
 from pagetpalace.src.instruments import Instrument
@@ -23,7 +23,7 @@ class SSLMultiTimeFrame(Strategy):
             entry_timeframe: str,
             sub_strategies_count: int,
             boundary_multipliers: dict,
-            live_trade_monitor: LiveTradeMonitor,
+            live_trade_monitor: Union[LiveTradeMonitor, None],
             trade_multipliers: dict = None,
             ssl_periods: Dict[str, int] = None,
     ):

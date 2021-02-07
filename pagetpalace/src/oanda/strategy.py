@@ -2,7 +2,7 @@
 import abc
 import concurrent.futures
 import math
-from typing import List, Dict
+from typing import Dict, List, Union
 
 # Local.
 from pagetpalace.src.instruments import Instrument
@@ -27,7 +27,7 @@ class Strategy:
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
-            live_trade_monitor: LiveTradeMonitor,
+            live_trade_monitor: Union[LiveTradeMonitor, None],
     ):
         self.equity_split = equity_split
         self.account = account
@@ -45,7 +45,7 @@ class Strategy:
 
     def _send_mail_alert(self, error_source: str, exc_msg: str = ''):
         error_source_to_msgs = {
-            'place_order': 'Failed to place pending order',
+            'place_order': 'Failed to place new order',
             'get_data': 'Failed to retrieve latest data',
             'clear_pending': 'Failed to clear pending orders',
         }
@@ -80,14 +80,14 @@ class Strategy:
         return UnitConversions(self.instrument, entry_price) \
             .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
-    def _construct_order(self,
-                         signal: str,
-                         last_close_price: float,
-                         entry_offset: float,
-                         worst_price_bound_offset: float,
-                         tp_pip_amount: float,
-                         sl_pip_amount: float,
-                         units: float) -> str:
+    def _construct_stop_order(self,
+                              signal: str,
+                              last_close_price: float,
+                              entry_offset: float,
+                              worst_price_bound_offset: float,
+                              tp_pip_amount: float,
+                              sl_pip_amount: float,
+                              units: float) -> str:
         precision = self.instrument.price_precision
         units = self._risk_manager.calculate_unit_size_within_max_risk(
             float(self.account.get_full_account_details()['account']['balance']),
@@ -111,6 +111,10 @@ class Strategy:
 
         return Orders.create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
 
+    def _construct_market_order(self):
+        # TODO.
+        pass
+
     def _place_pending_order(
             self,
             price_to_offset_from: float,
@@ -122,7 +126,7 @@ class Strategy:
             signal: str,
             units: float,
     ):
-        order_schema = self._construct_order(
+        order_schema = self._construct_stop_order(
             signal=signal,
             last_close_price=price_to_offset_from,
             entry_offset=entry_offset,
@@ -135,6 +139,12 @@ class Strategy:
         self._add_id_to_pending_orders(pending_order, strategy)
         logger.info(f'pending order placed: {pending_order}')
         logger.info(f'pending_orders: {self._pending_orders}')
+
+    def _place_market_order(self):
+        # TODO.
+        order_schema = self._construct_market_order()
+        market_order = self.account.create_order(order_schema)
+        logger.info(f'market order placed: {market_order}')
 
     def _update_latest_data(self):
         od = OandaInstrumentData()

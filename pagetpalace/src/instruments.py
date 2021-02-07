@@ -118,6 +118,7 @@ class Commodities:
 
 
 class Indices:
+    DE30_EUR = Index('DE30_EUR', exchange_rate_data={'symbol': 'EUR_GBP', 'inverse_required': False})
     IN50_USD = Index('IN50_USD', leverage=10)
     NAS100_USD = Index('NAS100_USD')
     SPX500_USD = Index('SPX500_USD')

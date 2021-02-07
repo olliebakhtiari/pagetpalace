@@ -88,3 +88,118 @@ def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coe
             signal = 'short'
 
     return signal
+
+
+def is_candle_range_greater_than_x(candle: pd.DataFrame, value: float):
+    return (candle['midHigh'].values[0] - candle['midLow'].values[0]) > value
+
+
+def _adjust_if_zero(value: float) -> float:
+    return value if value > 0 else 0.00001
+
+
+def _get_range_of_body(prices: Dict[str, float]) -> float:
+    return _adjust_if_zero(prices['o'] - prices['c'] if prices['o'] > prices['c'] else prices['c'] - prices['o'])
+
+
+def _get_range_of_tail(prices: Dict[str, float]) -> float:
+    return _adjust_if_zero(min(prices['o'], prices['c']) - prices['l'])
+
+
+def _get_range_of_head(prices: Dict[str, float]) -> float:
+    return _adjust_if_zero(prices['h'] - max(prices['o'], prices['c']))
+
+
+def _get_candlestick_ranges(prices: Dict[str, float]):
+    return {'body': _get_range_of_body(prices), 'head': _get_range_of_head(prices), 'tail': _get_range_of_tail(prices)}
+
+
+def was_price_ascending(dataframe: pd.DataFrame,
+                        idx_to_analyse: int,
+                        prices: str = 'midHigh',
+                        look_back: int = 2) -> bool:
+    is_ascending = True
+    while look_back > 0:
+        if dataframe.iloc[idx_to_analyse - look_back][prices] > dataframe.iloc[idx_to_analyse - look_back + 1][prices]:
+            return False
+        look_back -= 1
+
+    return is_ascending
+
+
+def was_price_descending(dataframe: pd.DataFrame,
+                         idx_to_analyse: int,
+                         prices: str = 'midLow',
+                         look_back: int = 2) -> bool:
+    is_descending = True
+    while look_back > 0:
+        if dataframe.iloc[idx_to_analyse - look_back][prices] < dataframe.iloc[idx_to_analyse - look_back + 1][prices]:
+            return False
+        look_back -= 1
+
+    return is_descending
+
+
+def _is_doji_candlestick(prices: Dict[str, float]) -> bool:
+    """
+        In isolation, a doji candlestick is a neutral indicator that provides little information.
+        Moreover, a doji is not a common occurrence; therefore, it is not a reliable tool for spotting things like
+        price reversals.
+    """
+    return prices['o'] == prices['c']
+
+
+def _is_hammer_candlestick(ranges: Dict[str, float], coeffs: Dict[str, float]) -> bool:
+    is_tail_x_times_bigger_than_body = (ranges['tail'] > (coeffs['body'] * ranges['body']))
+    is_head_x_times_smaller_than_tail = (ranges['head'] < (ranges['tail'] / coeffs['shadow']))
+
+    return is_tail_x_times_bigger_than_body and is_head_x_times_smaller_than_tail
+
+
+def _is_pin_candlestick(ranges: Dict[str, float], coeffs: Dict[str, float]) -> bool:
+    is_head_x_times_bigger_than_body = (ranges['head'] > (coeffs['body'] * ranges['body']))
+    is_tail_x_times_smaller_than_head = (ranges['tail'] < (ranges['head'] / coeffs['shadow']))
+
+    return is_head_x_times_bigger_than_body and is_tail_x_times_smaller_than_head
+
+
+def get_hammer_pin_signal_v2(dataframe: pd.DataFrame, idx_to_analyse: int, coeffs: Dict[str, float]) -> str:
+    signal = ''
+    candle_to_check = dataframe.iloc[idx_to_analyse]
+    prices_to_check = {
+        'o': candle_to_check['midOpen'],
+        'h': candle_to_check['midHigh'],
+        'l': candle_to_check['midLow'],
+        'c': candle_to_check['midClose'],
+    }
+    ranges = _get_candlestick_ranges(prices_to_check)
+    if _is_doji_candlestick(prices_to_check):
+        signal = ''
+    elif _is_hammer_candlestick(ranges, coeffs):
+        signal = 'long'
+    elif _is_pin_candlestick(ranges, coeffs):
+        signal = 'short'
+
+    return signal
+
+
+def was_previous_green_streak(dataframe: pd.DataFrame, idx_to_analyse: int, look_back: int = 4) -> bool:
+    is_green_streak = True
+    while look_back > 0:
+        candle = dataframe.iloc[idx_to_analyse - look_back]
+        if candle['midOpen'] > candle['midClose']:
+            return False
+        look_back -= 1
+
+    return is_green_streak
+
+
+def was_previous_red_streak(dataframe: pd.DataFrame, idx_to_analyse: int, look_back: int = 4) -> bool:
+    is_red_streak = True
+    while look_back > 0:
+        candle = dataframe.iloc[idx_to_analyse - look_back]
+        if candle['midOpen'] < candle['midClose']:
+            return False
+        look_back -= 1
+
+    return is_red_streak
