@@ -196,7 +196,7 @@ class HPDaily(Strategy):
                          + (self._latest_data[self.entry_timeframe]['midHigh'].values[-1] - close))
 
         return amount \
-               + (self._strategy_atr_values[self.entry_timeframe] / 10 * 2) \
+               + (self._strategy_atr_values[self.entry_timeframe] / 10) \
                + (self._strategy_atr_values[self.entry_timeframe] * self.trade_multipliers['1'][signal]['sl'])
 
     def _log_latest_values(self, now, signals):
