@@ -20,3 +20,9 @@ class InstrumentDecimalRatio:
     COMMODITY = 1e2
     CURRENCY = 1e4
     INDEX = 1
+
+
+class InstrumentPricePrecision:
+    COMMODITY = 3
+    CURRENCY = 5
+    INDEX = 1

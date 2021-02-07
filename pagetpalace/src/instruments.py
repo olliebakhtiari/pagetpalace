@@ -3,11 +3,15 @@ import inspect
 from typing import Dict
 
 # Local.
-from pagetpalace.src.instrument_attributes import InstrumentDecimalRatio, InstrumentLeverage, InstrumentTypes
+from pagetpalace.src.instrument_attributes import (
+    InstrumentDecimalRatio,
+    InstrumentLeverage,
+    InstrumentTypes,
+    InstrumentPricePrecision,
+)
 
 
 class Instrument:
-
     def __init__(
             self,
             symbol: str,
@@ -34,8 +38,8 @@ class Currency(Instrument):
             self,
             symbol: str,
             leverage: int = InstrumentLeverage.CURRENCY,
-            decimal_ratio: float = 1e4,
-            price_precision: int = 5,
+            decimal_ratio: float = InstrumentDecimalRatio.CURRENCY,
+            price_precision: int = InstrumentPricePrecision.CURRENCY,
             exchange_rate_data: dict = None,
     ):
         if symbol.split('_')[-1] == 'JPY':
@@ -57,7 +61,7 @@ class Commodity(Instrument):
             symbol: str,
             leverage: int = InstrumentLeverage.COMMODITY,
             decimal_ratio: float = InstrumentDecimalRatio.COMMODITY,
-            price_precision: int = 3,
+            price_precision: int = InstrumentPricePrecision.COMMODITY,
             exchange_rate_data: dict = None,
     ):
         if not exchange_rate_data and symbol.split('_')[-1] == 'USD':
@@ -78,7 +82,7 @@ class Index(Instrument):
             symbol: str,
             leverage: int = InstrumentLeverage.INDEX,
             decimal_ratio: float = InstrumentDecimalRatio.INDEX,
-            price_precision: int = 1,
+            price_precision: int = InstrumentPricePrecision.INDEX,
             exchange_rate_data: dict = None,
     ):
         if not exchange_rate_data and symbol.split('_')[-1] == 'USD':
