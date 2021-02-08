@@ -12,7 +12,7 @@ class OandaPricingData(OandaAccount):
 
     def get_latest_candles(self,
                            candle_specifications: str,
-                           units: float = 1,
+                           units: int = 1,
                            smooth: bool = False,
                            daily_alignment: int = 22,
                            alignment_timezone: str = 'Europe/London',

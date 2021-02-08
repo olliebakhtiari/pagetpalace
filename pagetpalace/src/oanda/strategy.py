@@ -2,7 +2,7 @@
 import abc
 import concurrent.futures
 import math
-from typing import Dict, List, Union
+from typing import Dict, List
 
 # Local.
 from pagetpalace.src.instruments import Instrument
@@ -10,7 +10,6 @@ from pagetpalace.src.oanda.orders import Orders
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.instrument import OandaInstrumentData
 from pagetpalace.src.oanda.pricing import OandaPricingData
-from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 from pagetpalace.src.oanda.unit_conversions import UnitConversions
 from pagetpalace.src.risk_manager import RiskManager
@@ -27,7 +26,6 @@ class Strategy:
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
-            live_trade_monitor: Union[LiveTradeMonitor, None],
     ):
         self.equity_split = equity_split
         self.account = account
@@ -35,8 +33,6 @@ class Strategy:
         self.time_frames = time_frames
         self.entry_timeframe = entry_timeframe
         self.sub_strategies_count = sub_strategies_count
-        self.live_trade_monitor = live_trade_monitor
-        self._live_trade_monitor = live_trade_monitor
         self._risk_manager = RiskManager(self.instrument)
         self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
@@ -76,7 +72,7 @@ class Strategy:
             logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
             self._send_mail_alert(error_source='clear_pending')
 
-    def _get_unit_size_of_trade(self, entry_price: float) -> float:
+    def _get_unit_size_of_trade(self, entry_price: float) -> int:
         return UnitConversions(self.instrument, entry_price) \
             .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
@@ -87,7 +83,7 @@ class Strategy:
                               worst_price_bound_offset: float,
                               tp_pip_amount: float,
                               sl_pip_amount: float,
-                              units: float) -> str:
+                              units: int) -> str:
         precision = self.instrument.price_precision
         units = self._risk_manager.calculate_unit_size_within_max_risk(
             float(self.account.get_full_account_details()['account']['balance']),
@@ -111,9 +107,34 @@ class Strategy:
 
         return Orders.create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
 
-    def _construct_market_order(self):
+    def _construct_market_order(self,
+                                signal: str,
+                                units: int,
+                                last_close_price: float,
+                                sl_pip_amount: float,
+                                tp_pip_amount: float,
+                                worst_price_bound_offset: float) -> str:
         # TODO.
-        pass
+        precision = self.instrument.price_precision
+        units = self._risk_manager.calculate_unit_size_within_max_risk(
+            float(self.account.get_full_account_details()['account']['balance']),
+            units,
+            last_close_price,
+            sl_pip_amount
+        )
+        if signal == 'long':
+            tp = round(last_close_price + tp_pip_amount, precision)
+            sl = round(last_close_price - sl_pip_amount, precision)
+            price_bound = round(last_close_price + worst_price_bound_offset, precision)
+        elif signal == 'short':
+            tp = round(last_close_price - tp_pip_amount, precision)
+            sl = round(last_close_price + sl_pip_amount, precision)
+            price_bound = round(last_close_price - worst_price_bound_offset, precision)
+            units = units * -1
+        else:
+            raise ValueError('Invalid signal received.')
+
+        return Orders.create_market_order(price_bound, sl, tp, self.instrument.symbol, math.floor(units))
 
     def _place_pending_order(
             self,
@@ -124,7 +145,7 @@ class Strategy:
             tp_pip_amount: float,
             strategy: str,
             signal: str,
-            units: float,
+            units: int,
     ):
         order_schema = self._construct_stop_order(
             signal=signal,
@@ -137,14 +158,28 @@ class Strategy:
         )
         pending_order = self.account.create_order(order_schema)
         self._add_id_to_pending_orders(pending_order, strategy)
-        logger.info(f'pending order placed: {pending_order}')
+        logger.info(f'GTC pending order placed: {pending_order}')
         logger.info(f'pending_orders: {self._pending_orders}')
 
-    def _place_market_order(self):
-        # TODO.
-        order_schema = self._construct_market_order()
+    def _place_market_order(
+            self,
+            last_close_price: float,
+            worst_price_bound_offset: float,
+            sl_pip_amount: float,
+            tp_pip_amount: float,
+            signal: str,
+            units: int,
+    ):
+        order_schema = self._construct_market_order(
+            signal=signal,
+            last_close_price=last_close_price,
+            worst_price_bound_offset=worst_price_bound_offset,
+            tp_pip_amount=tp_pip_amount,
+            sl_pip_amount=sl_pip_amount,
+            units=units,
+        )
         market_order = self.account.create_order(order_schema)
-        logger.info(f'market order placed: {market_order}')
+        logger.info(f'IOC market order placed: {market_order}')
 
     def _update_latest_data(self):
         od = OandaInstrumentData()

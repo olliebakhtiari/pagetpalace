@@ -41,7 +41,6 @@ class HPDaily(Strategy):
             time_frames=['D'],
             entry_timeframe='D',
             sub_strategies_count=1,
-            live_trade_monitor=None,
         )
         """     
             coefficients = {
@@ -62,7 +61,7 @@ class HPDaily(Strategy):
         self.boundary_multipliers = boundary_multipliers
         self.coefficients = coefficients
         self.directions = tuple(coefficients['hp_coeffs'].keys())
-        self.spread_cap = spread_cap
+        self.spread_cap = spread_cap if spread_cap else 100000
         self._strategy_atr_values = {}
         self._strategy_ssma_values = {}
 
@@ -88,12 +87,12 @@ class HPDaily(Strategy):
 
     def _update_strategy_atr_values(self):
         append_average_true_range(self._latest_data[self.entry_timeframe])
-        self._strategy_atr_values = {self.entry_timeframe: self._latest_data[self.entry_timeframe]['14_ATR'].values[-1]}
+        self._strategy_atr_values = {self.entry_timeframe: self._latest_data[self.entry_timeframe].iloc[-1]['14_ATR']}
 
     def _update_strategy_ssma_values(self):
         append_ssma(self._latest_data[self.entry_timeframe])
         self._strategy_ssma_values = {
-            self.entry_timeframe: round(self._latest_data[self.entry_timeframe]['SSMA_50'].values[-1], 5)
+            self.entry_timeframe: round(self._latest_data[self.entry_timeframe].iloc[-1]['SSMA_50'], 5)
         }
 
     def _update_current_indicators_and_signals(self):
@@ -118,7 +117,7 @@ class HPDaily(Strategy):
         bias = 'long'
         midlow_20_distance_met = self._has_met_reverse_trade_condition(
             bias,
-            self._latest_data[self.entry_timeframe]['midLow'].values[-1],
+            self._latest_data[self.entry_timeframe].iloc[-1]['midLow'],
             self._strategy_ssma_values[self.entry_timeframe],
         )
         red_streak = was_previous_red_streak(
@@ -138,7 +137,7 @@ class HPDaily(Strategy):
         bias = 'short'
         midhigh_20_distance_met = self._has_met_reverse_trade_condition(
             bias,
-            self._latest_data[self.entry_timeframe]['midHigh'].values[-1],
+            self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'],
             self._strategy_ssma_values[self.entry_timeframe],
         )
         green_streak = was_previous_green_streak(
@@ -168,7 +167,7 @@ class HPDaily(Strategy):
 
     def _get_s1_signal(self) -> Union[str, None]:
         signal = None
-        idx_to_analyse = self._latest_data[self.entry_timeframe]['idx'].values[-1]
+        idx_to_analyse = self._latest_data[self.entry_timeframe].iloc[-1]['idx']
         long = 'long'
         short = 'short'
         if long in self.directions and self._is_big_enough_movement(long) and self._is_long_signal(idx_to_analyse):
@@ -182,17 +181,17 @@ class HPDaily(Strategy):
         return {'1': self._get_s1_signal()}
 
     def _is_within_spread_cap(self) -> bool:
-        return float(self._latest_data[self.entry_timeframe]['askOpen'].values[-1]) \
-               - float(self._latest_data[self.entry_timeframe]['bidOpen'].values[-1]) <= self.spread_cap
+        return float(self._latest_data[self.entry_timeframe].iloc[-1]['askOpen']) \
+               - float(self._latest_data[self.entry_timeframe].iloc[-1]['bidOpen']) <= self.spread_cap
 
     def _get_stop_loss_pip_amount(self, signal: str) -> float:
-        close = self._latest_data[self.entry_timeframe]['midClose'].values[-1]
+        close = self._latest_data[self.entry_timeframe].iloc[-1]['midClose']
         if signal == 'short':
-            amount = abs((self._latest_data[self.entry_timeframe]['midHigh'].values[-1] - close)
-                         + (close - self._latest_data[self.entry_timeframe]['midLow'].values[-1]))
+            amount = abs((self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'] - close)
+                         + (close - self._latest_data[self.entry_timeframe].iloc[-1]['midLow']))
         else:
-            amount = abs((close - self._latest_data[self.entry_timeframe]['midLow'].values[-1])
-                         + (self._latest_data[self.entry_timeframe]['midHigh'].values[-1] - close))
+            amount = abs((close - self._latest_data[self.entry_timeframe].iloc[-1]['midLow'])
+                         + (self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'] - close))
 
         return amount \
                + (self._strategy_atr_values[self.entry_timeframe] / 10) \
@@ -205,13 +204,16 @@ class HPDaily(Strategy):
         logger.info(f'{now} signals: {signals}')
 
     def _place_market_order_if_units_available(self, strategy: str, signal: str):
+        last_close_price = self._latest_data[self.entry_timeframe].iloc[-1]['midClose']
         try:
-            units = self._get_unit_size_of_trade(self._latest_data[self.entry_timeframe]['midClose'].values[-1])
+            units = self._get_unit_size_of_trade(last_close_price)
             if units > 0:
                 sl_pip_amount = self._get_stop_loss_pip_amount(signal)
                 tp_pip_amount = self._strategy_atr_values[self.entry_timeframe] \
                                 * self.trade_multipliers[strategy][signal]['tp']
                 self._place_market_order(
+                    last_close_price=last_close_price,
+                    worst_price_bound_offset=self._strategy_atr_values[self.entry_timeframe] / 6,
                     sl_pip_amount=sl_pip_amount,
                     tp_pip_amount=tp_pip_amount,
                     signal=signal,
@@ -227,10 +229,6 @@ class HPDaily(Strategy):
         while 1:
             now = datetime.now().astimezone(london_tz)
             if now.isoweekday() != 6:
-                try:
-                    self._sync_pending_orders(self.account.get_pending_orders()['orders'])
-                except Exception as exc:
-                    logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and (now.hour == 21 or now.hour == 22) and now.hour != prev_exec:
                     time.sleep(8 + (self.wait_time_precedence / 10) + 0.05)
                     self._update_latest_data()
@@ -245,6 +243,5 @@ class HPDaily(Strategy):
                             if self._is_within_spread_cap():
                                 for strategy, signal in signals.items():
                                     if signal:
-                                        # TODO. place instant market order.
                                         self._place_market_order_if_units_available(strategy, signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']

@@ -36,7 +36,6 @@ class SSLHammerPin(SSLMultiTimeFrame):
             sub_strategies_count=1,
             boundary_multipliers=boundary_multipliers,
             trade_multipliers=trade_multipliers,
-            live_trade_monitor=None,
             ssl_periods={tf: 10 for tf in time_frames} if not ssl_periods else ssl_periods,
         )
         self.hammer_pin_coefficients = hammer_pin_coefficients

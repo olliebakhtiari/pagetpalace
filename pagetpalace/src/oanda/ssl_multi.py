@@ -1,13 +1,12 @@
 # Python standard.
 import abc
 import sys
-from typing import Dict, List, Union
+from typing import Dict, List
 
 # Local.
 from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.indicators import append_ssl_channel
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.strategy import Strategy
 from pagetpalace.tools.logger import *
 
@@ -23,7 +22,6 @@ class SSLMultiTimeFrame(Strategy):
             entry_timeframe: str,
             sub_strategies_count: int,
             boundary_multipliers: dict,
-            live_trade_monitor: Union[LiveTradeMonitor, None],
             trade_multipliers: dict = None,
             ssl_periods: Dict[str, int] = None,
     ):
@@ -51,7 +49,6 @@ class SSLMultiTimeFrame(Strategy):
             time_frames,
             entry_timeframe,
             sub_strategies_count,
-            live_trade_monitor,
         )
         self.ssl_periods = {tf: 20 for tf in time_frames} if not ssl_periods else ssl_periods
         self.trade_multipliers = trade_multipliers

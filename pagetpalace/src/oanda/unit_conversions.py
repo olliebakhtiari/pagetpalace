@@ -51,10 +51,10 @@ class UnitConversions:
         else:
             raise Exception("Denominator scenario not accounted for.")
 
-    def calculate_units(self, margin_size: float) -> float:
+    def calculate_units(self, margin_size: float) -> int:
         return math.floor((margin_size * self.instrument.leverage) / self._pound_to_units_variable)
 
-    def calculate_pound_to_pip_ratio(self, units: float) -> float:
+    def calculate_pound_to_pip_ratio(self, units: int) -> float:
         if self.instrument.symbol.split('_')[-1] == BaseCurrencies.GBP:
             p2p_ratio = (units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable
         elif self.instrument.type_ == InstrumentTypes.CURRENCY and self.instrument.base_currency == BaseCurrencies.GBP:
@@ -94,5 +94,5 @@ class UnitConversions:
 
         return self._adjust_according_to_restricted_margin(margin_size, available_minus_restricted)
 
-    def calculate_unit_size_of_trade(self, account_data: dict, equity_split: float) -> float:
+    def calculate_unit_size_of_trade(self, account_data: dict, equity_split: float) -> int:
         return self.calculate_units(self._get_valid_margin_size(account_data, equity_split))

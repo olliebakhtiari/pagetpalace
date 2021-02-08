@@ -31,8 +31,8 @@ class SSLInvestment(SSLMultiTimeFrame):
             sub_strategies_count=1,
             trade_multipliers=trade_multipliers,
             boundary_multipliers=boundary_multipliers,
-            live_trade_monitor=live_trade_monitor,
         )
+        self._live_trade_monitor = live_trade_monitor
 
     def _update_atr_values(self):
         append_average_true_range(self._latest_data['H1'])
@@ -80,7 +80,7 @@ class SSLInvestment(SSLMultiTimeFrame):
                 except Exception as exc:
                     logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != prev_exec:
-                    time.sleep(8.1)
+                    time.sleep(8.05)
                     self._update_latest_data()
                     if self._latest_data:
                         self._update_current_indicators_and_signals()

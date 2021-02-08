@@ -1,14 +1,15 @@
+# Python standard.
 import unittest
 
 
-class TestAccount(unittest.TestCase):
+class TestStrategy(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
-    def test_something(self):
+    def test_get_unit_size_of_trade(self):
         self.assertEqual(True, False)
 
-    def tearDown(self) -> None:
+    def test_construct_stop_order(self) -> None:
         pass
 
 

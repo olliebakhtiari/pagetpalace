@@ -19,7 +19,7 @@ class RiskManager:
             )
 
     def _calculate_risk(self,
-                        units: float,
+                        units: int,
                         entry_price: float,
                         stop_loss_amount: float) -> float:
         return UnitConversions(self.instrument, entry_price).calculate_pound_to_pip_ratio(units) \
@@ -30,12 +30,12 @@ class RiskManager:
 
         return trade_risk > self.current_max_risk_in_margin
 
-    def _adjust_risk(self, units: float, trade_risk: float) -> float:
+    def _adjust_risk(self, units: int, trade_risk: float) -> float:
         return units / (trade_risk / self.current_max_risk_in_margin)
 
     def calculate_unit_size_within_max_risk(self,
                                             current_balance: float,
-                                            units: float,
+                                            units: int,
                                             entry_price: float,
                                             stop_loss_amount: float) -> float:
         trade_risk = self._calculate_risk(units, entry_price, stop_loss_amount)
