@@ -30,7 +30,6 @@ class HPDaily(Strategy):
             boundary_multipliers: dict,
             trade_multipliers: dict,
             coefficients: dict,
-            trading_restriction: str,
             spread_cap: float = None,
             wait_time_precedence: int = 1,
             equity_split: float = 8,
@@ -57,7 +56,7 @@ class HPDaily(Strategy):
             'boun_m': {'D': {'long': {'below': 0.01}, 'short': {'above': 0.01}}},
         }
         """
-        self._prev_candle_datetime = None
+        self._prev_exec_datetime = None
         self.wait_time_precedence = wait_time_precedence
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
@@ -237,9 +236,9 @@ class HPDaily(Strategy):
                     self._update_latest_data()
                     if self._latest_data:
                         prev_exec = now.hour
-                        if self._prev_candle_datetime != self._latest_data[self.entry_timeframe].iloc[-1]['datetime']:
+                        if self._prev_exec_datetime != self._latest_data[self.entry_timeframe].iloc[-1]['datetime']:
                             self._update_current_indicators_and_signals()
-                            signals = self._get_signals(prev_candle=self._latest_data[self.entry_timeframe].iloc[-1])
+                            signals = self._get_signals()
                             self._log_latest_values(now, signals)
 
                             # New orders.
@@ -248,4 +247,4 @@ class HPDaily(Strategy):
                                     if signal:
                                         # TODO. place instant market order.
                                         self._place_market_order_if_units_available(strategy, signal)
-                            self._prev_candle_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
+                            self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
