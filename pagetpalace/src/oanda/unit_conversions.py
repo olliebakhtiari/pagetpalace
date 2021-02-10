@@ -3,7 +3,7 @@ import math
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.instrument_attributes import BaseCurrencies, InstrumentTypes
+from pagetpalace.src.instrument_attributes import BaseCurrencies
 from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 
@@ -34,15 +34,16 @@ class UnitConversions:
 
     def _get_formula_variables(self):
         if self.instrument.exchange_rate_data:
-            exchange_rate_price = self._get_latest_instrument_price(self.instrument.exchange_rate_data['symbol'])
-            if self.instrument.exchange_rate_data['inverse_required']:
-                inverse_price = 1 / exchange_rate_price
-                self._pound_to_units_variable = inverse_price
-                self._pound_to_pip_variable = inverse_price
+            if not self.instrument.exchange_rate_data.get('units'):
+                self._pound_to_units_variable = self.entry_price / self.instrument.exchange_rate_data['p2p']
             else:
-                self._pound_to_units_variable = self.entry_price / exchange_rate_price
-                self._pound_to_pip_variable = exchange_rate_price
-        elif self.instrument.type_ == InstrumentTypes.CURRENCY and self.instrument.base_currency == BaseCurrencies.GBP:
+                u_inv_req = self.instrument.exchange_rate_data['units']['inverse_required']
+                self._pound_to_units_variable = 1 / self.instrument.exchange_rate_data['units'] \
+                    if u_inv_req else self.instrument.exchange_rate_data['units']
+            p2p_inv_req = self.instrument.exchange_rate_data['p2p']['inverse_required']
+            self._pound_to_pip_variable = 1 / self.instrument.exchange_rate_data['p2p'] \
+                if p2p_inv_req else self.instrument.exchange_rate_data['p2p']
+        elif self.instrument.base_currency == BaseCurrencies.GBP:
             self._pound_to_units_variable = 1.
             self._pound_to_pip_variable = self.entry_price
         elif self.instrument.symbol.split('_')[-1] == BaseCurrencies.GBP:
@@ -54,15 +55,8 @@ class UnitConversions:
     def calculate_units(self, margin_size: float) -> int:
         return math.floor((margin_size * self.instrument.leverage) / self._pound_to_units_variable)
 
-    def calculate_pound_to_pip_ratio(self, units: int) -> float:
-        if self.instrument.symbol.split('_')[-1] == BaseCurrencies.GBP:
-            p2p_ratio = (units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable
-        elif self.instrument.type_ == InstrumentTypes.CURRENCY and self.instrument.base_currency == BaseCurrencies.GBP:
-            p2p_ratio = (units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable
-        else:
-            p2p_ratio = (units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable
-
-        return round(p2p_ratio, 2)
+    def calculate_pound_to_pip_ratio(self, units: float) -> float:
+        return round((units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable, 2)
 
     def _convert_units_to_gbp(self, units: int) -> float:
         return round((units * self._pound_to_units_variable) / self.instrument.leverage, 2)

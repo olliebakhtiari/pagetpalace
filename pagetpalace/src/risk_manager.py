@@ -1,8 +1,6 @@
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.unit_conversions import UnitConversions
-from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 
 
 class RiskManager:
@@ -11,12 +9,6 @@ class RiskManager:
     def __init__(self, instrument: Instrument):
         self.instrument = instrument
         self.current_max_risk_in_margin = None
-        self._latest_exchange_rates = None
-        if instrument.exchange_rate_data:
-            self._oanda_pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
-            self._latest_exchange_rates = self._oanda_pricing.get_pricing_info(
-                [self.instrument.exchange_rate_data['symbol']]
-            )
 
     def _calculate_risk(self,
                         units: int,

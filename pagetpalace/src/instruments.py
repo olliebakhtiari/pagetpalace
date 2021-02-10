@@ -65,7 +65,7 @@ class Commodity(Instrument):
             exchange_rate_data: dict = None,
     ):
         if not exchange_rate_data and symbol.split('_')[-1] == 'USD':
-            exchange_rate_data = {'symbol': 'GBP_USD', 'inverse_required': False}
+            exchange_rate_data = {'p2p': {'symbol': 'GBP_USD', 'inverse_required': False}}
         super().__init__(
             symbol,
             InstrumentTypes.COMMODITY,
@@ -86,7 +86,7 @@ class Index(Instrument):
             exchange_rate_data: dict = None,
     ):
         if not exchange_rate_data and symbol.split('_')[-1] == 'USD':
-            exchange_rate_data = {'symbol': 'GBP_USD', 'inverse_required': False}
+            exchange_rate_data = {'p2p': {'symbol': 'GBP_USD', 'inverse_required': False}}
         super().__init__(
             symbol,
             InstrumentTypes.INDEX,
@@ -98,27 +98,88 @@ class Index(Instrument):
 
 
 class CurrencyPairs:
-    AUD_JPY = Currency('AUD_JPY', leverage=20, exchange_rate_data={'symbol': 'GBP_AUD', 'inverse_required': True})
-    AUD_USD = Currency('AUD_USD', leverage=20, exchange_rate_data={'symbol': 'GBP_AUD', 'inverse_required': True})
-    CAD_CHF = Currency('CAD_CHF', leverage=25, exchange_rate_data={'symbol': 'GBP_CAD', 'inverse_required': True})
+    AUD_JPY = Currency(
+        'AUD_JPY',
+        leverage=20,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_AUD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_JPY', 'inverse_required': False},
+        }
+    )
+    AUD_USD = Currency(
+        'AUD_USD',
+        leverage=20,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_AUD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_USD', 'inverse_required': False},
+        }
+    )
+    CAD_CHF = Currency(
+        'CAD_CHF',
+        leverage=25,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_CAD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
+        }
+    )
     EUR_GBP = Currency('EUR_GBP')
-    EUR_JPY = Currency('EUR_JPY', exchange_rate_data={'symbol': 'EUR_GBP', 'inverse_required': False})
-    EUR_USD = Currency('EUR_USD', exchange_rate_data={'symbol': 'EUR_GBP', 'inverse_required': False})
+    EUR_JPY = Currency(
+        'EUR_JPY',
+        exchange_rate_data={
+            'units': {'symbol': 'EUR_GBP', 'inverse_required': False},
+            'p2p': {'symbol': 'GBP_JPY', 'inverse_required': False},
+        }
+    )
+    EUR_USD = Currency(
+        'EUR_USD',
+        exchange_rate_data={
+            'units': {'symbol': 'EUR_GBP', 'inverse_required': False},
+            'p2p': {'symbol': 'GBP_USD', 'inverse_required': False},
+        }
+    )
     GBP_USD = Currency('GBP_USD')
-    USD_CAD = Currency('USD_CAD', exchange_rate_data={'symbol': 'GBP_USD', 'inverse_required': True})
-    USD_CHF = Currency('USD_CHF', leverage=25, exchange_rate_data={'symbol': 'GBP_USD', 'inverse_required': True})
+    USD_CAD = Currency(
+        'USD_CAD',
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_USD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_CAD', 'inverse_required': False},
+        }
+    )
+    USD_CHF = Currency(
+        'USD_CHF',
+        leverage=25,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_USD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
+        }
+    )
 
 
 class Commodities:
     BCO_USD = Commodity('BCO_USD')
-    GOLD_SILVER = Commodity('XAU_XAG', exchange_rate_data={'symbol': 'XAU_GBP', 'inverse_required': False})
+    GOLD_SILVER = Commodity(
+        'XAU_XAG',
+        exchange_rate_data={
+            'units': {'symbol': 'XAU_GBP', 'inverse_required': False},
+            'p2p': {'symbol': 'XAG_GBP', 'inverse_required': True},
+        }
+    )
     GOLD_USD = Commodity('XAU_USD', leverage=20)
+    NATGAS_USD = Commodity('NATGAS_USD')
     PLATINUM_USD = Commodity('XPT_USD')
+    SILVER_CHF = Commodity(
+        'XAG_CHF',
+        decimal_ratio=1e4,
+        exchange_rate_data={
+            'units': {'symbol': 'XAG_GBP', 'inverse_required': False},
+            'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
+        }
+    )
     SUGAR_USD = Commodity('SUGAR_USD', decimal_ratio=1e4)
 
 
 class Indices:
-    DE30_EUR = Index('DE30_EUR', exchange_rate_data={'symbol': 'EUR_GBP', 'inverse_required': False})
+    DE30_EUR = Index('DE30_EUR', exchange_rate_data={'p2p': {'symbol': 'EUR_GBP', 'inverse_required': True}})
     IN50_USD = Index('IN50_USD', leverage=10)
     NAS100_USD = Index('NAS100_USD')
     SPX500_USD = Index('SPX500_USD')
