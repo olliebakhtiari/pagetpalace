@@ -32,7 +32,7 @@ class HPDaily(Strategy):
             coefficients: dict,
             spread_cap: float = None,
             wait_time_precedence: int = 1,
-            equity_split: float = 8,
+            equity_split: float = 3,
     ):
         super().__init__(
             equity_split=equity_split,
@@ -50,10 +50,7 @@ class HPDaily(Strategy):
                 'streak_look_back': {'long': 1, 'short': 1},
                 'price_movement_lb': {'long': 1, 'short': 1},
                 'x_atr': {'long': 0.5, 'short': 0.5},
-            },
-            'trade_m': {'1': {'long': {'tp': 3.5, 'sl': 1.5}, 'short': {'tp': 3, 'sl': 1.5}}},
-            'boun_m': {'D': {'long': {'below': 0.01}, 'short': {'above': 0.01}}},
-        }
+            }
         """
         self._prev_exec_datetime = None
         self.wait_time_precedence = wait_time_precedence
