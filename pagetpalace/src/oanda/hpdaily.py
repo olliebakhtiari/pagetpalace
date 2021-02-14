@@ -32,7 +32,7 @@ class HPDaily(Strategy):
             coefficients: dict,
             spread_cap: float = None,
             wait_time_precedence: int = 1,
-            equity_split: float = 3,
+            equity_split: float = 3.5,
     ):
         super().__init__(
             equity_split=equity_split,

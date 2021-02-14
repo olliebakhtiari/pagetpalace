@@ -39,10 +39,14 @@ class TestHPDaily(unittest.TestCase):
         self.assertEqual(self.hp_daily._get_signals(), {'1': 'short'})
 
     def test_get_stop_loss_pip_amount(self):
-        pass
+        self.hp_daily._latest_data = {'D': pd.read_csv('test_data/hp_daily_long_signal.csv')}
+        self.hp_daily._strategy_atr_values = {'D': 0.01000}
+        self.assertEqual(self.hp_daily._get_stop_loss_pip_amount('long'), 0.029390000000000013)
 
     def test_place_market_order_correctly(self):
-        pass
+        self.hp_daily._latest_data = {'D': pd.read_csv('test_data/hp_daily_place_order.csv')}
+        self.hp_daily._strategy_atr_values = {'D': 0.01000}
+        self.hp_daily._place_market_order_if_units_available('1', 'long')
 
 
 if __name__ == '__main__':
