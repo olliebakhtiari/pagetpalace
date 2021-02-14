@@ -34,7 +34,6 @@ class Orders:
 
     @classmethod
     def create_market_order(cls,
-                            price_bound: float,
                             stop_loss_price: float,
                             take_profit_price: float,
                             instrument: str,
@@ -54,6 +53,5 @@ class Orders:
                 "units": f"{units}",
                 "type": "MARKET",
                 "positionFill": "DEFAULT",
-                "priceBound": f"{price_bound}",
             }
         })

@@ -113,8 +113,7 @@ class Strategy:
                                 units: int,
                                 last_close_price: float,
                                 sl_pip_amount: float,
-                                tp_pip_amount: float,
-                                worst_price_bound_offset: float) -> str:
+                                tp_pip_amount: float) -> str:
         precision = self.instrument.price_precision
         units = self._risk_manager.calculate_unit_size_within_max_risk(
             float(self.account.get_full_account_details()['account']['balance']),
@@ -125,16 +124,14 @@ class Strategy:
         if signal == 'long':
             tp = round(last_close_price + tp_pip_amount, precision)
             sl = round(last_close_price - sl_pip_amount, precision)
-            price_bound = round(last_close_price + worst_price_bound_offset, precision)
         elif signal == 'short':
             tp = round(last_close_price - tp_pip_amount, precision)
             sl = round(last_close_price + sl_pip_amount, precision)
-            price_bound = round(last_close_price - worst_price_bound_offset, precision)
             units = units * -1
         else:
             raise ValueError('Invalid signal received.')
 
-        return Orders.create_market_order(price_bound, sl, tp, self.instrument.symbol, math.floor(units))
+        return Orders.create_market_order(sl, tp, self.instrument.symbol, math.floor(units))
 
     def _place_pending_order(
             self,
@@ -164,7 +161,6 @@ class Strategy:
     def _place_market_order(
             self,
             last_close_price: float,
-            worst_price_bound_offset: float,
             sl_pip_amount: float,
             tp_pip_amount: float,
             signal: str,
@@ -173,7 +169,6 @@ class Strategy:
         order_schema = self._construct_market_order(
             signal=signal,
             last_close_price=last_close_price,
-            worst_price_bound_offset=worst_price_bound_offset,
             tp_pip_amount=tp_pip_amount,
             sl_pip_amount=sl_pip_amount,
             units=units,

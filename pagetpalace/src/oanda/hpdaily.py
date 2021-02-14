@@ -210,7 +210,6 @@ class HPDaily(Strategy):
                     * self.trade_multipliers[strategy][signal]['tp']
                 self._place_market_order(
                     last_close_price=last_close_price,
-                    worst_price_bound_offset=self._strategy_atr_values[self.entry_timeframe] / 6,
                     sl_pip_amount=sl_pip_amount,
                     tp_pip_amount=tp_pip_amount,
                     signal=signal,
