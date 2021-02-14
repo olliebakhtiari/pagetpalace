@@ -158,13 +158,13 @@ class HPDaily(Strategy):
 
     def _is_big_enough_movement(self, bias: str) -> bool:
         return is_candle_range_greater_than_x(
-            self._latest_data[self.entry_timeframe],
+            self._latest_data[self.entry_timeframe].iloc[len(self._latest_data[self.entry_timeframe]) - 1],
             self._strategy_atr_values[self.entry_timeframe] * self.coefficients['x_atr'][bias],
         )
 
     def _get_s1_signal(self) -> Union[str, None]:
         signal = None
-        idx_to_analyse = self._latest_data[self.entry_timeframe].iloc[-1]['idx']
+        idx_to_analyse = len(self._latest_data[self.entry_timeframe]) - 1
         long = 'long'
         short = 'short'
         if long in self.directions and self._is_big_enough_movement(long) and self._is_long_signal(idx_to_analyse):
@@ -191,8 +191,8 @@ class HPDaily(Strategy):
                          + (self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'] - close))
 
         return amount \
-               + (self._strategy_atr_values[self.entry_timeframe] / 10) \
-               + (self._strategy_atr_values[self.entry_timeframe] * self.trade_multipliers['1'][signal]['sl'])
+            + (self._strategy_atr_values[self.entry_timeframe] / 10) \
+            + (self._strategy_atr_values[self.entry_timeframe] * self.trade_multipliers['1'][signal]['sl'])
 
     def _log_latest_values(self, now, signals):
         logger.info(f'latest candle: {self._latest_data[self.entry_timeframe][-1]}')
@@ -207,7 +207,7 @@ class HPDaily(Strategy):
             if units > 0:
                 sl_pip_amount = self._get_stop_loss_pip_amount(signal)
                 tp_pip_amount = self._strategy_atr_values[self.entry_timeframe] \
-                                * self.trade_multipliers[strategy][signal]['tp']
+                    * self.trade_multipliers[strategy][signal]['tp']
                 self._place_market_order(
                     last_close_price=last_close_price,
                     worst_price_bound_offset=self._strategy_atr_values[self.entry_timeframe] / 6,
@@ -216,9 +216,12 @@ class HPDaily(Strategy):
                     signal=signal,
                     units=units,
                 )
+            else:
+                logger.warning('Not enough margin available to place an order!')
+                self._send_mail_alert(error_source='no_margin_available', exc_msg='trade missed.')
         except Exception as exc:
             logger.info(f'Failed place new market order. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='place_order')
+            self._send_mail_alert(error_source='place_order', exc_msg=str(exc))
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')

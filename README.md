@@ -1,1 +1,1 @@
-# Live implementation tools to develop strategies.
+# Build and deploy live strategies.

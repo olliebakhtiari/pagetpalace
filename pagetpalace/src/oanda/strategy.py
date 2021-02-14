@@ -44,6 +44,7 @@ class Strategy:
             'place_order': 'Failed to place new order',
             'get_data': 'Failed to retrieve latest data',
             'clear_pending': 'Failed to clear pending orders',
+            'no_margin_available': 'Not enough margin available to place an order!'
         }
         msg = f'{error_source_to_msgs[error_source]} for {self.instrument}.'
         try:
@@ -70,7 +71,7 @@ class Strategy:
                 self._pending_orders[key].clear()
         except Exception as exc:
             logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='clear_pending')
+            self._send_mail_alert(error_source='clear_pending', exc_msg=str(exc))
 
     def _get_unit_size_of_trade(self, entry_price: float) -> int:
         return UnitConversions(self.instrument, entry_price) \

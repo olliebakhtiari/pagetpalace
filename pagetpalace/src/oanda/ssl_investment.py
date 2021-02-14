@@ -66,7 +66,7 @@ class SSLInvestment(SSLMultiTimeFrame):
                 )
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='place_order')
+            self._send_mail_alert(error_source='place_order', exc_msg=str(exc))
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')

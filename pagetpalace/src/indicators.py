@@ -91,7 +91,7 @@ def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coe
 
 
 def is_candle_range_greater_than_x(candle: pd.DataFrame, value: float):
-    return (candle['midHigh'].values[0] - candle['midLow'].values[0]) > value
+    return (candle['midHigh'] - candle['midLow']) > value
 
 
 def _adjust_if_zero(value: float) -> float:
