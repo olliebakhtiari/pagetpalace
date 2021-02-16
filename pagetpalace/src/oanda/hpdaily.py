@@ -239,7 +239,6 @@ class HPDaily(Strategy):
                             # New orders.
                             if self._is_within_spread_cap():
                                 for strategy, signal in signals.items():
-                                    signal = 'long'
                                     if signal:
                                         self._place_market_order_if_units_available(strategy, signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
