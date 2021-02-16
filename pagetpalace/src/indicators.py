@@ -91,7 +91,7 @@ def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coe
 
 
 def is_candle_range_greater_than_x(candle: pd.DataFrame, value: float):
-    return (candle['midHigh'] - candle['midLow']) > value
+    return (float(candle['midHigh']) - float(candle['midLow'])) > value
 
 
 def _adjust_if_zero(value: float) -> float:
@@ -167,10 +167,10 @@ def get_hammer_pin_signal_v2(dataframe: pd.DataFrame, idx_to_analyse: int, coeff
     signal = ''
     candle_to_check = dataframe.iloc[idx_to_analyse]
     prices_to_check = {
-        'o': candle_to_check['midOpen'],
-        'h': candle_to_check['midHigh'],
-        'l': candle_to_check['midLow'],
-        'c': candle_to_check['midClose'],
+        'o': float(candle_to_check['midOpen']),
+        'h': float(candle_to_check['midHigh']),
+        'l': float(candle_to_check['midLow']),
+        'c': float(candle_to_check['midClose']),
     }
     ranges = _get_candlestick_ranges(prices_to_check)
     if _is_doji_candlestick(prices_to_check):

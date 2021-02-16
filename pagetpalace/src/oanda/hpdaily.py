@@ -84,7 +84,7 @@ class HPDaily(Strategy):
 
     def _update_strategy_atr_values(self):
         append_average_true_range(self._latest_data[self.entry_timeframe])
-        self._strategy_atr_values = {self.entry_timeframe: self._latest_data[self.entry_timeframe].iloc[-1]['14_ATR']}
+        self._strategy_atr_values = {self.entry_timeframe: self._latest_data[self.entry_timeframe].iloc[-1]['ATR_14']}
 
     def _update_strategy_ssma_values(self):
         append_ssma(self._latest_data[self.entry_timeframe])
@@ -114,7 +114,7 @@ class HPDaily(Strategy):
         bias = 'long'
         midlow_20_distance_met = self._has_met_reverse_trade_condition(
             bias,
-            self._latest_data[self.entry_timeframe].iloc[-1]['midLow'],
+            float(self._latest_data[self.entry_timeframe].iloc[-1]['midLow']),
             self._strategy_ssma_values[self.entry_timeframe],
         )
         red_streak = was_previous_red_streak(
@@ -134,7 +134,7 @@ class HPDaily(Strategy):
         bias = 'short'
         midhigh_20_distance_met = self._has_met_reverse_trade_condition(
             bias,
-            self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'],
+            float(self._latest_data[self.entry_timeframe].iloc[-1]['midHigh']),
             self._strategy_ssma_values[self.entry_timeframe],
         )
         green_streak = was_previous_green_streak(
@@ -182,26 +182,24 @@ class HPDaily(Strategy):
                - float(self._latest_data[self.entry_timeframe].iloc[-1]['bidOpen']) <= self.spread_cap
 
     def _get_stop_loss_pip_amount(self, signal: str) -> float:
-        close = self._latest_data[self.entry_timeframe].iloc[-1]['midClose']
+        close = float(self._latest_data[self.entry_timeframe].iloc[-1]['midClose'])
         if signal == 'short':
-            amount = abs((self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'] - close)
-                         + (close - self._latest_data[self.entry_timeframe].iloc[-1]['midLow']))
+            amount = abs((float(self._latest_data[self.entry_timeframe].iloc[-1]['midHigh']) - close)
+                         + (close - float(self._latest_data[self.entry_timeframe].iloc[-1]['midLow'])))
         else:
-            amount = abs((close - self._latest_data[self.entry_timeframe].iloc[-1]['midLow'])
-                         + (self._latest_data[self.entry_timeframe].iloc[-1]['midHigh'] - close))
+            amount = abs((close - float(self._latest_data[self.entry_timeframe].iloc[-1]['midLow']))
+                         + (float(self._latest_data[self.entry_timeframe].iloc[-1]['midHigh']) - close))
 
         return amount \
             + (self._strategy_atr_values[self.entry_timeframe] / 10) \
             + (self._strategy_atr_values[self.entry_timeframe] * self.trade_multipliers['1'][signal]['sl'])
 
     def _log_latest_values(self, now, signals):
-        logger.info(f'latest candle: {self._latest_data[self.entry_timeframe][-1]}')
-        logger.info(f'ssma values: {self._strategy_ssma_values}')
-        logger.info(f'atr values: {self._strategy_atr_values}')
+        logger.info(f'latest candle: {self._latest_data[self.entry_timeframe].iloc[-1]}')
         logger.info(f'{now} signals: {signals}')
 
     def _place_market_order_if_units_available(self, strategy: str, signal: str):
-        last_close_price = self._latest_data[self.entry_timeframe].iloc[-1]['midClose']
+        last_close_price = float(self._latest_data[self.entry_timeframe].iloc[-1]['midClose'])
         try:
             units = self._get_unit_size_of_trade(last_close_price)
             if units > 0:
@@ -241,6 +239,7 @@ class HPDaily(Strategy):
                             # New orders.
                             if self._is_within_spread_cap():
                                 for strategy, signal in signals.items():
+                                    signal = 'long'
                                     if signal:
                                         self._place_market_order_if_units_available(strategy, signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
