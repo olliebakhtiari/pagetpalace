@@ -170,12 +170,13 @@ class Commodities:
     SILVER_CHF = Commodity(
         'XAG_CHF',
         decimal_ratio=1e4,
+        price_precision=5,
         exchange_rate_data={
             'units': {'symbol': 'XAG_GBP', 'inverse_required': False},
             'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
         }
     )
-    SUGAR_USD = Commodity('SUGAR_USD', decimal_ratio=1e4)
+    SUGAR_USD = Commodity('SUGAR_USD', decimal_ratio=1e4, price_precision=5)
 
 
 class Indices:
