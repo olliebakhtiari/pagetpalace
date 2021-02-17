@@ -106,6 +106,14 @@ class CurrencyPairs:
             'p2p': {'symbol': 'GBP_JPY', 'inverse_required': False},
         }
     )
+    AUD_NZD = Currency(
+        'AUD_NZD',
+        leverage=20,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_AUD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_NZD', 'inverse_required': False},
+        }
+    )
     AUD_USD = Currency(
         'AUD_USD',
         leverage=20,
