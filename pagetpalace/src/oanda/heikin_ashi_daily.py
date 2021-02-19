@@ -12,7 +12,7 @@ from pagetpalace.src.oanda.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 
-class HeikinAshiDailyLong(Strategy):
+class HeikinAshiDaily(Strategy):
     def __init__(
             self,
             account: OandaAccount,
