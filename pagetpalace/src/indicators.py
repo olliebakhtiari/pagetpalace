@@ -203,3 +203,19 @@ def was_previous_red_streak(dataframe: pd.DataFrame, idx_to_analyse: int, look_b
         look_back -= 1
 
     return is_red_streak
+
+
+def append_heikin_ashi(df: pd.DataFrame):
+    opens = pd.to_numeric(df.midOpen, downcast='float')
+    highs = pd.to_numeric(df.midHigh, downcast='float')
+    lows = pd.to_numeric(df.midLow, downcast='float')
+    closes = pd.to_numeric(df.midClose, downcast='float')
+    df['HA_Close'] = ((opens + highs + lows + closes) / 4)
+    ha_open = [(opens[0] + closes[0]) / 2]
+    [ha_open.append((ha_open[i] + df.HA_Close.values[i]) / 2) for i in range(0, len(df) - 1)]
+    df['HA_Open'] = ha_open
+    df['HA_Open'] = df['HA_Open'].round(5)
+    df['HA_High'] = df[['HA_Open', 'HA_Close', 'midHigh']].max(axis=1).round(5)
+    df['HA_Low'] = df[['HA_Open', 'HA_Close', 'midLow']].min(axis=1).round(5)
+
+    return df

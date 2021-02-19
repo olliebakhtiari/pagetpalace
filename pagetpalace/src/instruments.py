@@ -192,6 +192,7 @@ class Indices:
     IN50_USD = Index('IN50_USD', leverage=10)
     NAS100_USD = Index('NAS100_USD')
     SPX500_USD = Index('SPX500_USD')
+    UK100_GBP = Index('UK100_GBP')
     US30_USD = Index('US30_USD')
 
 
