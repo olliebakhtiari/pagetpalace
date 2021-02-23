@@ -5,23 +5,28 @@ import time
 from datetime import datetime
 
 # Local.
-from pagetpalace.src.indicators import append_average_true_range, append_ssma, append_heikin_ashi
+from pagetpalace.src.indicators import (
+    append_average_true_range,
+    append_heikin_ashi,
+    append_exponentially_weighted_moving_average,
+    append_ssma,
+)
 from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 
-class HeikinAshiDaily(Strategy):
+class HeikinAshiEwm2(Strategy):
     def __init__(
             self,
             account: OandaAccount,
             instrument: Instrument,
-            ssma_period: int,
+            ewm_period: int,
             boundary_multipliers: dict,
             trade_multipliers: dict,
             wait_time_precedence: int = 1,
-            equity_split: float = 3.5,
+            equity_split: float = 3,
     ):
         super().__init__(
             equity_split=equity_split,
@@ -31,21 +36,22 @@ class HeikinAshiDaily(Strategy):
             entry_timeframe='D',
             sub_strategies_count=1,
         )
-        self.ssma_period = ssma_period
+        self.ewm_period = ewm_period
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
         self.directions = tuple(trade_multipliers['1'].keys())
+        self._ewm_value = 0.
         self._ssma_value = 0.
         self._atr_value = 0.
         self._heikin_ashi_signal = ''
-        self.previous_entry_signal = ''
+        self._previous_entry_signal = ''
         self.long_re_entry_allowed = True
         self.short_re_entry_allowed = True
         self.wait_time_precedence = wait_time_precedence
         self._prev_exec_datetime = None
 
     def _check_and_clear_pending_orders(self, ha_signal: str):
-        if ha_signal != self.previous_entry_signal:
+        if ha_signal != self._previous_entry_signal:
             try:
                 self._clear_pending_orders()
             except Exception as exc:
@@ -57,8 +63,12 @@ class HeikinAshiDaily(Strategy):
         self._atr_value = self._latest_data[self.entry_timeframe]['ATR_14'].values[-1]
 
     def _update_ssma_value(self):
-        append_ssma(self._latest_data[self.entry_timeframe], periods=self.ssma_period)
-        self._ssma_value = round(self._latest_data[self.entry_timeframe][f'SSMA_{self.ssma_period}'].values[-1], 5)
+        append_ssma(self._latest_data[self.entry_timeframe], periods=50)
+        self._ssma_value = round(self._latest_data[self.entry_timeframe]['SSMA_50'].values[-1], 5)
+
+    def _update_ewm_value(self):
+        append_exponentially_weighted_moving_average(self._latest_data[self.entry_timeframe], period=self.ewm_period)
+        self._ewm_value = round(self._latest_data[self.entry_timeframe][f'EWM_{self.ewm_period}'].values[-1], 5)
 
     def _update_heikin_ashi_signal(self):
         signal = ''
@@ -74,65 +84,53 @@ class HeikinAshiDaily(Strategy):
     def _update_current_indicators_and_signals(self):
         self._update_atr_value()
         self._update_ssma_value()
+        self._update_ewm_value()
         self._update_heikin_ashi_signal()
-        if self._latest_data[self.entry_timeframe]['HA_High'].values[-1] > self._ssma_value:
-            self.long_re_entry_allowed = True
-        if self._latest_data[self.entry_timeframe]['HA_Low'].values[-1] < self._ssma_value:
-            self.short_re_entry_allowed = True
-
-    def _reset_reentry_flag(self, direction: str):
-        if direction == 'long':
-            self.long_re_entry_allowed = False
-        elif direction == 'short':
-            self.short_re_entry_allowed = False
+        if self._latest_data[self.entry_timeframe]['HA_Close'].values[-1] > self._ewm_value:
+            self._long_re_entry_allowed = True
+        if self._latest_data[self.entry_timeframe]['HA_Close'].values[-1] < self._ewm_value:
+            self._short_re_entry_allowed = True
 
     def _calculate_atr_factor(self, price: float) -> float:
         return abs((price - self._ssma_value) / self._atr_value)
 
-    def _calculate_boundary(self, price: float, multipliers: dict) -> float:
+    def _calculate_boundary(self, bias: str, price: float) -> float:
         try:
             if price >= self._ssma_value:
-                boundary = multipliers['above']
+                boundary = self.boundary_multipliers[self.entry_timeframe][bias]['above']
             else:
-                boundary = multipliers['below']
+                boundary = self.boundary_multipliers[self.entry_timeframe][bias]['below']
         except KeyError:  # Not interested in these situations, don't trade.
             boundary = sys.maxsize
 
         return boundary * self._atr_value
 
-    def _has_met_reverse_trade_condition(self, price: float, multipliers: dict) -> bool:
-        return self._calculate_atr_factor(price) * self._atr_value >= self._calculate_boundary(price, multipliers)
+    def _is_within_valid_boundary(self, bias: str, price: float) -> float:
+        return not (self._calculate_atr_factor(price) * self._atr_value > self._calculate_boundary(bias, price))
 
-    def _is_long_signal(self) -> bool:
-        return self._heikin_ashi_signal == 'long' \
-               and self._has_met_reverse_trade_condition(
-                        self._latest_data[self.entry_timeframe]['HA_Low'].values[-1],
-                        self.boundary_multipliers['long'],
-                    )
+    def _is_long_condition(self) -> bool:
+        return self._ewm_value < self._ssma_value \
+            and self._heikin_ashi_signal == 'long' \
+            and self._is_within_valid_boundary('long', self._latest_data[self.entry_timeframe]['midHigh'].values[-1])
 
-    def _is_short_signal(self) -> bool:
-        return self._heikin_ashi_signal == 'short' \
-               and self._has_met_reverse_trade_condition(
-                        self._latest_data[self.entry_timeframe]['HA_High'].values[-1],
-                        self.boundary_multipliers['short'],
-                    )
+    def _is_short_condition(self) -> bool:
+        return self._ewm_value > self._ssma_value \
+            and self._heikin_ashi_signal == 'short' \
+            and self._is_within_valid_boundary('short', self._latest_data[self.entry_timeframe]['midLow'].values[-1])
 
     def _get_signals(self, **kwargs) -> dict:
         signal = ''
         long = 'long'
         short = 'short'
-        if long in self.directions and self._is_long_signal():
+        if long in self.directions and self._is_long_condition():
             signal = long
-        elif short in self.directions and self._is_short_signal():
+        elif short in self.directions and self._is_short_condition():
             signal = short
 
         return {'1': signal}
 
-    def _is_valid_new_signal(self, direction: str) -> bool:
-        return (self.previous_entry_signal != self._heikin_ashi_signal) \
-               and (self.long_re_entry_allowed if direction == 'long' else self.short_re_entry_allowed)
-
-    def _get_stop_loss_pip_amount(self, price: float, direction: str) -> float:
+    def _get_stop_loss_pip_amount(self, direction: str) -> float:
+        price = self._latest_data[self.entry_timeframe]['midClose'].values[-1]
         if direction == 'long':
             amount = price - self._latest_data[self.entry_timeframe]['midLow'].values[-1]
         elif direction == 'short':
@@ -141,6 +139,16 @@ class HeikinAshiDaily(Strategy):
             raise ValueError('Invalid direction.')
 
         return amount + ((self._atr_value / 15) * 2) + (self._atr_value * self.trade_multipliers['1'][direction]['sl'])
+
+    def _reset_reentry_flag(self, direction: str):
+        if direction == 'long':
+            self._long_re_entry_allowed = False
+        elif direction == 'short':
+            self._short_re_entry_allowed = False
+
+    def _is_valid_new_signal(self, direction: str) -> bool:
+        return (self._previous_entry_signal != self._heikin_ashi_signal) \
+               and (self._long_re_entry_allowed if direction == 'long' else self._short_re_entry_allowed)
 
     def _log_latest_values(self, now, signals):
         logger.info(f'latest candle: {self._latest_data[self.entry_timeframe].iloc[-1]}')
@@ -155,7 +163,7 @@ class HeikinAshiDaily(Strategy):
                     price_to_offset_from=last_close,
                     entry_offset=self._atr_value / 15,
                     worst_price_bound_offset=self._atr_value / 5,
-                    sl_pip_amount=self._get_stop_loss_pip_amount(last_close, signal),
+                    sl_pip_amount=self._get_stop_loss_pip_amount(signal),
                     tp_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['tp'],
                     strategy=strategy,
                     signal=signal,
@@ -188,4 +196,4 @@ class HeikinAshiDaily(Strategy):
                                     self._place_new_pending_order_if_units_available(strategy, signal)
                                     self._reset_reentry_flag(signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
-                        self.previous_entry_signal = self._heikin_ashi_signal
+                        self._previous_entry_signal = self._heikin_ashi_signal

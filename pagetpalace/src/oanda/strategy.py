@@ -26,6 +26,7 @@ class Strategy:
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
+            max_risk_pct: float = 0.15,
     ):
         self.equity_split = equity_split
         self.account = account
@@ -33,7 +34,7 @@ class Strategy:
         self.time_frames = time_frames
         self.entry_timeframe = entry_timeframe
         self.sub_strategies_count = sub_strategies_count
-        self._risk_manager = RiskManager(self.instrument)
+        self._risk_manager = RiskManager(self.instrument, max_risk_pct)
         self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
         self._latest_price = 0

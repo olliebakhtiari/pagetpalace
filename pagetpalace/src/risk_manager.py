@@ -4,10 +4,9 @@ from pagetpalace.src.oanda.unit_conversions import UnitConversions
 
 
 class RiskManager:
-    MAX_RISK_PCT = 0.15
-
-    def __init__(self, instrument: Instrument):
+    def __init__(self, instrument: Instrument, max_risk_pct):
         self.instrument = instrument
+        self.max_risk_pct = max_risk_pct
         self.current_max_risk_in_margin = None
 
     def _calculate_risk(self,
@@ -18,7 +17,7 @@ class RiskManager:
                * (stop_loss_amount * self.instrument.decimal_ratio)
 
     def _is_more_than_max_risk(self, trade_risk: float, current_balance: float) -> bool:
-        self.current_max_risk_in_margin = current_balance * self.MAX_RISK_PCT
+        self.current_max_risk_in_margin = current_balance * self.max_risk_pct
 
         return trade_risk > self.current_max_risk_in_margin
 

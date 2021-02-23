@@ -219,3 +219,7 @@ def append_heikin_ashi(df: pd.DataFrame):
     df['HA_Low'] = df[['HA_Open', 'HA_Close', 'midLow']].min(axis=1).round(5)
 
     return df
+
+
+def append_exponentially_weighted_moving_average(df: pd.DataFrame, period: int = 15):
+    df[f'EWM_{period}'] = (df['midClose'].ewm(span=period, adjust=False).mean()).round(5)
