@@ -11,7 +11,7 @@ from pagetpalace.src.oanda.heikin_ashi_ewm_2 import HeikinAshiEwm2
 from pagetpalace.src.oanda.settings import DEMO_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
 
 
-class TestHPDaily(unittest.TestCase):
+class TestHeikinAshiEwm2(unittest.TestCase):
     def setUp(self):
         self.ha_ewm = HeikinAshiEwm2(
             equity_split=3,

@@ -191,9 +191,12 @@ class Indices:
     CN50_USD = Index('CN50_USD', leverage=10)
     DE30_EUR = Index('DE30_EUR', exchange_rate_data={'p2p': {'symbol': 'EUR_GBP', 'inverse_required': True}})
     IN50_USD = Index('IN50_USD', leverage=10)
+    JP225_USD = Index('JP225_USD')
     NAS100_USD = Index('NAS100_USD')
     SPX500_USD = Index('SPX500_USD')
+    TWIX_USD = Index('TWIX_USD', leverage=10)
     UK100_GBP = Index('UK100_GBP')
+    US2000_USD = Index('US2000_USD', leverage=10)
     US30_USD = Index('US30_USD')
 
 
