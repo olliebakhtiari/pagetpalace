@@ -175,6 +175,7 @@ class Commodities:
     )
     GOLD_USD = Commodity('XAU_USD', leverage=20)
     NATGAS_USD = Commodity('NATGAS_USD')
+    PALLADIUM_USD = Commodity('XPD_USD')
     PLATINUM_USD = Commodity('XPT_USD')
     SILVER_CHF = Commodity(
         'XAG_CHF',
