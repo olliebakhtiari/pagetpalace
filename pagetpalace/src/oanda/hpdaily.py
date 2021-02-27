@@ -200,19 +200,30 @@ class HPDaily(Strategy):
 
     def _place_market_order_if_units_available(self, strategy: str, signal: str):
         last_close_price = float(self._latest_data[self.entry_timeframe].iloc[-1]['midClose'])
+        atr_val = self._strategy_atr_values[self.entry_timeframe]
         try:
             units = self._get_unit_size_of_trade(last_close_price)
             if units > 0:
                 sl_pip_amount = self._get_stop_loss_pip_amount(signal)
-                tp_pip_amount = self._strategy_atr_values[self.entry_timeframe] \
-                    * self.trade_multipliers[strategy][signal]['tp']
-                self._place_market_order(
+                tp_pip_amount = atr_val * self.trade_multipliers[strategy][signal]['tp']
+                order_create_transaction = self._place_market_order(
                     last_close_price=last_close_price,
                     sl_pip_amount=sl_pip_amount,
                     tp_pip_amount=tp_pip_amount,
                     signal=signal,
                     units=units,
                 )
+                if order_create_transaction.get('orderCancelTransaction', {}).get('reason') == 'MARKET_HALTED':
+                    self._place_pending_order(
+                        price_to_offset_from=last_close_price,
+                        entry_offset=atr_val / 18,
+                        worst_price_bound_offset=atr_val / 5,
+                        sl_pip_amount=sl_pip_amount,
+                        tp_pip_amount=tp_pip_amount,
+                        strategy=strategy,
+                        signal=signal,
+                        units=units,
+                    )
             else:
                 logger.warning('Not enough margin available to place an order!')
                 self._send_mail_alert(error_source='no_margin_available', exc_msg='trade missed.')

@@ -159,14 +159,45 @@ class Strategy:
         logger.info(f'GTC pending order placed: {pending_order}')
         logger.info(f'pending_orders: {self._pending_orders}')
 
-    def _place_market_order(
-            self,
-            last_close_price: float,
-            sl_pip_amount: float,
-            tp_pip_amount: float,
-            signal: str,
-            units: int,
-    ):
+    def _place_market_order(self,
+                            last_close_price: float,
+                            sl_pip_amount: float,
+                            tp_pip_amount: float,
+                            signal: str,
+                            units: int) -> dict:
+        """
+        {
+            'orderCreateTransaction': {
+                'id': '20',
+                'accountID': '001-004-3448019-009',
+                'userID': 3448019,
+                'batchID': '20',
+                'requestID': '132871614305289672',
+                'time': '2021-02-25T22:00:13.336751636Z',
+                'type': 'MARKET_ORDER',
+                'instrument': 'XAU_XAG',
+                'units': '3',
+                'timeInForce': 'IOC',
+                'positionFill': 'DEFAULT',
+                'takeProfitOnFill': {'price': '67.174', 'timeInForce': 'GTC'},
+                'stopLossOnFill': {'price': '61.318', 'timeInForce': 'GTC'},
+                'reason': 'CLIENT_ORDER'
+            },
+            'orderCancelTransaction': {
+                    'id': '21',
+                    'accountID': '001-004-3448019-009',
+                    'userID': 3448019,
+                    'batchID': '20',
+                    'requestID': '132871614305289672',
+                    'time': '2021-02-25T22:00:13.336751636Z',
+                    'type': 'ORDER_CANCEL',
+                    'orderID': '20',
+                    'reason': 'MARKET_HALTED'
+            },
+            'relatedTransactionIDs': ['20', '21'],
+            'lastTransactionID': '21'
+            }
+        """
         order_schema = self._construct_market_order(
             signal=signal,
             last_close_price=last_close_price,
@@ -176,6 +207,8 @@ class Strategy:
         )
         market_order = self.account.create_order(order_schema)
         logger.info(f'IOC market order placed: {market_order}')
+
+        return market_order
 
     def _update_latest_data(self):
         od = OandaInstrumentData()

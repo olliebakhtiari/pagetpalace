@@ -165,6 +165,7 @@ class CurrencyPairs:
 
 class Commodities:
     BCO_USD = Commodity('BCO_USD')
+    CORN_USD = Commodity('CORN_USD')
     GOLD_SILVER = Commodity(
         'XAU_XAG',
         exchange_rate_data={
