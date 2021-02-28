@@ -40,14 +40,14 @@ class HeikinAshiEwm2(Strategy):
         self.trade_multipliers = trade_multipliers
         self.boundary_multipliers = boundary_multipliers
         self.directions = tuple(trade_multipliers['1'].keys())
+        self.wait_time_precedence = wait_time_precedence
         self._ewm_value = 0.
         self._ssma_value = 0.
         self._atr_value = 0.
         self._heikin_ashi_signal = ''
         self._previous_entry_signal = ''
-        self.long_re_entry_allowed = True
-        self.short_re_entry_allowed = True
-        self.wait_time_precedence = wait_time_precedence
+        self._long_re_entry_allowed = True
+        self._short_re_entry_allowed = True
         self._prev_exec_datetime = None
 
     def _check_and_clear_pending_orders(self, ha_signal: str):
