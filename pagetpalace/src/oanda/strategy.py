@@ -40,16 +40,17 @@ class Strategy:
         self._latest_price = 0
         self._latest_data = {}
 
-    def _send_mail_alert(self, error_source: str, exc_msg: str = ''):
-        error_source_to_msgs = {
+    def _send_mail_alert(self, source: str, additional_msg: str = ''):
+        source_to_msgs = {
             'place_order': 'Failed to place new order',
             'get_data': 'Failed to retrieve latest data',
             'clear_pending': 'Failed to clear pending orders',
-            'no_margin_available': 'Not enough margin available to place an order!'
+            'no_margin_available': 'Not enough margin available to place an order',
+            'successful_order': 'Order placed successfully',
         }
-        msg = f'{error_source_to_msgs[error_source]} for {self.instrument}.'
+        msg = f'{source_to_msgs[source]} for {self.instrument}'
         try:
-            EmailSender().send_mail(subject=msg.upper(), body=f'{msg}, {exc_msg}. Check if manual action required.')
+            EmailSender().send_mail(subject=msg.upper(), body=f'{msg}. {additional_msg}')
         except Exception as exc:
             logger.error(f'Failed to send email alert. {exc}', exc_info=True)
 
@@ -72,7 +73,7 @@ class Strategy:
                 self._pending_orders[key].clear()
         except Exception as exc:
             logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='clear_pending', exc_msg=str(exc))
+            self._send_mail_alert(source='clear_pending', additional_msg=str(exc))
 
     def _get_unit_size_of_trade(self, entry_price: float) -> int:
         return UnitConversions(self.instrument, entry_price) \
@@ -156,8 +157,10 @@ class Strategy:
         )
         pending_order = self.account.create_order(order_schema)
         self._add_id_to_pending_orders(pending_order, strategy)
-        logger.info(f'GTC pending order placed: {pending_order}')
+        msg = f'GTC pending order placed: {pending_order}'
+        logger.info(msg)
         logger.info(f'pending_orders: {self._pending_orders}')
+        self._send_mail_alert(source='successful_order', additional_msg=msg)
 
     def _place_market_order(self,
                             last_close_price: float,
@@ -206,7 +209,9 @@ class Strategy:
             units=units,
         )
         market_order = self.account.create_order(order_schema)
-        logger.info(f'IOC market order placed: {market_order}')
+        msg = f'IOC market order placed: {market_order}'
+        logger.info(msg)
+        self._send_mail_alert(source='successful_order', additional_msg=msg)
 
         return market_order
 
@@ -226,7 +231,7 @@ class Strategy:
                 except ConnectionError as exc:
                     msg = f'Failed to retrieve Oanda candlestick data for time frame: {time_frame}. {exc}'
                     logger.error(msg, exc_info=True)
-                    self._send_mail_alert(error_source='get_data', exc_msg=msg)
+                    self._send_mail_alert(source='get_data', additional_msg=msg)
                     self._latest_data = {}
                     return
         self._latest_data = data

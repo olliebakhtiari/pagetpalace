@@ -56,7 +56,7 @@ class HeikinAshiEwm1(Strategy):
                 self._clear_pending_orders()
             except Exception as exc:
                 logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-                self._send_mail_alert(error_source='clear_pending', exc_msg=str(exc))
+                self._send_mail_alert(source='clear_pending', additional_msg=str(exc))
 
     def _update_atr_value(self):
         append_average_true_range(self._latest_data[self.entry_timeframe])
@@ -142,7 +142,7 @@ class HeikinAshiEwm1(Strategy):
                 )
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='place_order', exc_msg=str(exc))
+            self._send_mail_alert(source='place_order', additional_msg=str(exc))
 
     def _log_latest_values(self, now, signals):
         logger.info(f'latest candle: {self._latest_data[self.entry_timeframe].iloc[-1]}')
@@ -171,4 +171,3 @@ class HeikinAshiEwm1(Strategy):
                                     self._place_new_pending_order_if_units_available(strategy, signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
                         self._previous_entry_signal = self._heikin_ashi_signal
-

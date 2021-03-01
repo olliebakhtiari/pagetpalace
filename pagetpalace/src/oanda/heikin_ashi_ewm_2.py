@@ -56,7 +56,7 @@ class HeikinAshiEwm2(Strategy):
                 self._clear_pending_orders()
             except Exception as exc:
                 logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-                self._send_mail_alert(error_source='clear_pending', exc_msg=str(exc))
+                self._send_mail_alert(source='clear_pending', additional_msg=str(exc))
 
     def _update_atr_value(self):
         append_average_true_range(self._latest_data[self.entry_timeframe])
@@ -183,7 +183,7 @@ class HeikinAshiEwm2(Strategy):
                 )
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='place_order', exc_msg=str(exc))
+            self._send_mail_alert(source='place_order', additional_msg=str(exc))
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')

@@ -51,7 +51,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             self._clear_pending_orders()
         except Exception as exc:
             logger.error(f'Failed to clear pending orders. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='clear_pending', exc_msg=str(exc))
+            self._send_mail_alert(source='clear_pending', additional_msg=str(exc))
 
     def _update_atr_values(self):
         for tf in self.time_frames:
@@ -136,10 +136,10 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 )
             else:
                 logger.warning('Not enough margin available to place an order!')
-                self._send_mail_alert(error_source='no_margin_available', exc_msg='trade missed.')
+                self._send_mail_alert(source='no_margin_available', additional_msg='trade missed.')
         except Exception as exc:
             logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(error_source='place_order', exc_msg=str(exc))
+            self._send_mail_alert(source='place_order', additional_msg=str(exc))
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
