@@ -192,6 +192,11 @@ class Commodities:
 class Indices:
     CN50_USD = Index('CN50_USD', leverage=10)
     DE30_EUR = Index('DE30_EUR', exchange_rate_data={'p2p': {'symbol': 'EUR_GBP', 'inverse_required': True}})
+    HK33_HKD = Index(
+        'HK33_HKD',
+        leverage=10,
+        exchange_rate_data={'p2p': {'symbol': 'GBP_HKD', 'inverse_required': False}},
+    )
     IN50_USD = Index('IN50_USD', leverage=10)
     JP225_USD = Index('JP225_USD')
     NAS100_USD = Index('NAS100_USD')
