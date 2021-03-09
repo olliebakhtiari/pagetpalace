@@ -119,7 +119,7 @@ class HeikinAshiEwm2(Strategy):
             and self._heikin_ashi_signal == 'long' \
             and self._is_within_valid_boundary('long', self._latest_data[self.entry_timeframe]['midHigh'].values[-1]) \
             and self._has_met_reverse_trade_condition(
-                'long', self._latest_data[self.entry_timeframe]['midLow'].values[-1]
+                'long', float(self._latest_data[self.entry_timeframe]['midLow'].values[-1])
             )
 
     def _is_short_condition(self) -> bool:
@@ -127,7 +127,7 @@ class HeikinAshiEwm2(Strategy):
             and self._heikin_ashi_signal == 'short' \
             and self._is_within_valid_boundary('short', self._latest_data[self.entry_timeframe]['midLow'].values[-1]) \
             and self._has_met_reverse_trade_condition(
-                'short', self._latest_data[self.entry_timeframe]['midHigh'].values[-1]
+                'short', float(self._latest_data[self.entry_timeframe]['midHigh'].values[-1])
             )
 
     def _get_signals(self, **kwargs) -> dict:
@@ -142,11 +142,11 @@ class HeikinAshiEwm2(Strategy):
         return {'1': signal}
 
     def _get_stop_loss_pip_amount(self, direction: str) -> float:
-        price = self._latest_data[self.entry_timeframe]['midClose'].values[-1]
+        price = float(self._latest_data[self.entry_timeframe]['midClose'].values[-1])
         if direction == 'long':
-            amount = price - self._latest_data[self.entry_timeframe]['midLow'].values[-1]
+            amount = price - float(self._latest_data[self.entry_timeframe]['midLow'].values[-1])
         elif direction == 'short':
-            amount = self._latest_data[self.entry_timeframe]['midHigh'].values[-1] - price
+            amount = float(self._latest_data[self.entry_timeframe]['midHigh'].values[-1]) - price
         else:
             raise ValueError('Invalid direction.')
 
@@ -167,7 +167,7 @@ class HeikinAshiEwm2(Strategy):
         logger.info(f'{now} signals: {signals}')
 
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
-        last_close = self._latest_data[self.entry_timeframe]['midClose'].values[-1]
+        last_close = float(self._latest_data[self.entry_timeframe]['midClose'].values[-1])
         try:
             units = self._get_unit_size_of_trade(last_close)
             if units > 0:
