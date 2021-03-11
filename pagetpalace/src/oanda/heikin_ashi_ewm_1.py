@@ -139,7 +139,7 @@ class HeikinAshiEwm1(Strategy):
                 self._place_pending_order(
                     price_to_offset_from=last_close,
                     entry_offset=self._atr_value / 15,
-                    worst_price_bound_offset=self._atr_value / 5,
+                    worst_price_bound_offset=None,
                     sl_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['sl'],
                     tp_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['tp'],
                     strategy=strategy,

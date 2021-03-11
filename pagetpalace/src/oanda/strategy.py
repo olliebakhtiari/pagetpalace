@@ -2,7 +2,7 @@
 import abc
 import concurrent.futures
 import math
-from typing import Dict, List
+from typing import Dict, List, Union
 
 # Local.
 from pagetpalace.src.instruments import Instrument
@@ -139,7 +139,7 @@ class Strategy:
             self,
             price_to_offset_from: float,
             entry_offset: float,
-            worst_price_bound_offset: float,
+            worst_price_bound_offset: Union[float, None],
             sl_pip_amount: float,
             tp_pip_amount: float,
             strategy: str,
