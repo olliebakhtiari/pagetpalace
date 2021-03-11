@@ -98,12 +98,12 @@ class Strategy:
             entry = round(last_close_price + entry_offset, precision)
             tp = round(entry + tp_pip_amount, precision)
             sl = round(entry - sl_pip_amount, precision)
-            price_bound = round(entry + worst_price_bound_offset, precision)
+            price_bound = round(entry + worst_price_bound_offset, precision) if worst_price_bound_offset else None
         elif signal == 'short':
             entry = round(last_close_price - entry_offset, precision)
             tp = round(entry - tp_pip_amount, precision)
             sl = round(entry + sl_pip_amount, precision)
-            price_bound = round(entry - worst_price_bound_offset, precision)
+            price_bound = round(entry - worst_price_bound_offset, precision) if worst_price_bound_offset else None
             units = units * -1
         else:
             raise ValueError('Invalid signal received.')
