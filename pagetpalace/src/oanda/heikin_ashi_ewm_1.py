@@ -158,11 +158,12 @@ class HeikinAshiEwm1(Strategy):
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
         prev_exec = -1
+        first_run = True
         while 1:
             now = datetime.now().astimezone(london_tz)
             if now.isoweekday() != 6:
                 if now.minute == 0 and (now.hour == 21 or now.hour == 22) and now.hour != prev_exec:
-                    time.sleep(8 + (self.wait_time_precedence / 10) + 0.03)
+                    time.sleep(8 + (self.wait_time_precedence / 5) + 0.03)
                     self._update_latest_data()
                     if self._latest_data:
                         prev_exec = now.hour
@@ -174,7 +175,8 @@ class HeikinAshiEwm1(Strategy):
 
                             # New orders.
                             for strategy, signal in signals.items():
-                                if signal and self._previous_entry_signal != self._heikin_ashi_signal:
+                                if signal and self._previous_entry_signal != self._heikin_ashi_signal and not first_run:
                                     self._place_new_pending_order_if_units_available(strategy, signal)
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
                         self._previous_entry_signal = self._heikin_ashi_signal
+                        first_run = False
