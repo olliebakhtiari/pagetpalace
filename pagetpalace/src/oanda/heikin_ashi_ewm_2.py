@@ -167,7 +167,8 @@ class HeikinAshiEwm2(Strategy):
         logger.info(f'{now} signals: {signals}')
 
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
-        last_close = float(self._latest_data[self.entry_timeframe]['midClose'].values[-1])
+        price = 'askClose' if signal == 'long' else 'bidClose'
+        last_close = float(self._latest_data[self.entry_timeframe][price].values[-1])
         try:
             units = self._get_unit_size_of_trade(last_close)
             if units > 0:
