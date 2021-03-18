@@ -79,6 +79,17 @@ class Strategy:
         return UnitConversions(self.instrument, entry_price) \
             .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
+    @classmethod
+    def _validate_and_round_unit_size(cls, signal: str, units: float):
+        units = math.floor(units) if signal == 'long' else math.ceil(units)
+        if units == 0:
+            if signal == 'long':
+                units = 1
+            else:
+                units = -1
+
+        return units
+
     def _construct_stop_order(self,
                               signal: str,
                               last_close_price: float,
@@ -108,7 +119,14 @@ class Strategy:
         else:
             raise ValueError('Invalid signal received.')
 
-        return Orders.create_stop_order(entry, price_bound, sl, tp, self.instrument.symbol, math.floor(units))
+        return Orders.create_stop_order(
+            entry=entry,
+            price_bound=price_bound,
+            stop_loss_price=sl,
+            take_profit_price=tp,
+            instrument=self.instrument.symbol,
+            units=self._validate_and_round_unit_size(signal, units),
+        )
 
     def _construct_market_order(self,
                                 signal: str,

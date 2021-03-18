@@ -100,11 +100,12 @@ class LiveTradeMonitor:
     def _check_and_partially_close(self, prices: Dict[str, float], trade: dict, params: Dict[int, Dict[str, float]]):
         symbol = trade['instrument']
         for count, percentages in params.items():
-            if trade['id'] not in self.partially_closed[symbol][count]:
+            current_units = abs(float(trade['currentUnits']))
+            if current_units != 1 and (trade['id'] not in self.partially_closed[symbol][count]):
                 is_pct_hit = check_pct_hit(prices, trade, percentages['check'])
                 if is_pct_hit:
                     logger.info(f'Partially closing for: {trade}')
-                    pct_of_units = round(abs(float(trade['currentUnits'])) * percentages['close'])
+                    pct_of_units = round(current_units * percentages['close'])
                     to_close = pct_of_units if pct_of_units > 1 else 1
                     self._account.close_trade(trade_specifier=trade['id'], close_amount=str(to_close))
                     self.partially_closed[symbol][count].append(trade['id'])
