@@ -35,6 +35,7 @@ class HeikinAshiEwm2(Strategy):
             time_frames=['D'],
             entry_timeframe='D',
             sub_strategies_count=1,
+            max_risk_pct=0.1,
         )
         self.ewm_period = ewm_period
         self.trade_multipliers = trade_multipliers

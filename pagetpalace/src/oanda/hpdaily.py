@@ -41,6 +41,7 @@ class HPDaily(Strategy):
             time_frames=['D'],
             entry_timeframe='D',
             sub_strategies_count=1,
+            max_risk_pct=0.1,
         )
         """     
             coefficients = {
@@ -199,7 +200,8 @@ class HPDaily(Strategy):
         logger.info(f'{now} signals: {signals}')
 
     def _place_market_order_if_units_available(self, strategy: str, signal: str):
-        last_close_price = float(self._latest_data[self.entry_timeframe].iloc[-1]['midClose'])
+        price = 'askClose' if signal == 'long' else 'bidClose'
+        last_close_price = float(self._latest_data[self.entry_timeframe].iloc[-1][price])
         atr_val = self._strategy_atr_values[self.entry_timeframe]
         try:
             units = self._get_unit_size_of_trade(last_close_price)
