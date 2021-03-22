@@ -4,9 +4,13 @@ from pagetpalace.src.oanda.unit_conversions import UnitConversions
 
 
 class RiskManager:
+    _INSTRUMENT_SPECIFIC_MAX_RISKS = {'NAS100_USD': 0.05}
+
     def __init__(self, instrument: Instrument, max_risk_pct):
         self.instrument = instrument
-        self.max_risk_pct = max_risk_pct
+        self.max_risk_pct = max_risk_pct \
+            if not self._INSTRUMENT_SPECIFIC_MAX_RISKS.get(instrument.symbol) \
+            else self._INSTRUMENT_SPECIFIC_MAX_RISKS[instrument.symbol]
         self.current_max_risk_in_margin = None
 
     def _calculate_risk(self,
