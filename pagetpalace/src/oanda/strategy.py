@@ -27,6 +27,7 @@ class Strategy:
             entry_timeframe: str,
             sub_strategies_count: int,
             max_risk_pct: float = 0.15,
+            num_trades_cap: int = 2,
     ):
         self.equity_split = equity_split
         self.account = account
@@ -36,6 +37,7 @@ class Strategy:
         self.sub_strategies_count = sub_strategies_count
         self._risk_manager = RiskManager(self.instrument, max_risk_pct)
         self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
+        self._num_trades_cap = num_trades_cap
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
         self._latest_price = 0
         self._latest_data = {}
@@ -47,12 +49,21 @@ class Strategy:
             'clear_pending': 'Failed to clear pending orders',
             'no_margin_available': 'Not enough margin available to place an order',
             'successful_order': 'Order placed successfully',
+            'ins_trade_cap': 'Max trade cap for single instrument reached, order not placed',
         }
         msg = f'{source_to_msgs[source]} for {self.instrument}'
         try:
             EmailSender().send_mail(subject=msg.upper(), body=f'{msg}. {additional_msg}')
         except Exception as exc:
             logger.error(f'Failed to send email alert. {exc}', exc_info=True)
+
+    def _is_instrument_below_num_of_trades_cap(self) -> bool:
+        count = 0
+        for open_trade in self.account.get_open_trades()['trades']:
+            if open_trade.get('instrument') == self.instrument.symbol:
+                count += 1
+
+        return count < self._num_trades_cap
 
     def _add_id_to_pending_orders(self, order: dict, strategy: str):
         self._pending_orders[strategy].append(order['orderCreateTransaction']['id'])

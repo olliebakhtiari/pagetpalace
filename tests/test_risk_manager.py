@@ -10,7 +10,7 @@ class TestRiskManager(unittest.TestCase):
     def setUp(self):
         pair = CurrencyPairs.EUR_GBP
         pair.leverage = 10
-        self.risk_manager = RiskManager(pair)
+        self.risk_manager = RiskManager(pair, 0.15)
         self.trade_risk = self.risk_manager._calculate_risk(1328, 51.299, 2.)
 
     def test_calculate_risk(self):

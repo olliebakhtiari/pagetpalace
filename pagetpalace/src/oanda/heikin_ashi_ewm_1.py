@@ -135,22 +135,26 @@ class HeikinAshiEwm1(Strategy):
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
         price = 'askClose' if signal == 'long' else 'bidClose'
         last_close = float(self._latest_data[self.entry_timeframe][price].values[-1])
-        try:
-            units = self._get_unit_size_of_trade(last_close)
-            if units > 0:
-                self._place_pending_order(
-                    price_to_offset_from=last_close,
-                    entry_offset=self._atr_value / 15,
-                    worst_price_bound_offset=None,
-                    sl_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['sl'],
-                    tp_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['tp'],
-                    strategy=strategy,
-                    signal=signal,
-                    units=units,
-                )
-        except Exception as exc:
-            logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(source='place_order', additional_msg=str(exc))
+        if self._is_instrument_below_num_of_trades_cap():
+            try:
+                units = self._get_unit_size_of_trade(last_close)
+                if units > 0:
+                    self._place_pending_order(
+                        price_to_offset_from=last_close,
+                        entry_offset=self._atr_value / 15,
+                        worst_price_bound_offset=None,
+                        sl_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['sl'],
+                        tp_pip_amount=self._atr_value * self.trade_multipliers[strategy][signal]['tp'],
+                        strategy=strategy,
+                        signal=signal,
+                        units=units,
+                    )
+            except Exception as exc:
+                logger.info(f'Failed place new pending order. {exc}', exc_info=True)
+                self._send_mail_alert(source='place_order', additional_msg=str(exc))
+        else:
+            logger.info(f'Instrument has reached trade cap of {self._num_trades_cap}.')
+            self._send_mail_alert(source='ins_trade_cap', additional_msg='trade not taken.')
 
     def _log_latest_values(self, now, signals):
         logger.info(f'latest candle: {self._latest_data[self.entry_timeframe].iloc[-1]}')
@@ -181,3 +185,22 @@ class HeikinAshiEwm1(Strategy):
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
                         self._previous_entry_signal = self._heikin_ashi_signal
                         first_run = False
+
+
+if __name__ == '__main__':
+    from pagetpalace.src.oanda.account import OandaAccount
+    from pagetpalace.src.instruments import Indices
+    from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, HEIKIN_ASHI_EWM_1_POOL_ACCOUNT_NUMBER
+
+    hk33_usd = HeikinAshiEwm1(
+        account=OandaAccount(LIVE_ACCESS_TOKEN, HEIKIN_ASHI_EWM_1_POOL_ACCOUNT_NUMBER, 'LIVE_API'),
+        instrument=Indices.HK33_HKD,
+        ssma_period=5,
+        ewm_period=20,
+        boundary_multipliers={'D': {'long': {'below': 1000, 'above': 1.5}}},
+        trade_multipliers={'1': {'long': {'sl': 1, 'tp': 2}}},
+        wait_time_precedence=5,
+    )
+    t = hk33_usd.account.get_open_trades()['trades']
+    for tr in t:
+        print(tr['instrument'])

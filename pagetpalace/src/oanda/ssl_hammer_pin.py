@@ -120,26 +120,30 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
         entry_price = self._get_price_to_use_for_entry_offset(signal)
-        try:
-            units = self._get_unit_size_of_trade(entry_price)
-            if units > 0:
-                sl_pip_amount = self._atr_values[self.entry_timeframe] * self.trade_multipliers[strategy][signal]['sl']
-                self._place_pending_order(
-                    price_to_offset_from=entry_price,
-                    entry_offset=self._atr_values[self.entry_timeframe] / 7,
-                    worst_price_bound_offset=self._atr_values[self.entry_timeframe] / 2,
-                    sl_pip_amount=sl_pip_amount,
-                    tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
-                    strategy=strategy,
-                    signal=signal,
-                    units=units,
-                )
-            else:
-                logger.warning('Not enough margin available to place an order!')
-                self._send_mail_alert(source='no_margin_available', additional_msg='trade missed.')
-        except Exception as exc:
-            logger.info(f'Failed place new pending order. {exc}', exc_info=True)
-            self._send_mail_alert(source='place_order', additional_msg=str(exc))
+        if self._is_instrument_below_num_of_trades_cap():
+            try:
+                units = self._get_unit_size_of_trade(entry_price)
+                if units > 0:
+                    sl_pip_amount = self._atr_values[self.entry_timeframe] * self.trade_multipliers[strategy][signal]['sl']
+                    self._place_pending_order(
+                        price_to_offset_from=entry_price,
+                        entry_offset=self._atr_values[self.entry_timeframe] / 7,
+                        worst_price_bound_offset=self._atr_values[self.entry_timeframe] / 2,
+                        sl_pip_amount=sl_pip_amount,
+                        tp_pip_amount=sl_pip_amount * self.trade_multipliers[strategy][signal]['tp'],
+                        strategy=strategy,
+                        signal=signal,
+                        units=units,
+                    )
+                else:
+                    logger.warning('Not enough margin available to place an order!')
+                    self._send_mail_alert(source='no_margin_available', additional_msg='trade missed.')
+            except Exception as exc:
+                logger.info(f'Failed place new pending order. {exc}', exc_info=True)
+                self._send_mail_alert(source='place_order', additional_msg=str(exc))
+        else:
+            logger.info(f'Instrument has reached trade cap of {self._num_trades_cap}, order not placed.')
+            self._send_mail_alert(source='ins_trade_cap', additional_msg='trade not taken.')
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
