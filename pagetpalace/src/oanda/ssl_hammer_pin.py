@@ -25,6 +25,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             ssl_periods: Dict[str, int] = None,
             wait_time_precedence: int = 1,
             equity_split: float = 1.75,
+            entry_ssma_period: int = 20,
     ):
         time_frames = ['D', 'H1']
         super().__init__(
@@ -42,6 +43,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
         self.directions = tuple(hammer_pin_coefficients.keys())
         self.spread_cap = spread_cap
+        self.entry_ssma_period = entry_ssma_period
         self._prev_latest_candle_datetime = None
         self._wait_time_precedence = wait_time_precedence
 
@@ -59,24 +61,24 @@ class SSLHammerPin(SSLMultiTimeFrame):
             self._atr_values[tf] = round(self._latest_data[tf].iloc[-1]['ATR_14'], 5)
 
     def _update_ssma_values(self):
-        append_ssma(self._latest_data['H1'], periods=20)
-        self._ssma_values['H1'] = round(self._latest_data['H1'].iloc[-1]['SSMA_20'], 5)
+        append_ssma(self._latest_data['H1'], periods=self.entry_ssma_period)
+        self._ssma_values['H1'] = round(self._latest_data['H1'].iloc[-1][f'SSMA_{self.entry_ssma_period}'], 5)
 
     def _is_long_signal(self, prev_candle) -> bool:
         bias = 'long'
         coeffs = self.hammer_pin_coefficients[bias]
         hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midlow_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midLow']), 'H1')
+        midlow_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midLow']), 'H1')
 
-        return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_20_distance_met
+        return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_distance_met
 
     def _is_short_signal(self, prev_candle) -> bool:
         bias = 'short'
         coeffs = self.hammer_pin_coefficients[bias]
         hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midhigh_20_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh']), 'H1')
+        midhigh_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh']), 'H1')
 
-        return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_20_distance_met
+        return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_distance_met
 
     def _get_s1_signal(self, prev_candle) -> Union[str, None]:
         signal = None
