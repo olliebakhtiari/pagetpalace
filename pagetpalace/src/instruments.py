@@ -130,6 +130,14 @@ class CurrencyPairs:
             'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
         }
     )
+    CHF_JPY = Currency(
+        'CHF_JPY',
+        leverage=25,
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_CHF', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_JPY', 'inverse_required': False},
+        }
+    )
     EUR_GBP = Currency('EUR_GBP')
     EUR_JPY = Currency(
         'EUR_JPY',
@@ -145,6 +153,8 @@ class CurrencyPairs:
             'p2p': {'symbol': 'GBP_USD', 'inverse_required': False},
         }
     )
+    GBP_CHF = Currency('GBP_CHF', leverage=25)
+    GBP_JPY = Currency('GBP_JPY')
     GBP_USD = Currency('GBP_USD')
     USD_CAD = Currency(
         'USD_CAD',
@@ -186,6 +196,7 @@ class Commodities:
             'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
         }
     )
+    SILVER_GBP = Commodity('XAG_GBP', decimal_ratio=1e4, price_precision=5)
     SUGAR_USD = Commodity('SUGAR_USD', decimal_ratio=1e4, price_precision=5)
 
 
