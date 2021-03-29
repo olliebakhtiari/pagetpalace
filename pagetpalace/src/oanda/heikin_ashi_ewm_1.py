@@ -185,22 +185,3 @@ class HeikinAshiEwm1(Strategy):
                             self._prev_exec_datetime = self._latest_data[self.entry_timeframe].iloc[-1]['datetime']
                         self._previous_entry_signal = self._heikin_ashi_signal
                         first_run = False
-
-
-if __name__ == '__main__':
-    from pagetpalace.src.oanda.account import OandaAccount
-    from pagetpalace.src.instruments import Indices
-    from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, HEIKIN_ASHI_EWM_1_POOL_ACCOUNT_NUMBER
-
-    hk33_usd = HeikinAshiEwm1(
-        account=OandaAccount(LIVE_ACCESS_TOKEN, HEIKIN_ASHI_EWM_1_POOL_ACCOUNT_NUMBER, 'LIVE_API'),
-        instrument=Indices.HK33_HKD,
-        ssma_period=5,
-        ewm_period=20,
-        boundary_multipliers={'D': {'long': {'below': 1000, 'above': 1.5}}},
-        trade_multipliers={'1': {'long': {'sl': 1, 'tp': 2}}},
-        wait_time_precedence=5,
-    )
-    t = hk33_usd.account.get_open_trades()['trades']
-    for tr in t:
-        print(tr['instrument'])

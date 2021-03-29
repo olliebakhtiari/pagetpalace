@@ -118,17 +118,25 @@ class HeikinAshiEwm2(Strategy):
     def _is_long_condition(self) -> bool:
         return self._ewm_value < self._ssma_value \
             and self._heikin_ashi_signal == 'long' \
-            and self._is_within_valid_boundary('long', self._latest_data[self.entry_timeframe]['midHigh'].values[-1]) \
+            and self._is_within_valid_boundary(
+                'long',
+                float(self._latest_data[self.entry_timeframe]['midHigh'].values[-1]),
+            ) \
             and self._has_met_reverse_trade_condition(
-                'long', float(self._latest_data[self.entry_timeframe]['midLow'].values[-1])
+                'long',
+                float(self._latest_data[self.entry_timeframe]['midLow'].values[-1]),
             )
 
     def _is_short_condition(self) -> bool:
         return self._ewm_value > self._ssma_value \
             and self._heikin_ashi_signal == 'short' \
-            and self._is_within_valid_boundary('short', self._latest_data[self.entry_timeframe]['midLow'].values[-1]) \
+            and self._is_within_valid_boundary(
+                'short',
+                float(self._latest_data[self.entry_timeframe]['midLow'].values[-1]),
+            ) \
             and self._has_met_reverse_trade_condition(
-                'short', float(self._latest_data[self.entry_timeframe]['midHigh'].values[-1])
+                'short',
+                float(self._latest_data[self.entry_timeframe]['midHigh'].values[-1]),
             )
 
     def _get_signals(self, **kwargs) -> dict:
