@@ -130,6 +130,13 @@ class CurrencyPairs:
             'p2p': {'symbol': 'GBP_CHF', 'inverse_required': False},
         }
     )
+    CAD_JPY = Currency(
+        'CAD_JPY',
+        exchange_rate_data={
+            'units': {'symbol': 'GBP_CAD', 'inverse_required': True},
+            'p2p': {'symbol': 'GBP_JPY', 'inverse_required': False},
+        }
+    )
     CHF_JPY = Currency(
         'CHF_JPY',
         leverage=25,
