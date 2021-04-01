@@ -192,9 +192,9 @@ class OandaInstrumentData(RequestMixin):
                 'to': f'{year}-{month:02}-{day+1:02}T00:00:00.000000000Z',
             })
         dates.append({
-                'from': f'{year}-{month:02}-{end_day-1}T00:00:00.000000000Z',
-                'to': f'{end_date}.000000000Z',
-            })
+            'from': f'{year}-{month:02}-{end_day-1}T00:00:00.000000000Z',
+            'to': f'{end_date}.000000000Z',
+        })
 
         return dates
 
@@ -283,14 +283,14 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for i in ['GBP_NZD']:
-#         for g in ['D']:
+#     for i in ['XAU_USD']:
+#         for g in ['M5']:
 #             od = OandaInstrumentData()
 #             od.write_candles_to_csv(
 #                 instrument=i,
 #                 granularity=g,
 #                 output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-#                 start_year=2004,
+#                 start_year=2015,
 #                 end_year=2021,
 #                 prices='ABM',
 #             )
