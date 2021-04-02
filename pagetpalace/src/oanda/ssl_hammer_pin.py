@@ -5,7 +5,12 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Local.
-from pagetpalace.src.indicators import append_average_true_range, append_ssma, get_hammer_pin_signal
+from pagetpalace.src.indicators import (
+    append_average_true_range,
+    append_ssma,
+    get_hammer_pin_signal,
+    is_candle_range_greater_than_x,
+)
 from pagetpalace.src.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
@@ -26,6 +31,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             wait_time_precedence: int = 1,
             equity_split: float = 1.75,
             entry_ssma_period: int = 20,
+            x_atr_coeffs: Dict[str, float] = None,
     ):
         time_frames = ['D', 'H1']
         super().__init__(
@@ -42,6 +48,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
         self.hammer_pin_coefficients = hammer_pin_coefficients
         self.trading_restriction = trading_restriction  # 'trading_hours' or 'spread_cap'.
         self.directions = tuple(hammer_pin_coefficients.keys())
+        self.x_atr_coeffs = {direction: 0.0001 for direction in self.directions} if not x_atr_coeffs else x_atr_coeffs
         self.spread_cap = spread_cap
         self.entry_ssma_period = entry_ssma_period
         self._prev_latest_candle_datetime = None
@@ -64,35 +71,43 @@ class SSLHammerPin(SSLMultiTimeFrame):
         append_ssma(self._latest_data['H1'], periods=self.entry_ssma_period)
         self._ssma_values['H1'] = round(self._latest_data['H1'].iloc[-1][f'SSMA_{self.entry_ssma_period}'], 5)
 
-    def _is_long_signal(self, prev_candle) -> bool:
+    def _is_long_signal(self) -> bool:
+        candle = self._latest_data['H1'].iloc[-1]
         bias = 'long'
         coeffs = self.hammer_pin_coefficients[bias]
-        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midlow_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midLow']), 'H1')
+        hammer_pin_signal = get_hammer_pin_signal(candle, coeffs['body'], coeffs['head_tail'])
+        midlow_distance_met = self._has_met_reverse_trade_condition(bias, float(candle['midLow']), 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == 1 and midlow_distance_met
 
-    def _is_short_signal(self, prev_candle) -> bool:
+    def _is_short_signal(self) -> bool:
+        candle = self._latest_data['H1'].iloc[-1]
         bias = 'short'
         coeffs = self.hammer_pin_coefficients[bias]
-        hammer_pin_signal = get_hammer_pin_signal(prev_candle, coeffs['body'], coeffs['head_tail'])
-        midhigh_distance_met = self._has_met_reverse_trade_condition(bias, float(prev_candle['midHigh']), 'H1')
+        hammer_pin_signal = get_hammer_pin_signal(candle, coeffs['body'], coeffs['head_tail'])
+        midhigh_distance_met = self._has_met_reverse_trade_condition(bias, float(candle['midHigh']), 'H1')
 
         return hammer_pin_signal == bias and self._current_ssl_values['D'] == -1 and midhigh_distance_met
 
-    def _get_s1_signal(self, prev_candle) -> Union[str, None]:
+    def _is_big_enough_movement(self, bias: str) -> bool:
+        return is_candle_range_greater_than_x(
+            self._latest_data['H1'].iloc[-1],
+            self._atr_values[self.entry_timeframe] * self.x_atr_coeffs[bias],
+        )
+
+    def _get_s1_signal(self) -> Union[str, None]:
         signal = None
         long = 'long'
         short = 'short'
-        if long in self.directions and self._is_long_signal(prev_candle):
+        if long in self.directions and self._is_big_enough_movement(long) and self._is_long_signal():
             signal = long
-        elif short in self.directions and self._is_short_signal(prev_candle):
+        elif short in self.directions and self._is_big_enough_movement(short) and self._is_short_signal():
             signal = short
 
         return signal
 
     def _get_signals(self, **kwargs) -> Dict[str, Union[str, None]]:
-        return {'1': self._get_s1_signal(kwargs['prev_candle'])}
+        return {'1': self._get_s1_signal()}
 
     @classmethod
     def _is_within_trading_hours(cls, curr_dt) -> bool:
@@ -165,7 +180,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                         if self._prev_latest_candle_datetime != self._latest_data['H1'].iloc[-1]['datetime']:
                             self._check_and_clear_pending_orders()
                             self._update_current_indicators_and_signals()
-                            signals = self._get_signals(prev_candle=self._latest_data['H1'].iloc[-1])
+                            signals = self._get_signals()
                             self._log_latest_values(now, signals)
 
                             # New orders.
