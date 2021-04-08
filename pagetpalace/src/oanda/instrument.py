@@ -283,14 +283,14 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for i in ['XAU_USD']:
+#     for i in ['US30_USD', 'GBP_USD']:
 #         for g in ['M5']:
 #             od = OandaInstrumentData()
 #             od.write_candles_to_csv(
 #                 instrument=i,
 #                 granularity=g,
 #                 output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
-#                 start_year=2015,
+#                 start_year=2018,
 #                 end_year=2021,
 #                 prices='ABM',
 #             )

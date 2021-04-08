@@ -33,5 +33,6 @@ def read_oanda_data(file_path: str) -> pd.DataFrame:
 
 def remove_duplicate_datetimes_from_csv(file_path: str):
     df = read_oanda_data(file_path)
-    df.drop_duplicates(subset='datetime', inplace=True).reset_index(drop=True)
+    df.drop_duplicates(subset='datetime', inplace=True)
+    df.reset_index(drop=True)
     df.to_csv(file_path, index=False)
