@@ -23,7 +23,7 @@ class OandaInstrumentData(RequestMixin):
     DATA_POINTS = ['o', 'h', 'l', 'c']
 
     def __init__(self):
-        self.url = f'{PROTOCOL}{OANDA_DOMAINS["LIVE_API"]}/{OANDA_API_VERSION}/instruments/'
+        self.url = f'{PROTOCOL}{OANDA_DOMAINS["LIVE_API"]}/{OANDA_API_VERSION}/instruments'
         self.access_token = LIVE_ACCESS_TOKEN
         self.default_headers = {
             'Authorization': f'Bearer {self.access_token}',
@@ -296,3 +296,4 @@ class OandaInstrumentData(RequestMixin):
 #             )
 #     od = OandaInstrumentData()
 #     print(od.get_complete_candlesticks(instrument='XAU_USD', granularity='H1', count=3))
+#     print(OandaInstrumentData().get_position_book('USD_JPY'))
