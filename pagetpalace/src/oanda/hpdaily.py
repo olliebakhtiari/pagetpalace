@@ -218,7 +218,7 @@ class HPDaily(Strategy):
                 if order_create_transaction.get('orderCancelTransaction', {}).get('reason') == 'MARKET_HALTED':
                     self._place_pending_order(
                         price_to_offset_from=last_close_price,
-                        entry_offset=atr_val / 18,
+                        entry_offset=atr_val / 14,
                         worst_price_bound_offset=atr_val / 5,
                         sl_pip_amount=sl_pip_amount,
                         tp_pip_amount=tp_pip_amount,

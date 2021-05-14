@@ -27,7 +27,7 @@ class HeikinAshiEwm1(Strategy):
             boundary_multipliers: dict,
             trade_multipliers: dict,
             wait_time_precedence: int = 1,
-            equity_split: float = 3.5,
+            equity_split: float = 6,
     ):
         super().__init__(
             equity_split=equity_split,

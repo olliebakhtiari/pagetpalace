@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 
 # Local.
 from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.instrument_attributes import InstrumentTypes
 from pagetpalace.src.oanda.orders import Orders
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.instrument import OandaInstrumentData
@@ -90,9 +91,11 @@ class Strategy:
         return UnitConversions(self.instrument, entry_price) \
             .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
-    @classmethod
-    def _validate_and_round_unit_size(cls, signal: str, units: float):
-        units = math.floor(units) if signal == 'long' else math.ceil(units)
+    def _validate_and_round_unit_size(self, signal: str, units: float):
+        if self.instrument.type_ == InstrumentTypes.INDEX:
+            units = round(units, 1)
+        else:
+            units = math.floor(units) if signal == 'long' else math.ceil(units)
         if units == 0:
             if signal == 'long':
                 units = 1

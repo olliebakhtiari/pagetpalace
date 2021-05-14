@@ -4,7 +4,7 @@ from datetime import datetime
 
 # Local.
 from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.instrument_attributes import BaseCurrencies
+from pagetpalace.src.instrument_attributes import BaseCurrencies, InstrumentTypes
 from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 
@@ -71,7 +71,9 @@ class UnitConversions:
             raise Exception("Denominator scenario not accounted for.")
 
     def calculate_units(self, margin_size: float) -> int:
-        return math.floor((margin_size * self.instrument.leverage) / self._pound_to_units_variable)
+        return round((margin_size * self.instrument.leverage) / self._pound_to_units_variable, 1) \
+            if self.instrument.type_ == InstrumentTypes.INDEX \
+            else math.floor((margin_size * self.instrument.leverage) / self._pound_to_units_variable)
 
     def calculate_pound_to_pip_ratio(self, units: float) -> float:
         return round((units * (1. / self.instrument.decimal_ratio)) / self._pound_to_pip_variable, 2)
