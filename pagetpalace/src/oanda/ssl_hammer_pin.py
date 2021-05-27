@@ -29,7 +29,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
             spread_cap: float = None,
             ssl_periods: Dict[str, int] = None,
             wait_time_precedence: int = 1,
-            equity_split: float = 1.75,
+            equity_split: float = 2.25,
             entry_ssma_period: int = 20,
             x_atr_coeffs: Dict[str, float] = None,
     ):
