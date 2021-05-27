@@ -86,7 +86,7 @@ class UnitConversions:
         for order in account_data['orders']:
             units_in_order = order.get('units')
             if units_in_order:
-                units_pending += abs(int(units_in_order))
+                units_pending += abs(float(units_in_order))
         available = float(account_data['marginAvailable']) - self._convert_units_to_gbp(units_pending)
 
         return available if available > 0 else 0.

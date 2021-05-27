@@ -4,9 +4,9 @@ from typing import Dict
 
 def check_pct_hit(prices: Dict[str, float], trade: dict, pct: float) -> bool:
     has_hit = False
-    if int(trade['currentUnits']) > 0:
+    if float(trade['currentUnits']) > 0:
         has_hit = _check_long_pct_hit(prices['bid_high'], trade, pct)
-    elif int(trade['currentUnits']) < 0:
+    elif float(trade['currentUnits']) < 0:
         has_hit = _check_short_pct_hit(prices['ask_low'], trade, pct)
 
     return has_hit
@@ -22,9 +22,9 @@ def _check_short_pct_hit(price: float, trade: dict, pct: float) -> bool:
 
 def calculate_new_sl_price(trade: dict, pct: float) -> float:
     price = trade['price']
-    if int(trade['currentUnits']) > 0:
+    if float(trade['currentUnits']) > 0:
         price = _calculate_new_long_sl(trade, pct)
-    elif int(trade['currentUnits']) < 0:
+    elif float(trade['currentUnits']) < 0:
         price = _calculate_new_short_sl(trade, pct)
 
     return round(float(price), 5)
