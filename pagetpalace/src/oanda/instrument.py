@@ -14,7 +14,6 @@ from pagetpalace.tools.logger import *
 
 
 class OandaInstrumentData(RequestMixin):
-    DEFAULT_HEADERS = ['datetime', 'volume']
     PRICE_HEADERS = {
         'A': ['askOpen', 'askHigh', 'askLow', 'askClose'],
         'B': ['bidOpen', 'bidHigh', 'bidLow', 'bidClose'],
@@ -119,9 +118,10 @@ class OandaInstrumentData(RequestMixin):
                             ]
         """
         data = []
-        headers = cls.DEFAULT_HEADERS.copy()
+        headers = ['datetime']
         for price_type in prices:
             headers.extend(cls.PRICE_HEADERS.get(price_type))
+        headers.append('volume')
         for idx, candle in enumerate(candles):
 
             # format date string.
@@ -129,8 +129,8 @@ class OandaInstrumentData(RequestMixin):
             hr_mins_secs = time_.split('.')[0]
             date_time_str = f"{date_} {hr_mins_secs}"
 
-            # append volume and datetime, returned df index stays as integers, change to datetime later if required.
-            row = [date_time_str, candle['volume']]
+            # returned df index stays as integers, change to datetime later if required.
+            row = [date_time_str]
 
             # add price data. maintain order, all ask first, then bid, then mid.
             if 'A' in prices:
@@ -139,6 +139,7 @@ class OandaInstrumentData(RequestMixin):
                 row.extend([candle['bid'][data_point] for data_point in cls.DATA_POINTS])
             if 'M' in prices:
                 row.extend([candle['mid'][data_point] for data_point in cls.DATA_POINTS])
+            row.append(candle['volume'])
             data.append(row)
 
         return pd.DataFrame(data=data, columns=headers)
@@ -272,16 +273,16 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for i in ['GBP_USD']:
+#     for i in ['SPX500_USD', 'GBP_USD', 'USD_CAD', 'EUR_CHF']:
 #         for g in ['M1']:
 #             od = OandaInstrumentData()
 #             od.write_candles_to_csv(
 #                 instrument=i,
 #                 granularity=g,
-#                 output_loc=f'/Users/olliebakhtiari/Dropbox/My Mac (Ollie’s MacBook Air)/Documents/to_send/{i.strip("_")}_{g}.csv',
-#                 start_year=2019,
+#                 output_loc=f'/Users/olliebakhtiari/Documents/to_send/{i.strip("_")}_{g}.csv',
+#                 start_year=2018,
 #                 end_year=2021,
-#                 prices='ABM',
+#                 prices='M',
 #             )
 #     od = OandaInstrumentData()
 #     print(od.get_complete_candlesticks(instrument='XAU_USD', granularity='H1', count=3))
