@@ -1,0 +1,13 @@
+class Price:
+    ASK_OPEN = 'askOpen'
+    ASK_HIGH = 'askHigh'
+    ASK_LOW = 'askLow'
+    ASK_CLOSE = 'askClose'
+    BID_OPEN = 'bidOpen'
+    BID_HIGH = 'bidHigh'
+    BID_LOW = 'bidLow'
+    BID_CLOSE = 'bidClose'
+    MID_OPEN = 'midOpen'
+    MID_HIGH = 'midHigh'
+    MID_LOW = 'midLow'
+    MID_CLOSE = 'midClose'

@@ -2,8 +2,8 @@
 import json
 
 # Local.
-from pagetpalace.src.instrument_attributes import BaseCurrencies
-from pagetpalace.src.request import RequestMixin
+from pagetpalace.src.oanda.instruments.instrument_attributes import BaseCurrencies
+from pagetpalace.src.mixins.request_mixin import RequestMixin
 from pagetpalace.src.oanda.settings import OANDA_DOMAINS, PROTOCOL, OANDA_API_VERSION
 
 

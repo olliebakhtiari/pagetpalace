@@ -3,7 +3,7 @@ import inspect
 from typing import Dict
 
 # Local.
-from pagetpalace.src.instrument_attributes import (
+from pagetpalace.src.oanda.instruments.instrument_attributes import (
     InstrumentDecimalRatio,
     InstrumentLeverage,
     InstrumentTypes,

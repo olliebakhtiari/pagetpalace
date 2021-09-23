@@ -5,9 +5,9 @@ import unittest
 import pandas as pd
 
 # Local.
-from pagetpalace.src.instruments import Indices
+from pagetpalace.src.oanda.instruments.instruments import Indices
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.heikin_ashi_ewm_1 import HeikinAshiEwm1
+from pagetpalace.src.oanda.strategies.strategy_implementations.heikin_ashi_ewm_1 import HeikinAshiEwm1
 from pagetpalace.src.oanda.settings import DEMO_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
 
 

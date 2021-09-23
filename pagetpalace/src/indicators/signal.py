@@ -1,5 +1,9 @@
+# Local.
+from pagetpalace.src.constants.direction import Direction
+
+
 class Signal:
-    VALID_BIAS = ['long', 'short']
+    VALID_BIAS = [Direction.LONG, Direction.SHORT]
     VALID_TRADE_TYPES = ['reverse', 'continuation']
 
     def __init__(self, trade_type: str, bias: str, take_profit_multiplier: float, stop_loss_multiplier: float):

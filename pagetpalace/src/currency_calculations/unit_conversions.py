@@ -3,8 +3,8 @@ import math
 from datetime import datetime
 
 # Local.
-from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.instrument_attributes import BaseCurrencies, InstrumentTypes
+from pagetpalace.src.oanda.instruments.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instrument_attributes import BaseCurrencies, InstrumentTypes
 from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
 

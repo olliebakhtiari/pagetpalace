@@ -5,15 +5,15 @@ import time
 from datetime import datetime
 
 # Local.
-from pagetpalace.src.indicators import (
+from pagetpalace.src.indicators.indicators import (
     append_average_true_range,
     append_heikin_ashi,
     append_exponentially_weighted_moving_average,
     append_ssma,
 )
-from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.strategy import Strategy
+from pagetpalace.src.oanda.strategies.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 
@@ -135,7 +135,7 @@ class HeikinAshiEwm1(Strategy):
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
         price = 'askClose' if signal == 'long' else 'bidClose'
         last_close = float(self._latest_data[self.entry_timeframe][price].values[-1])
-        if self._is_instrument_below_num_of_trades_cap():
+        if self._is_instrument_below_num_of_trades_cap(2):
             try:
                 units = self._get_unit_size_of_trade(last_close)
                 if units > 0:
@@ -153,7 +153,7 @@ class HeikinAshiEwm1(Strategy):
                 logger.info(f'Failed place new pending order. {exc}', exc_info=True)
                 self._send_mail_alert(source='place_order', additional_msg=str(exc))
         else:
-            logger.info(f'Instrument has reached trade cap of {self._num_trades_cap}.')
+            logger.info(f'Instrument has reached trade cap of 2.')
             self._send_mail_alert(source='ins_trade_cap', additional_msg='trade not taken.')
 
     def _log_latest_values(self, now, signals):

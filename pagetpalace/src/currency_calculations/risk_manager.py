@@ -1,6 +1,6 @@
 # Local.
-from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.oanda.unit_conversions import UnitConversions
+from pagetpalace.src.oanda.instruments.instruments import Instrument
+from pagetpalace.src.currency_calculations.unit_conversions import UnitConversions
 
 
 class RiskManager:

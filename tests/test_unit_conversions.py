@@ -2,8 +2,8 @@
 import unittest
 
 # Local.
-from pagetpalace.src.instruments import CurrencyPairs, Indices, Commodities
-from pagetpalace.src.oanda.unit_conversions import UnitConversions
+from pagetpalace.src.oanda.instruments.instruments import CurrencyPairs, Indices, Commodities
+from pagetpalace.src.currency_calculations.unit_conversions import UnitConversions
 
 
 class TestUnitConversions(unittest.TestCase):

@@ -1,13 +1,12 @@
 # Python standard.
 import datetime
-import math
 from typing import List
 
 # Third-party.
 import pandas as pd
 
 # Local.
-from pagetpalace.src.request import RequestMixin
+from pagetpalace.src.mixins.request_mixin import RequestMixin
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, OANDA_DOMAINS, OANDA_API_VERSION, PROTOCOL
 from pagetpalace.tools.file_operations import remove_duplicate_datetimes_from_csv
 from pagetpalace.tools.logger import *
@@ -273,17 +272,21 @@ class OandaInstrumentData(RequestMixin):
 
 
 # if __name__ == '__main__':
-#     for i in ['SPX500_USD', 'GBP_USD', 'USD_CAD', 'EUR_CHF']:
-#         for g in ['M1']:
+#     for i in ['NAS100_USD', 'GBP_USD']:
+#         for g in ['H1']:
 #             od = OandaInstrumentData()
 #             od.write_candles_to_csv(
 #                 instrument=i,
 #                 granularity=g,
-#                 output_loc=f'/Users/olliebakhtiari/Documents/to_send/{i.strip("_")}_{g}.csv',
-#                 start_year=2018,
+#                 output_loc=f'/Users/olliebakhtiari/Documents/pagetpalace_backtester/pagetpalace_backtester/data/oanda/{i}/{i.strip("_")}_{g}.csv',
+#                 start_year=2015,
 #                 end_year=2021,
-#                 prices='M',
+#                 prices='ABM',
 #             )
 #     od = OandaInstrumentData()
 #     print(od.get_complete_candlesticks(instrument='XAU_USD', granularity='H1', count=3))
 #     print(OandaInstrumentData().get_position_book('USD_JPY'))
+#     for fname in ['SPX500_USD_M1']:
+#         df = pd.read_csv(f'/Users/olliebakhtiari/Documents/to_send/{fname}.csv')
+#         df = df.iloc[: , 1:]
+#         df.to_csv(f'/Users/olliebakhtiari/Documents/to_send/{fname}_adj.csv')

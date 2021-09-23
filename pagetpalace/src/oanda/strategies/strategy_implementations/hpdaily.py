@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Local.
-from pagetpalace.src.indicators import (
+from pagetpalace.src.indicators.indicators import (
     append_average_true_range,
     append_ssma,
     get_hammer_pin_signal_v2,
@@ -16,9 +16,9 @@ from pagetpalace.src.indicators import (
     was_previous_green_streak,
     was_previous_red_streak,
 )
-from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.strategy import Strategy
+from pagetpalace.src.oanda.strategies.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 

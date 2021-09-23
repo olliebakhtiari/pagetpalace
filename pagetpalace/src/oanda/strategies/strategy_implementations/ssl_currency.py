@@ -5,11 +5,11 @@ from datetime import datetime
 from typing import Dict
 
 # Local.
-from pagetpalace.src.indicators import append_average_true_range, append_ssma
-from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.indicators.indicators import append_average_true_range, append_ssma
+from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
-from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
+from pagetpalace.src.oanda.strategies.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.tools.logger import *
 
 

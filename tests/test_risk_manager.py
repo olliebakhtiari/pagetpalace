@@ -2,8 +2,8 @@
 import unittest
 
 # Local.
-from pagetpalace.src.instruments import CurrencyPairs
-from pagetpalace.src.risk_manager import RiskManager
+from pagetpalace.src.oanda.instruments.instruments import CurrencyPairs
+from pagetpalace.src.currency_calculations.risk_manager import RiskManager
 
 
 class TestRiskManager(unittest.TestCase):

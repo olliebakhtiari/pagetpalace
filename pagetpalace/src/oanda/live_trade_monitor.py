@@ -3,12 +3,16 @@ from collections import defaultdict
 from typing import Dict, List
 
 # Local.
-from pagetpalace.src.instruments import get_all_instruments
+from pagetpalace.src.oanda.instruments.instruments import get_all_instruments
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.pricing import OandaPricingData
-from pagetpalace.src.oanda.calculations import calculate_new_sl_price, check_pct_hit
+from pagetpalace.src.dependent_orders.target_calculations import calculate_new_sl_price, check_pct_hit
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
-from pagetpalace.src.trade_adjustment_params import PartialClosureParams, StopLossMoveParams, TradeAdjustmentParameters
+from pagetpalace.src.dependent_orders.trade_adjustment_params import (
+    PartialClosureParams,
+    StopLossMoveParams,
+    TradeAdjustmentParameters,
+)
 from pagetpalace.tools.logger import *
 
 

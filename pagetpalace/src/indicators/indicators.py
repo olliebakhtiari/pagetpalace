@@ -1,9 +1,15 @@
 # Python standard.
+import sys
 from typing import Dict
 
 # Third-party.
 import pandas as pd
 import numpy as np
+
+# Local.
+from pagetpalace.src.constants.data_point import DataPoint
+from pagetpalace.src.constants.price import Price
+from pagetpalace.src.constants.direction import Direction
 
 
 def ssl_channel(data: pd.DataFrame, prices: str = 'mid', periods: int = 20) -> np.ndarray:
@@ -40,7 +46,7 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
     df[f'ATR_{periods}'] = data['true_range'].ewm(alpha=1 / periods).mean()
 
 
-def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = "midClose"):
+def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = Price.MID_CLOSE):
     df[f'SSMA_{periods}'] = df[prices].ewm(ignore_na=False, alpha=1.0 / periods, min_periods=0, adjust=False).mean()
 
 
@@ -67,31 +73,31 @@ def is_short_red_pin(prices: Dict[str, float], body_coeff: float, head_tail_coef
 def get_hammer_pin_signal(candle: pd.DataFrame, body_coeff: float, head_tail_coeff: float) -> str:
     signal = ''
     prices = {
-        'o': float(candle['midOpen']),
-        'h': float(candle['midHigh']),
-        'l': float(candle['midLow']),
-        'c': float(candle['midClose']),
+        'o': float(candle[Price.MID_OPEN]),
+        'h': float(candle[Price.MID_HIGH]),
+        'l': float(candle[Price.MID_LOW]),
+        'c': float(candle[Price.MID_CLOSE]),
     }
     if prices['c'] > prices['o']:
 
         # Green candle
         if is_long_green_hammer(prices, body_coeff, head_tail_coeff):
-            signal = 'long'
+            signal = Direction.LONG
         elif is_short_green_pin(prices, body_coeff, head_tail_coeff):
-            signal = 'short'
+            signal = Direction.SHORT
     else:
 
         # Red candle
         if is_long_red_hammer(prices, body_coeff, head_tail_coeff):
-            signal = 'long'
+            signal = Direction.LONG
         elif is_short_red_pin(prices, body_coeff, head_tail_coeff):
-            signal = 'short'
+            signal = Direction.SHORT
 
     return signal
 
 
 def is_candle_range_greater_than_x(candle: pd.DataFrame, value: float):
-    return (float(candle['midHigh']) - float(candle['midLow'])) > value
+    return (float(candle[Price.MID_HIGH]) - float(candle[Price.MID_LOW])) > value
 
 
 def _adjust_if_zero(value: float) -> float:
@@ -116,7 +122,7 @@ def _get_candlestick_ranges(prices: Dict[str, float]):
 
 def was_price_ascending(dataframe: pd.DataFrame,
                         idx_to_analyse: int,
-                        prices: str = 'midHigh',
+                        prices: str = Price.MID_HIGH,
                         look_back: int = 2) -> bool:
     is_ascending = True
     while look_back > 0:
@@ -129,7 +135,7 @@ def was_price_ascending(dataframe: pd.DataFrame,
 
 def was_price_descending(dataframe: pd.DataFrame,
                          idx_to_analyse: int,
-                         prices: str = 'midLow',
+                         prices: str = Price.MID_LOW,
                          look_back: int = 2) -> bool:
     is_descending = True
     while look_back > 0:
@@ -167,18 +173,18 @@ def get_hammer_pin_signal_v2(dataframe: pd.DataFrame, idx_to_analyse: int, coeff
     signal = ''
     candle_to_check = dataframe.iloc[idx_to_analyse]
     prices_to_check = {
-        'o': float(candle_to_check['midOpen']),
-        'h': float(candle_to_check['midHigh']),
-        'l': float(candle_to_check['midLow']),
-        'c': float(candle_to_check['midClose']),
+        'o': float(candle_to_check[Price.MID_OPEN]),
+        'h': float(candle_to_check[Price.MID_HIGH]),
+        'l': float(candle_to_check[Price.MID_LOW]),
+        'c': float(candle_to_check[Price.MID_CLOSE]),
     }
     ranges = _get_candlestick_ranges(prices_to_check)
     if _is_doji_candlestick(prices_to_check):
         signal = ''
     elif _is_hammer_candlestick(ranges, coeffs):
-        signal = 'long'
+        signal = Direction.LONG
     elif _is_pin_candlestick(ranges, coeffs):
-        signal = 'short'
+        signal = Direction.SHORT
 
     return signal
 
@@ -187,7 +193,7 @@ def was_previous_green_streak(dataframe: pd.DataFrame, idx_to_analyse: int, look
     is_green_streak = True
     while look_back > 0:
         candle = dataframe.iloc[idx_to_analyse - look_back]
-        if candle['midOpen'] > candle['midClose']:
+        if candle[Price.MID_OPEN] > candle[Price.MID_CLOSE]:
             return False
         look_back -= 1
 
@@ -198,7 +204,7 @@ def was_previous_red_streak(dataframe: pd.DataFrame, idx_to_analyse: int, look_b
     is_red_streak = True
     while look_back > 0:
         candle = dataframe.iloc[idx_to_analyse - look_back]
-        if candle['midOpen'] < candle['midClose']:
+        if candle[Price.MID_OPEN] < candle[Price.MID_CLOSE]:
             return False
         look_back -= 1
 
@@ -215,11 +221,40 @@ def append_heikin_ashi(df: pd.DataFrame):
     [ha_open.append((ha_open[i] + df.HA_Close.values[i]) / 2) for i in range(0, len(df) - 1)]
     df['HA_Open'] = ha_open
     df['HA_Open'] = df['HA_Open'].round(5)
-    df['HA_High'] = df[['HA_Open', 'HA_Close', 'midHigh']].max(axis=1).round(5)
-    df['HA_Low'] = df[['HA_Open', 'HA_Close', 'midLow']].min(axis=1).round(5)
+    df['HA_High'] = df[['HA_Open', 'HA_Close', Price.MID_HIGH]].max(axis=1).round(5)
+    df['HA_Low'] = df[['HA_Open', 'HA_Close', Price.MID_LOW]].min(axis=1).round(5)
 
     return df
 
 
 def append_exponentially_weighted_moving_average(df: pd.DataFrame, period: int = 15):
-    df[f'EWM_{period}'] = (df['midClose'].ewm(span=period, adjust=False).mean()).round(5)
+    df[f'EWM_{period}'] = (df[Price.MID_CLOSE].ewm(span=period, adjust=False).mean()).round(5)
+
+
+def append_chaikin_money_flow(df: pd.DataFrame, periods=20):
+    """
+        Chaikin Money Flow (CMF)
+        measures the amount of Money Flow Volume over a specific period.
+    """
+    mfv = ((df[Price.MID_CLOSE] - df[Price.MID_LOW]) - (df[Price.MID_HIGH] - df[Price.MID_CLOSE])) \
+          / (df[Price.MID_HIGH] - df[Price.MID_LOW])
+    mfv = mfv.fillna(0.0)
+    mfv *= df['volume']
+    cmf = (mfv.rolling(periods, min_periods=0).sum() / df['volume'].rolling(periods, min_periods=0).sum())
+    df['CMF'] = cmf
+
+
+def calculate_local_high_and_low(df: pd.DataFrame, index: int, look_back: int) -> Dict[str, float]:
+    high = 0
+    low = sys.maxsize
+    i = index
+    while i > index - look_back and i >= 0:
+        candle_high = df[Price.MID_HIGH].iloc[i]
+        candle_low = df[Price.MID_LOW].iloc[i]
+        if candle_high > high:
+            high = candle_high
+        if candle_low < low:
+            low = candle_low
+        i -= 1
+
+    return {DataPoint.HIGH: high, DataPoint.LOW: low}

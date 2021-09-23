@@ -5,9 +5,9 @@ import unittest
 import pandas as pd
 
 # Local.
-from pagetpalace.src.instruments import CurrencyPairs
+from pagetpalace.src.oanda.instruments.instruments import CurrencyPairs
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.hpdaily import HPDaily
+from pagetpalace.src.oanda.strategies.strategy_implementations.hpdaily import HPDaily
 from pagetpalace.src.oanda.settings import DEMO_ACCOUNT_NUMBER, DEMO_ACCESS_TOKEN
 
 

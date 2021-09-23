@@ -5,15 +5,15 @@ import time
 from datetime import datetime
 
 # Local.
-from pagetpalace.src.indicators import (
+from pagetpalace.src.indicators.indicators import (
     append_average_true_range,
     append_heikin_ashi,
     append_exponentially_weighted_moving_average,
     append_ssma,
 )
-from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.strategy import Strategy
+from pagetpalace.src.oanda.strategies.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 

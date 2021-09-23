@@ -5,15 +5,15 @@ from datetime import datetime
 from typing import Dict, Union
 
 # Local.
-from pagetpalace.src.indicators import (
+from pagetpalace.src.indicators.indicators import (
     append_average_true_range,
     append_ssma,
     get_hammer_pin_signal,
     is_candle_range_greater_than_x,
 )
-from pagetpalace.src.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.ssl_multi import SSLMultiTimeFrame
+from pagetpalace.src.oanda.strategies.ssl_multi import SSLMultiTimeFrame
 from pagetpalace.tools.logger import *
 
 
@@ -137,7 +137,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _place_new_pending_order_if_units_available(self, strategy: str, signal: str):
         entry_price = self._get_price_to_use_for_entry_offset(signal)
-        if self._is_instrument_below_num_of_trades_cap():
+        if self._is_instrument_below_num_of_trades_cap(2):
             try:
                 units = self._get_unit_size_of_trade(entry_price)
                 if units > 0:
@@ -159,7 +159,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
                 logger.info(f'Failed place new pending order. {exc}', exc_info=True)
                 self._send_mail_alert(source='place_order', additional_msg=str(exc))
         else:
-            logger.info(f'Instrument has reached trade cap of {self._num_trades_cap}, order not placed.')
+            logger.info(f'Instrument has reached trade cap of 2, order not placed.')
             self._send_mail_alert(source='ins_trade_cap', additional_msg='trade not taken.')
 
     def execute(self):

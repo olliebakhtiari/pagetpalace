@@ -1,20 +1,23 @@
 # Python standard.
 import abc
 import concurrent.futures
+import datetime
 import math
 from typing import Dict, List, Union
 
 # Local.
-from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.instrument_attributes import InstrumentTypes
+from pagetpalace.src.constants.direction import Direction
+from pagetpalace.src.constants.price import Price
+from pagetpalace.src.currency_calculations.unit_conversions import UnitConversions
+from pagetpalace.src.currency_calculations.risk_manager import RiskManager
+from pagetpalace.tools.email_sender import EmailSender
+from pagetpalace.src.oanda.instruments.instruments import Instrument
+from pagetpalace.src.oanda.instruments.instrument_attributes import InstrumentTypes
 from pagetpalace.src.oanda.orders import Orders
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.instrument import OandaInstrumentData
 from pagetpalace.src.oanda.pricing import OandaPricingData
 from pagetpalace.src.oanda.settings import LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER
-from pagetpalace.src.oanda.unit_conversions import UnitConversions
-from pagetpalace.src.risk_manager import RiskManager
-from pagetpalace.tools.email_sender import EmailSender
 from pagetpalace.tools.logger import *
 
 
@@ -27,8 +30,7 @@ class Strategy:
             time_frames: List[str],
             entry_timeframe: str,
             sub_strategies_count: int,
-            max_risk_pct: float = 0.15,
-            num_trades_cap: int = 2,
+            max_risk_pct: float = 0.05,
     ):
         self.equity_split = equity_split
         self.account = account
@@ -38,10 +40,13 @@ class Strategy:
         self.sub_strategies_count = sub_strategies_count
         self._risk_manager = RiskManager(self.instrument, max_risk_pct)
         self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
-        self._num_trades_cap = num_trades_cap
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
         self._latest_price = 0
         self._latest_data = {}
+
+    @staticmethod
+    def _should_run(dt: datetime.datetime):
+        return dt.isoweekday() != 6
 
     def _send_mail_alert(self, source: str, additional_msg: str = ''):
         source_to_msgs = {
@@ -58,13 +63,13 @@ class Strategy:
         except Exception as exc:
             logger.error(f'Failed to send email alert. {exc}', exc_info=True)
 
-    def _is_instrument_below_num_of_trades_cap(self) -> bool:
+    def _is_instrument_below_num_of_trades_cap(self, cap: int) -> bool:
         count = 0
         for open_trade in self.account.get_open_trades()['trades']:
             if open_trade.get('instrument') == self.instrument.symbol:
                 count += 1
 
-        return count < self._num_trades_cap
+        return count < cap
 
     def _add_id_to_pending_orders(self, order: dict, strategy: str):
         self._pending_orders[strategy].append(order['orderCreateTransaction']['id'])
@@ -91,13 +96,13 @@ class Strategy:
         return UnitConversions(self.instrument, entry_price) \
             .calculate_unit_size_of_trade(self.account.get_full_account_details()['account'], self.equity_split)
 
-    def _validate_and_round_unit_size(self, signal: str, units: float):
+    def _validate_and_round_unit_size(self, signal: Direction, units: float):
         if self.instrument.type_ == InstrumentTypes.INDEX:
             units = round(units, 1)
         else:
-            units = math.floor(units) if signal == 'long' else math.ceil(units)
+            units = math.floor(units) if signal == Direction.LONG else math.ceil(units)
         if units == 0:
-            if signal == 'long':
+            if signal == Direction.LONG:
                 units = 1
             else:
                 units = -1
@@ -105,7 +110,7 @@ class Strategy:
         return units
 
     def _construct_stop_order(self,
-                              signal: str,
+                              signal: Direction,
                               last_close_price: float,
                               entry_offset: float,
                               worst_price_bound_offset: float,
@@ -119,12 +124,12 @@ class Strategy:
             last_close_price,
             sl_pip_amount
         )
-        if signal == 'long':
+        if signal == Direction.LONG:
             entry = round(last_close_price + entry_offset, precision)
             tp = round(entry + tp_pip_amount, precision)
             sl = round(entry - sl_pip_amount, precision)
             price_bound = round(entry + worst_price_bound_offset, precision) if worst_price_bound_offset else None
-        elif signal == 'short':
+        elif signal == Direction.SHORT:
             entry = round(last_close_price - entry_offset, precision)
             tp = round(entry - tp_pip_amount, precision)
             sl = round(entry + sl_pip_amount, precision)
@@ -155,10 +160,10 @@ class Strategy:
             last_close_price,
             sl_pip_amount
         )
-        if signal == 'long':
+        if signal == Direction.LONG:
             tp = round(last_close_price + tp_pip_amount, precision)
             sl = round(last_close_price - sl_pip_amount, precision)
-        elif signal == 'short':
+        elif signal == Direction.SHORT:
             tp = round(last_close_price - tp_pip_amount, precision)
             sl = round(last_close_price + sl_pip_amount, precision)
             units = units * -1
@@ -175,7 +180,7 @@ class Strategy:
             sl_pip_amount: float,
             tp_pip_amount: float,
             strategy: str,
-            signal: str,
+            signal: Direction,
             units: int,
     ):
         order_schema = self._construct_stop_order(
@@ -246,6 +251,14 @@ class Strategy:
         self._send_mail_alert(source='successful_order', additional_msg=msg)
 
         return market_order
+
+    def _is_green_candle(self) -> bool:
+        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[0] \
+               > self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[0]
+
+    def _is_red_candle(self) -> bool:
+        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[0] \
+               < self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[0]
 
     def _update_latest_data(self):
         od = OandaInstrumentData()

@@ -4,10 +4,10 @@ import sys
 from typing import Dict, List
 
 # Local.
-from pagetpalace.src.instruments import Instrument
-from pagetpalace.src.indicators import append_ssl_channel
+from pagetpalace.src.oanda.instruments.instruments import Instrument
+from pagetpalace.src.indicators.indicators import append_ssl_channel
 from pagetpalace.src.oanda.account import OandaAccount
-from pagetpalace.src.oanda.strategy import Strategy
+from pagetpalace.src.oanda.strategies.strategy import Strategy
 from pagetpalace.tools.logger import *
 
 
