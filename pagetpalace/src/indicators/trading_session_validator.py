@@ -11,6 +11,9 @@ class TradingSessionValidator:
         self.date_time = date_time
         self._openings_hours = self._get_openings_hours()
 
+    def __repr__(self):
+        return f'TradingSessionValidator(self.date_time={self._date_time}, self._opening_hours={self._openings_hours})'
+
     @property
     def date_time(self):
         return self._date_time

@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Local.
 from pagetpalace.src.indicators.indicators import (
-    append_average_true_range,
+    get_average_true_range_value,
     append_heikin_ashi,
     append_exponentially_weighted_moving_average,
     append_ssma,
@@ -60,7 +60,7 @@ class HeikinAshiEwm2(Strategy):
                 self._send_mail_alert(source='clear_pending', additional_msg=str(exc))
 
     def _update_atr_value(self):
-        append_average_true_range(self._latest_data[self.entry_timeframe])
+        get_average_true_range_value(self._latest_data[self.entry_timeframe])
         self._atr_value = self._latest_data[self.entry_timeframe]['ATR_14'].values[-1]
 
     def _update_ssma_value(self):

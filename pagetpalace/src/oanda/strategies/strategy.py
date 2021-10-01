@@ -29,7 +29,7 @@ class Strategy:
             instrument: Instrument,
             time_frames: List[str],
             entry_timeframe: str,
-            sub_strategies_count: int,
+            sub_strategies_count: int = 1,
             max_risk_pct: float = 0.05,
     ):
         self.equity_split = equity_split
@@ -41,12 +41,11 @@ class Strategy:
         self._risk_manager = RiskManager(self.instrument, max_risk_pct)
         self._pricing = OandaPricingData(LIVE_ACCESS_TOKEN, PRIMARY_ACCOUNT_NUMBER, 'LIVE_API')
         self._pending_orders = {str(i + 1): [] for i in range(sub_strategies_count)}
-        self._latest_price = 0
         self._latest_data = {}
 
     @staticmethod
     def _should_run(dt: datetime.datetime):
-        return dt.isoweekday() != 6
+        return dt.isoweekday() != 6 or (dt.isoweekday() == 7 and dt.hour > 20)
 
     def _send_mail_alert(self, source: str, additional_msg: str = ''):
         source_to_msgs = {
@@ -267,7 +266,7 @@ class Strategy:
             future_to_tf = {}
             for granularity in self.time_frames:
                 future_to_tf[
-                    executor.submit(od.get_complete_candlesticks, self.instrument.symbol, 'ABM', granularity, 1000)
+                    executor.submit(od.get_complete_candlesticks, self.instrument.symbol, 'ABM', granularity, 50)
                 ] = granularity
             for future in concurrent.futures.as_completed(future_to_tf):
                 time_frame = future_to_tf[future]

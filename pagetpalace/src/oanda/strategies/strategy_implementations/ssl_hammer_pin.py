@@ -6,7 +6,7 @@ from typing import Dict, Union
 
 # Local.
 from pagetpalace.src.indicators.indicators import (
-    append_average_true_range,
+    get_average_true_range_value,
     append_ssma,
     get_hammer_pin_signal,
     is_candle_range_greater_than_x,
@@ -64,7 +64,7 @@ class SSLHammerPin(SSLMultiTimeFrame):
 
     def _update_atr_values(self):
         for tf in self.time_frames:
-            append_average_true_range(self._latest_data[tf])
+            get_average_true_range_value(self._latest_data[tf])
             self._atr_values[tf] = round(self._latest_data[tf].iloc[-1]['ATR_14'], 5)
 
     def _update_ssma_values(self):

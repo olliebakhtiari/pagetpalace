@@ -9,7 +9,7 @@ from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
 from pagetpalace.src.oanda.strategies.ssl_multi import SSLMultiTimeFrame
-from pagetpalace.src.indicators.indicators import append_average_true_range, append_ssma
+from pagetpalace.src.indicators.indicators import get_average_true_range_value, append_ssma
 from pagetpalace.tools.logger import *
 
 
@@ -35,7 +35,7 @@ class SSLInvestment(SSLMultiTimeFrame):
         self._live_trade_monitor = live_trade_monitor
 
     def _update_atr_values(self):
-        append_average_true_range(self._latest_data['H1'])
+        get_average_true_range_value(self._latest_data['H1'])
         self._atr_values['H1'] = round(self._latest_data['H1'].iloc[-1]['ATR_14'], 5)
 
     def _update_ssma_values(self):

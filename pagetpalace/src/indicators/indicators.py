@@ -1,5 +1,4 @@
 # Python standard.
-import sys
 from typing import Dict
 
 # Third-party.
@@ -33,7 +32,7 @@ def append_ssl_channel(data: pd.DataFrame, periods: int = 20):
     data[f'HighLowValue_{periods}_period'] = hlv
 
 
-def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: int = 14):
+def get_average_true_range_value(df: pd.DataFrame, prices: str = 'mid', periods: int = 14) -> float:
     data = df.copy()
     data.reset_index(drop=True)
     high = data[f'{prices}High'].apply(pd.to_numeric)
@@ -44,6 +43,8 @@ def append_average_true_range(df: pd.DataFrame, prices: str = 'mid', periods: in
     data['tr2'] = abs(low - close.shift())
     data['true_range'] = data[['tr0', 'tr1', 'tr2']].max(axis=1)
     df[f'ATR_{periods}'] = data['true_range'].ewm(alpha=1 / periods).mean()
+
+    return df[f'ATR_{periods}'].iloc[-1]
 
 
 def append_ssma(df: pd.DataFrame, periods: int = 50, prices: str = Price.MID_CLOSE):
@@ -231,26 +232,30 @@ def append_exponentially_weighted_moving_average(df: pd.DataFrame, period: int =
     df[f'EWM_{period}'] = (df[Price.MID_CLOSE].ewm(span=period, adjust=False).mean()).round(5)
 
 
-def append_chaikin_money_flow(df: pd.DataFrame, periods=20):
+def get_chaikin_money_flow_value(df: pd.DataFrame, periods=20) -> float:
     """
         Chaikin Money Flow (CMF)
         measures the amount of Money Flow Volume over a specific period.
     """
-    mfv = ((df[Price.MID_CLOSE] - df[Price.MID_LOW]) - (df[Price.MID_HIGH] - df[Price.MID_CLOSE])) \
-          / (df[Price.MID_HIGH] - df[Price.MID_LOW])
+    highs = pd.to_numeric(df[Price.MID_HIGH], errors='coerce').astype('Float32')
+    lows = pd.to_numeric(df[Price.MID_LOW], errors='coerce').astype('Float32')
+    closes = pd.to_numeric(df[Price.MID_CLOSE], errors='coerce').astype('Float32')
+    mfv = ((closes - lows) - (highs - closes)) / (highs - lows)
     mfv = mfv.fillna(0.0)
     mfv *= df['volume']
     cmf = (mfv.rolling(periods, min_periods=0).sum() / df['volume'].rolling(periods, min_periods=0).sum())
     df['CMF'] = cmf
 
+    return df['CMF'].iloc[-1]
+
 
 def calculate_local_high_and_low(df: pd.DataFrame, index: int, look_back: int) -> Dict[str, float]:
-    high = 0
-    low = sys.maxsize
+    high = 0.
+    low = 1000000.
     i = index
     while i > index - look_back and i >= 0:
-        candle_high = df[Price.MID_HIGH].iloc[i]
-        candle_low = df[Price.MID_LOW].iloc[i]
+        candle_high = float(df[Price.MID_HIGH].iloc[i])
+        candle_low = float(df[Price.MID_LOW].iloc[i])
         if candle_high > high:
             high = candle_high
         if candle_low < low:

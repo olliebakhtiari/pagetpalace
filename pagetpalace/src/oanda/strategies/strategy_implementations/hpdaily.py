@@ -7,7 +7,7 @@ from typing import Dict, Union
 
 # Local.
 from pagetpalace.src.indicators.indicators import (
-    append_average_true_range,
+    get_average_true_range_value,
     append_ssma,
     get_hammer_pin_signal_v2,
     is_candle_range_greater_than_x,
@@ -84,7 +84,7 @@ class HPDaily(Strategy):
                >= self._calculate_boundary(bias, price, sma_value)
 
     def _update_strategy_atr_values(self):
-        append_average_true_range(self._latest_data[self.entry_timeframe])
+        get_average_true_range_value(self._latest_data[self.entry_timeframe])
         self._strategy_atr_values = {self.entry_timeframe: self._latest_data[self.entry_timeframe].iloc[-1]['ATR_14']}
 
     def _update_strategy_ssma_values(self):

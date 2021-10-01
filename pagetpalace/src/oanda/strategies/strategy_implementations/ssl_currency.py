@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict
 
 # Local.
-from pagetpalace.src.indicators.indicators import append_average_true_range, append_ssma
+from pagetpalace.src.indicators.indicators import get_average_true_range_value, append_ssma
 from pagetpalace.src.oanda.instruments.instruments import Instrument
 from pagetpalace.src.oanda.account import OandaAccount
 from pagetpalace.src.oanda.live_trade_monitor import LiveTradeMonitor
@@ -31,11 +31,10 @@ class SSLCurrency(SSLMultiTimeFrame):
             sub_strategies_count=1,
             trade_multipliers=trade_multipliers,
             boundary_multipliers=boundary_multipliers,
-            live_trade_monitor=live_trade_monitor,
         )
 
     def _update_atr_values(self):
-        append_average_true_range(self._latest_data['M30'])
+        get_average_true_range_value(self._latest_data['M30'])
         self._atr_values['M30'] = round(self._latest_data['M30'].iloc[-1]['ATR_14'], 5)
 
     def _update_ssma_values(self):
