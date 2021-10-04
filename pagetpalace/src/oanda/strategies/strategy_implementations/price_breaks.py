@@ -166,12 +166,16 @@ class PriceBreaks(Strategy):
     def _get_tp_pip_amount(self, signal: Direction) -> float:
         return self._atr_value * self.tp_multipliers[signal]
 
-    def _get_stop_loss_price(self, signal: Direction) -> float:
+    def _get_sl_pip_amount(self, signal: Direction, entry_price: float) -> float:
         offset = self._atr_value * self.sl_multipliers[signal]
         if signal == Direction.LONG:
             offset *= -1
+        sl_price = float(self._latest_candle[Price.BID_LOW if signal == Direction.LONG else Price.ASK_HIGH]) + offset
 
-        return float(self._latest_candle[Price.BID_LOW if signal == Direction.LONG else Price.ASK_HIGH]) + offset
+        return round(
+            entry_price - sl_price if signal == Direction.LONG else sl_price - entry_price,
+            self.instrument.price_precision,
+        )
 
     def _execute_and_act_on_new_order(self, signal: Direction):
         entry_price = self._get_entry_price_to_offset_from(signal)
@@ -182,7 +186,7 @@ class PriceBreaks(Strategy):
                     price_to_offset_from=entry_price,
                     entry_offset=self._atr_value / self.entry_offset_factors[signal],
                     worst_price_bound_offset=self._atr_value / 3,
-                    sl_pip_amount=self._get_stop_loss_price(signal),
+                    sl_pip_amount=self._get_sl_pip_amount(signal, entry_price),
                     tp_pip_amount=self._get_tp_pip_amount(signal),
                     strategy=self.STRATEGY_LABEL,
                     signal=signal,
@@ -196,13 +200,13 @@ class PriceBreaks(Strategy):
 
     def _log_latest(self, signals: dict):
         logger.info(self._trading_session_validator)
-        logger.info(f'prev: {self._prev_candle_datetime}')
-        logger.info(f'latest: {self._latest_candle}')
-        logger.info(f'cmf: {self._cmf_value}')
-        logger.info(f'atr: {self._atr_value}')
+        logger.info(f'prev candle: {self._prev_candle_datetime}')
+        logger.info(f'latest candle: {self._latest_candle}')
+        logger.info(f'chaikin money flow value: {self._cmf_value}')
+        logger.info(f'average true range value: {self._atr_value}')
         logger.info(f'local extremas: {self._local_extremas}')
-        logger.info(f'new extrema: {self._new_extrema_flags}')
-        logger.info(f'trade counts: {self._session_trade_counts}')
+        logger.info(f'new extrema flags: {self._new_extrema_flags}')
+        logger.info(f'remaining trades: {self._session_trade_counts}')
         logger.info(f'signals: {signals}')
 
     def execute(self):
