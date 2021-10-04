@@ -61,6 +61,7 @@ class PriceBreaks(Strategy):
         self._prev_candle_datetime = None
         self._trading_session_validator = TradingSessionValidator(datetime.now())
         self._prev_exec = -1
+        logger.info({k: v for k, v in self.__dict__.items()})
 
     def _get_latest_datetime(self) -> datetime:
         return datetime.strptime(self._latest_candle['datetime'], '%Y-%m-%d %H:%M:%S')
@@ -193,6 +194,17 @@ class PriceBreaks(Strategy):
                 logger.info(f'Failed place new pending order. {exc}', exc_info=True)
                 self._send_mail_alert(source='place_order', additional_msg=str(exc))
 
+    def _log_latest(self, signals: dict):
+        logger.info(self._trading_session_validator)
+        logger.info(f'prev: {self._prev_candle_datetime}')
+        logger.info(f'latest: {self._latest_candle}')
+        logger.info(f'cmf: {self._cmf_value}')
+        logger.info(f'atr: {self._atr_value}')
+        logger.info(f'local extremas: {self._local_extremas}')
+        logger.info(f'new extrema: {self._new_extrema_flags}')
+        logger.info(f'trade counts: {self._session_trade_counts}')
+        logger.info(f'signals: {signals}')
+
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
         while 1:
@@ -208,6 +220,7 @@ class PriceBreaks(Strategy):
                     if self._is_new_candle():
                         self._update_strategy_reqs()
                         signals = self._get_signals()
+                        self._log_latest(signals)
                         for strategy, signal in signals.items():
                             if signal:
                                 self._execute_and_act_on_new_order(signal)
