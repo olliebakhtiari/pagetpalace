@@ -252,12 +252,12 @@ class Strategy:
         return market_order
 
     def _is_green_candle(self) -> bool:
-        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[0] \
-               > self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[0]
+        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[-1] \
+               > self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[-1]
 
     def _is_red_candle(self) -> bool:
-        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[0] \
-               < self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[0]
+        return self._latest_data[self.entry_timeframe][Price.MID_CLOSE].values[-1] \
+               < self._latest_data[self.entry_timeframe][Price.MID_OPEN].values[-1]
 
     def _update_latest_data(self):
         od = OandaInstrumentData()
