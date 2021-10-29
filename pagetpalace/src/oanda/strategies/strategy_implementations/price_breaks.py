@@ -113,7 +113,10 @@ class PriceBreaks(Strategy):
 
     def _update_dynamic_tp_targets(self):
         self._dynamic_tp_targets = {
-            trade['id']: round(float(trade['price']) + self._atr_value, self.instrument.price_precision)
+            trade['id']: round(
+                float(trade['price']) + (self._atr_value * self.tp_multipliers[Direction.LONG]),
+                self.instrument.price_precision,
+            )
             for trade
             in self.account.get_open_trades()['trades']
         }
