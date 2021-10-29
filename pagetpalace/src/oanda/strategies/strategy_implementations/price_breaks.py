@@ -61,6 +61,8 @@ class PriceBreaks(Strategy):
         self._prev_candle_datetime = None
         self._trading_session_validator = TradingSessionValidator(datetime.now())
         self._prev_exec = -1
+        self._dynamic_tp_targets = {}
+        self._update_dynamic_tp_targets()
         logger.info({k: v for k, v in self.__dict__.items()})
 
     def _get_latest_datetime(self) -> datetime:
@@ -109,6 +111,13 @@ class PriceBreaks(Strategy):
             self._latest_candle = self._latest_data[self.entry_timeframe].iloc[-1]
             self._prev_exec = now.hour
 
+    def _update_dynamic_tp_targets(self):
+        self._dynamic_tp_targets = {
+            trade['id']: round(float(trade['price']) + self._atr_value, self.instrument.price_precision)
+            for trade
+            in self.account.get_open_trades()['trades']
+        }
+
     def _update_strategy_reqs(self):
         self._clear_pending_orders()
         self._trading_session_validator.date_time = self._get_latest_datetime() + timedelta(hours=1)
@@ -117,6 +126,20 @@ class PriceBreaks(Strategy):
         self._update_new_extrema_flags()
         if self._trading_session_validator.is_new_session():
             self._update_for_new_session()
+        self._update_dynamic_tp_targets()
+
+    def _close_active_if_dynamic_tp_hit(self):
+        to_delete = []
+        latest_prices = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
+        for trade_id, target_price in self._dynamic_tp_targets.items():
+            if float(latest_prices['prices'][0]['bids'][0]['price']) >= target_price:
+                try:
+                    self.account.close_trade(trade_specifier=trade_id)
+                    to_delete.append(trade_id)
+                except Exception as exc:
+                    logger.error(f"Failed to close trade: {trade_id} - {exc}", exc_info=True)
+        for key in to_delete:
+            del self._dynamic_tp_targets[key]
 
     def _adjust_session_trades_count(self, signal: Direction):
         if self._session_trade_counts[signal] > 0:
@@ -208,17 +231,19 @@ class PriceBreaks(Strategy):
         logger.info(f'new extrema flags: {self._new_extrema_flags}')
         logger.info(f'remaining trades: {self._session_trade_counts}')
         logger.info(f'signals: {signals}')
+        logger.info(f'dynamic tp targets: {self._dynamic_tp_targets}')
 
     def execute(self):
         london_tz = pytz.timezone('Europe/London')
         while 1:
             now = datetime.now().astimezone(london_tz)
             if self._should_run(now):
-                try:
-                    self._sync_pending_orders(self.account.get_pending_orders()['orders'])
-                except Exception as exc:
-                    logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
+                self._close_active_if_dynamic_tp_hit()
                 if now.minute == 0 and now.hour != self._prev_exec:
+                    try:
+                        self._sync_pending_orders(self.account.get_pending_orders()['orders'])
+                    except Exception as exc:
+                        logger.error(f'Failed to sync pending orders. {exc}', exc_info=True)
                     time.sleep(2)
                     self._update_oanda_candlestick_data(now)
                     if self._is_new_candle():
