@@ -62,7 +62,6 @@ class PriceBreaks(Strategy):
         self._trading_session_validator = TradingSessionValidator(datetime.now())
         self._prev_exec = -1
         self._dynamic_tp_targets = {}
-        self._update_dynamic_tp_targets()
         logger.info({k: v for k, v in self.__dict__.items()})
 
     def _get_latest_datetime(self) -> datetime:
@@ -133,16 +132,17 @@ class PriceBreaks(Strategy):
 
     def _close_active_if_dynamic_tp_hit(self):
         to_delete = []
-        latest_prices = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
-        for trade_id, target_price in self._dynamic_tp_targets.items():
-            if float(latest_prices['prices'][0]['bids'][0]['price']) >= target_price:
-                try:
-                    self.account.close_trade(trade_specifier=trade_id)
-                    to_delete.append(trade_id)
-                except Exception as exc:
-                    logger.error(f"Failed to close trade: {trade_id} - {exc}", exc_info=True)
-        for key in to_delete:
-            del self._dynamic_tp_targets[key]
+        if self._dynamic_tp_targets:
+            latest_prices = self._pricing.get_pricing_info([self.instrument.symbol], include_home_conversions=False)
+            for trade_id, target_price in self._dynamic_tp_targets.items():
+                if float(latest_prices['prices'][0]['bids'][0]['price']) >= target_price:
+                    try:
+                        self.account.close_trade(trade_specifier=trade_id)
+                        to_delete.append(trade_id)
+                    except Exception as exc:
+                        logger.error(f"Failed to close trade: {trade_id} - {exc}", exc_info=True)
+            for key in to_delete:
+                del self._dynamic_tp_targets[key]
 
     def _adjust_session_trades_count(self, signal: Direction):
         if self._session_trade_counts[signal] > 0:
