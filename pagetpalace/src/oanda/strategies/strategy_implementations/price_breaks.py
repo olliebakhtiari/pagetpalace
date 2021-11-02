@@ -241,7 +241,10 @@ class PriceBreaks(Strategy):
         while 1:
             now = datetime.now().astimezone(london_tz)
             if self._should_run(now):
-                self._close_active_if_dynamic_tp_hit()
+                try:
+                    self._close_active_if_dynamic_tp_hit()
+                except Exception as exc:
+                    logger.error(f'Failed to run _close_active_if_dynamic_tp_hit - {exc}', exc_info=True)
                 if now.minute == 0 and now.hour != self._prev_exec:
                     try:
                         self._sync_pending_orders(self.account.get_pending_orders()['orders'])
